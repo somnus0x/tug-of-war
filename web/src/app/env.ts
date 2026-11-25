@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { basePathSchema } from '@/lib/base-path'
+
 const ADDRESS_PATTERN = /^0x[0-9a-fA-F]{40}$/
 
 const envSchema = z.object({
@@ -19,6 +21,7 @@ const envSchema = z.object({
   ),
   VITE_WC_PROJECT_ID: z.string().trim().min(1, 'must not be empty'),
   VITE_FIXTURES: z.enum(['0', '1']).transform((value) => value === '1'),
+  VITE_BASE: basePathSchema,
 })
 
 export type Env = z.infer<typeof envSchema>

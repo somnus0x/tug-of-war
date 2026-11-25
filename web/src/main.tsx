@@ -7,14 +7,26 @@ import { WagmiProvider } from 'wagmi'
 
 import '@/app/env'
 import { queryClient } from '@/app/query-client'
-import { router } from '@/app/router'
+import { createAppRouter } from '@/app/router'
 import { wagmiConfig } from '@/app/wagmi'
 import { walletTheme } from '@/app/wallet-theme'
+import { entryLinkTarget } from '@/lib/entry-link'
 
 import '@rainbow-me/rainbowkit/styles.css'
 import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/shell.css'
+
+const entryTarget = entryLinkTarget(
+  window.location.search,
+  window.location.hash,
+  import.meta.env.BASE_URL,
+)
+if (entryTarget !== null) {
+  window.history.replaceState(null, '', entryTarget)
+}
+
+const router = createAppRouter()
 
 const container = document.getElementById('root')
 
