@@ -19,8 +19,9 @@ What to show: the testnet launch, the code, and a short explanation of what make
 
 - Solidity `^0.8.24`, Foundry.
 - Teams: `0 = NONE`, `1 = BLUE`, `2 = RED` (`uint8`).
-- Phases: `0 = AWAITING_CAPTAINS`, `1 = BUY_IN`, `2 = AWAITING_LAUNCH`, `3 = REFUNDING`, `4 = LAUNCHED`, `5 = CANCELLED`.
+- Phases: `0 = AWAITING_CAPTAINS`, `1 = BUY_IN`, `2 = AWAITING_LAUNCH`, `3 = REFUNDING`, `4 = LAUNCHED`, `5 = CANCELLED` (`uint8`).
 - Shares in basis points (`10000 = 100%`). BNB and token amounts in wei.
+- Widen basis-point operands to `uint256` before multiplication in PRs 2–4. For example, use `uint256(captainShareBps) * finalBlueShareBps`.
 - Custom errors only, so the frontend can decode reverts.
 - State changes before external calls; `nonReentrant` on every function that sends BNB or tokens.
 - Each PR ships with its own tests. No PR is "tests later".
@@ -68,15 +69,17 @@ docs/frontend-api.md              calls per screen, for the frontend
 | Total supply | 1,000,000 |
 | Pool | 50% (500,000) |
 | Base allocation | 35%, pro rata by BNB contributed, regardless of team |
-| Bonus allocation | 13%, split between teams by capped rope, then by pull within team |
+| Bonus allocation | `1500 − captainAllocBps` bps of total supply (13% by default), split between teams by capped rope, then by pull within team |
 | Max bonus share per team | 70% (floor for the other team 30%) |
-| Captain allocation | 2%, split by capped rope (0.6% to 1.4% each), linear vest over 30 days from launch, held by the Launcher |
+| Captain allocation | 2% by default, split by capped rope (0.6% to 1.4% each at defaults), linear vest over 30 days by default from launch, held by the Launcher |
 | Reserve handed to the Launcher | 50% (base + bonus + captain pool) |
 | Buy / sell tax | 3% / 5% |
+| Tax / anti-farmer duration | 30 days / 1 day |
 | Fee slots | VAULT 8000, DEFLATION 2000 |
 | Vault split | 20% captains, 80% stakers. Both split Blue / Red by final rope |
 | Time weight | 2x → 1x linear from `gameStart` over `duration`, 1x in overtime. Both captain deposits get the full 2x |
 | Overtime | +30 s if lead flips in last 60 s, max 5 |
+| Launch grace | 24 hours from the final buy-in deadline. Unlaunched games enter refunding at the cutoff |
 | Captain minimum deposit | Set per game (0.1 tBNB for the demo) |
 | Accept window | 1 hour from game creation (2 minutes for the demo) |
 | Demo duration | 3 minutes |
@@ -116,14 +119,22 @@ Interfaces, shared types and exported ABIs only. No implementation. Lets the fro
 
 ### `TugTypes.sol`
 
-| Type | Purpose |
+| Type | Fields and units |
 |---|---|
-| `Team`, `Phase` | constants libraries |
-| `TugConfig` | create-game form: `name, symbol, meta, salt, duration, minRaise, walletCap, captainBlue, captainRed, vaultFactory, maxBonusShareBps, captainMinDeposit, acceptWindow, captainAllocBps, captainVestDuration, captainShareBps` |
-| `GameView` | everything the game page renders: identity, config, phase, captains (deposited per team, accept deadline = creation + accept window), clock (gameStart, originalDeadline, deadline, extensionsUsed, currentWeightBps), raised and pull per team, players per team, ropeBps, auto-launch (request id, budget), launch results (token, pool, vault, finalBlueShareBps) |
-| `PlayerView` | one wallet: team, contribution, pull, base and bonus entitlement, claimed, claimable, refundable, remainingCap |
-| `CaptainAllocView` | one captain: team, deposited, allocation, vested, claimed, claimable, vestEnd |
-| `RulesView` | taxes, fee slots, captain share of vault revenue, supply split, max bonus share, captain allocation and vesting — shown before contributing |
+| `Team`, `Phase` | `uint8` constants libraries |
+| `TeamPair`, `TeamFlags` | Named `blue` and `red` fields of type `uint256` and `bool`, respectively |
+| `DurationRange`, `BpsRange` | Inclusive named `min` and `max` fields. Durations use `uint64` seconds and basis-point ranges use `uint16` |
+| `TugConfig` | In order: `string name, string symbol, string meta, bytes32 salt, uint64 duration, uint256 minRaise, uint256 walletCap, address captainBlue, address captainRed, address vaultFactory, uint16 maxBonusShareBps, uint256 captainMinDeposit, uint64 acceptWindow, uint16 captainAllocBps, uint64 captainVestDuration, uint16 captainShareBps` |
+| `GameView` | `launcher, creator, factory, config, phase, captainDeposited, acceptDeadline, gameStart, originalDeadline, deadline, extensionsUsed, currentWeightBps, raised, raisedByTeam, pullByTeam, playersByTeam, ropeBps, autoLaunchRequestId, triggerBudget, triggerFunder, token, pool, vault, finalBlueShareBps`. Deposit flags use `TeamFlags`. Team totals use `TeamPair`. Clocks are `uint64` Unix seconds, overtime count is `uint8`, shares and weights are `uint16` basis points, and amounts and request IDs are `uint256` |
+| `PlayerView` | `team, contribution, pull, baseEntitlement, bonusEntitlement, claimed, claimable, refundable, remainingCap`. `team` is `uint8`. Other fields are `uint256`. `refundable` is BNB wei |
+| `CaptainAllocView` | `team, deposited, allocation, vested, claimed, claimable, vestEnd`. `team` is `uint8`, `deposited` is `bool`, token amounts are `uint256` wei, and `vestEnd` is `uint64` Unix seconds |
+| `RulesView` | `buyTaxBps, sellTaxBps, vaultFeeBps, deflationFeeBps, captainShareBps, poolAllocBps, baseAllocBps, bonusAllocBps, captainAllocBps, maxBonusShareBps, captainVestDuration, taxDuration, antiFarmerDuration, startWeightBps, overtimeWindow, overtimeExtension, maxExtensions, launchGrace`. Basis points are `uint16`. Tax and anti-farmer durations use `uint32` seconds, other durations use `uint64` seconds, and `maxExtensions` is `uint8`. Time and weight defaults are in the game parameters above |
+| `Limits` | `duration, acceptWindow, captainVestDuration` use `DurationRange`. `maxBonusShareBps, captainAllocBps, captainShareBps` use `BpsRange`. Then `uint256 minRaiseFloor` in BNB wei and `bool creationFloorAvailable`. True with zero is a valid floor. False with zero means unavailable |
+| `VaultView` | Four `TeamPair` fields: `teamStaked` in token wei, `rewardPer1000NewTokensPerBnb` in BNB wei per 1 BNB of new revenue for a hypothetical new 1,000-token stake, `captainAccrued` and `captainClaimed` in BNB wei. Then `uint256 undistributed` in BNB wei. See Step 5 for the reward calculation |
+| `StakerView` | `uint8 team`, then `uint256 staked, pendingRewards, tokenBalance, allowance`. Amounts are token wei, except `pendingRewards` is BNB wei and projects the sync that the claim would settle |
+| `CaptainView` | `uint8 team`, then `uint256 accrued, claimed, claimable` in BNB wei. `claimable` projects the sync that the claim would settle |
+
+`captainIn(uint8 team)` and `teamStake(uint8 team)` take the numeric Blue and Red IDs and revert with `InvalidTeam()` for any other ID.
 
 ### `ITugLauncher`
 
@@ -135,27 +146,30 @@ Interfaces, shared types and exported ABIs only. No implementation. Lets the fro
 | Button gates | `canDepositCaptain(address, uint256 amount) → (bool, bytes4 reason)`, `canCancel()`, `canScheduleAutoLaunch()`, `canContribute(address, uint8 team, uint256 amount)`, `canLaunch()`, `canRefund(address)`, `canClaim(address)`, `canClaimCaptain(address)` |
 | Preview | `previewContribute(uint8 team, uint256 amount) → (pull, newRopeBps, wouldTriggerOvertime)`, `autoLaunchQuote() → uint256` (Trigger Service fee × 6: the first request plus one per possible overtime) |
 | Getters | `phase, teamOf, contribution, pullOf, ropeBps, finalBlueShareBps, captainBlue, captainRed, captainIn, gameStart, raised, minRaise, deadline, launched, launching, token, pool, vault, creator, factory, triggerService, autoLaunchRequestId, triggerBudget` |
-| Events | `CaptainDeposited(captain, team, amount)`, `GameStarted(gameStart, deadline)`, `AutoLaunchScheduled(requestId, executeAfter)`, `Cancelled(captain, refunded)`, `Contributed(player, team, amount, pull, weightBps, ropeBps)`, `Overtime(newDeadline, extensionsUsed)`, `Launched(token, pool, vault, raised, finalBlueShareBps)`, `Claimed(player, base, bonus)`, `CaptainVested(captain, amount)`, `Refunded(player, amount)` |
-| Errors | `InvalidTeam, TeamLocked, ZeroContribution, WalletCapExceeded, NotCaptain, CaptainAlreadyIn, BelowCaptainMinimum, CaptainsNotIn, AcceptWindowOpen, AcceptWindowClosed, NotCancellable, GameCancelled, GameNotStarted, OnlyTriggerService, AutoLaunchAlreadyScheduled, InsufficientTriggerFee, BuyInClosed, BuyInOpen, BelowMinRaise, MinRaiseMet, AlreadyLaunched, NotLaunched, NothingToClaim, NothingToRefund, TransferFailed` |
+| Events | `CaptainDeposited(captain, team, amount)`, `GameStarted(gameStart, deadline)`, `AutoLaunchScheduled(requestId, executeAfter)`, `Cancelled(captain, refunded)`, `Contributed(player, team, amount, pull, weightBps, ropeBps)`, `Overtime(newDeadline, extensionsUsed)`, `Launched(token, pool, vault, raised, finalBlueShareBps)`, `Claimed(player, base, bonus)`, `CaptainVested(captain, amount)`, `Refunded(player, amount)`. Index player, captain, and team where present, plus `requestId` and the three `Launched` addresses |
+| Errors | `InvalidTeam, TeamLocked, ZeroContribution, WalletCapExceeded, NotCaptain, CaptainAlreadyIn, BelowCaptainMinimum, CaptainsNotIn, AcceptWindowOpen, AcceptWindowClosed, NotCancellable, GameCancelled, GameNotStarted, OnlyTriggerService, AutoLaunchAlreadyScheduled, InsufficientTriggerFee, BuyInClosed, BuyInOpen, BelowMinRaise, MinRaiseMet, CreationFloorUnavailable, BelowCreationFloor, LaunchGraceExpired, AlreadyLaunched, NotLaunched, NothingToClaim, NothingToRefund, NotTriggerFunder, TriggerBudgetLocked, TransferFailed` |
+
+Gates return `(true, bytes4(0))` or the applicable state or validation error selector. `canScheduleAutoLaunch()` checks state and `autoLaunchQuote()` supplies the payment amount.
 
 ### `ITugLauncherFactory`
 
 | Kind | Functions |
 |---|---|
-| Form | `limits() → Limits`, `defaultConfig() → TugConfig`, `validateConfig(TugConfig) → (bool, bytes4)`, `encodeConfig(TugConfig) → bytes`, `pairedVaultFactory()`, `portal()` |
+| Form | `limits() → Limits`, `defaultConfig() → TugConfig`, `validateConfig(TugConfig) → (bool, bytes4)`, `encodeConfig(TugConfig) → bytes`, `pairedVaultFactory()`, `portal()`. Validation returns `(true, bytes4(0))` on success or the matching creation error selector on failure |
 | Salt mining | `tokenImplementation()`, `predictToken(bytes32 salt)` |
 | Game list | `isLauncher(address)`, `gamesCount()`, `gameAt(i)`, `gamesOf(captain)` |
-| Events | `TugLauncherCreated(launcher, creator, captainBlue, captainRed, salt)` |
+| Events | `TugLauncherCreated(launcher, creator, captainBlue, captainRed, salt)`. Index `launcher`, `captainBlue` and `captainRed` |
+| Errors | `InvalidVaultFactory, InvalidCaptains, InvalidSalt, DurationOutOfRange, AcceptWindowOutOfRange, CaptainVestDurationOutOfRange, MaxBonusShareOutOfRange, CaptainAllocOutOfRange, CaptainShareOutOfRange, InvalidWalletCap, CaptainDepositExceedsWalletCap, ZeroMinRaise, CreationFloorUnavailable, MinRaiseBelowCreationFloor, NonCanonicalConfig`. All are parameterless |
 
 ### `ITugVault`
 
 | Kind | Functions |
 |---|---|
 | Write | `stake(uint256 amount, uint8 team)`, `unstake(uint256)`, `claimRewards()`, `claimCaptain()`, `sync()` |
-| One-call views | `getVault() → VaultView` (per team: staked, reward per 1,000 coins; captain ledger; undistributed), `getStaker(address) → StakerView` (team, staked, pendingRewards, tokenBalance, allowance), `getCaptain(address) → CaptainView` |
+| One-call views | `getVault() → VaultView`, `getStaker(address) → StakerView`, `getCaptain(address) → CaptainView` |
 | Getters | `stakeOf, stakerTeam, teamStake, pendingRewards, pendingCaptain, launcher, taxToken` |
-| Events | `Synced(revenue, toCaptains, toBlue, toRed, carried)`, `Staked`, `Unstaked`, `RewardsClaimed`, `CaptainClaimed` |
-| Errors | `ZeroAmount, WrongTeam, InsufficientStake, NothingToClaim, NotCaptain, TransferFailed` |
+| Events | `Synced(uint256 revenue, uint256 toCaptains, uint256 toBlue, uint256 toRed, uint256 carried)`, `Staked(address indexed staker, uint8 indexed team, uint256 amount)`, `Unstaked(address indexed staker, uint8 indexed team, uint256 amount)`, `RewardsClaimed(address indexed staker, uint8 indexed team, uint256 amount)`, `CaptainClaimed(address indexed captain, uint8 indexed team, uint256 amount)`. Staked amount is the token wei actually credited. Claim amounts and Synced fields are BNB wei |
+| Errors | `InvalidTeam, ZeroAmount, WrongTeam, InsufficientStake, NothingToClaim, NotCaptain, TransferFailed` |
 
 `TugLauncher.claimCaptain()` releases the vested coin allocation. `TugVault.claimCaptain()` pays the captain's BNB tax share. The frontend labels them differently.
 
@@ -166,7 +180,7 @@ Interfaces, shared types and exported ABIs only. No implementation. Lets the fro
 | Create game | `limits`, `defaultConfig` → mine salt with `tokenImplementation` / `predictToken` → `validateConfig` → `Portal.newLauncher{value: SALT_LOCK_FEE}`; launcher address from `TugLauncherCreated` |
 | Waiting for captains | poll `getGame`; captain sees `canDepositCaptain` → `depositCaptain`; after the accept window `canCancel` → `cancel`; after `GameStarted`, `autoLaunchQuote` → `scheduleAutoLaunch{value: quote}` |
 | Game page | poll `getGame`, `getPlayer(me)`, `getRules`; `previewContribute` while typing; `canContribute` → `contribute`; feed from `Contributed`, `Overtime` |
-| After the clock | the Trigger Service normally launches; the launch button stays for a late or failed callback (`canLaunch` → `launch`); or `canRefund` → `refund`; the auto-launch funder sees `withdrawTriggerBudget` |
+| After the clock | Use `canLaunch` → `launch` during the grace period if the trigger is late or the live floor recovers. Use `canRefund` → `refund` once refunding opens. The auto-launch funder can call `withdrawTriggerBudget` after launch or when refunding opens |
 | Claim and stake | `getPlayer` → `claim`; `getStaker` → approve + `stake`, `unstake`, `claimRewards`; captains: `getCaptain` on the launcher → `claimCaptain`, `getCaptain` on the vault → `claimCaptain` |
 
 **Done when:** `forge build` passes, ABIs exported to `abi/` by one command, a compile test asserts key selectors, and `docs/frontend-api.md` lists the calls per screen.
@@ -205,20 +219,24 @@ Inherits `LauncherBase`, `Initializable`, `IStrategy`, `ReentrancyGuard`. Implem
 | `depositCaptain() payable` | named captain, once, either order | before `acceptDeadline`, `msg.value ≥ captainMinDeposit`, within wallet cap; record as a contribution on the captain's team with full 2x pull; the second deposit sets `gameStart` and `deadline = gameStart + duration` |
 | `cancel()` | anyone | `acceptDeadline` passed with fewer than two captains in; mark cancelled, then send back the deposit of the captain who is in, if any. Salt lock fee is not returned |
 | `contribute(team) payable` | anyone | both captains in, before deadline, not launched, `msg.value > 0`, valid team; lock team on first call; enforce wallet cap; update raised, contribution, pull with weight from `gameStart`; overtime if leader changed, `deadline − now ≤ 60`, `extensionsUsed < 5` |
-| `launch()` | anyone | after deadline, `raised ≥ minRaise`, not launched; fix `finalBlueShareBps`; set captain allocations; `launching = true`; `launchTaxTokenV2{value: raised}`; `launching = false`; store token, pool, vault, `launchedAt` |
+| `launch()` | anyone | From the final deadline until the grace cutoff, with `raised ≥ minRaise` and a met live creation floor. Fix `finalBlueShareBps` and captain allocations, set `launching = true`, call `launchTaxTokenV2{value: raised}`, then clear `launching` and store token, pool, vault and `launchedAt` |
 | `initializeDistribution(token, amount, , )` | `onlyHub`, only while `launching`, once | pull exactly the reserved amount (base + bonus + captain pool) from the Hub |
-| `refund()` | player or captain | after deadline, `raised < minRaise`, not launched; zero contribution, then send BNB |
+| `refund()` | player or captain | In `REFUNDING`, zero the caller's contribution before sending the BNB. Refund eligibility uses game state and time |
 | `claim()` | player or captain | pay base + bonus `entitlement − claimed`; state first |
 | `claimCaptain()` | named captain | pay `vested(captainAlloc, launchedAt, captainVestDuration) − captainClaimed`; nothing at launch |
-| `scheduleAutoLaunch() payable` | anyone, once | game started, not launched, `msg.value ≥ autoLaunchQuote()`; `requestTrigger{value: getFee()}(deadline)`; store the request id; keep the rest as `triggerBudget`; record the caller as `triggerFunder` |
-| `trigger(requestId)` | Trigger Service only (a Flap `retryTrigger` arrives this way too) | do nothing if the id is not the current one or the game already launched; if `now < deadline` (overtime moved it), request again at the new deadline from `triggerBudget`; else if the raise met the minimum, launch; else do nothing. Never reverts on a state check. Shares the launch code with `launch()`, so whichever runs first launches and the other does nothing (`trigger`) or reverts `AlreadyLaunched` (`launch`) |
+| `scheduleAutoLaunch() payable` | anyone, once | Game started, unlaunched, and `now ≤ deadline` so the request is for a current or future time. Require `msg.value ≥ autoLaunchQuote()`, schedule `requestTrigger{value: getFee()}(deadline)`, and record the request ID, unused `triggerBudget`, and `triggerFunder` |
+| `trigger(requestId)` | Trigger Service only (a Flap `retryTrigger` arrives this way too) | Ignore stale requests and terminal states. If overtime moved the deadline into the future, request again at that deadline from `triggerBudget`. From the deadline until the grace cutoff, launch only if both raise checks pass. An unavailable floor, a missed raise, or an elapsed grace cutoff is a no-op. Share launch execution with `launch()` and allow only the first eligible call to launch |
 | `withdrawTriggerBudget()` | `triggerFunder` | after launch, or once refunding: return the unused budget |
 | Views from Step 1 | — | `getGame`, `getPlayer`, `getCaptain`, `getRules`, gates, preview, getters |
 | `_description()` | internal | v1 JSON under 4 KB |
-| `_buildParams()` | private | `quoteToken = 0`, `poolQuote = raised`, `poolToken = 500k`, tax 300/500, `antiSniperMode = 0`, `Distribution.target = EXPLICIT` with `strategy = address(this)`, `encodeCreator(creator)` |
+| `_buildParams()` | private | `quoteToken = 0`, `poolQuote = raised`, `poolToken = 500k`, tax 300/500, `taxDuration = 30 days`, `antiFarmerDuration = 1 days`, `antiSniperMode = 0`, `Distribution.target = EXPLICIT` with `strategy = address(this)`, `encodeCreator(creator)` |
 | `_feeConfigs()` | private | VAULT 8000 with `vaultData = abi.encode(address(this))`, DEFLATION 2000 |
 
 Captain deposits go through `depositCaptain()`, not the initializer, so creation still sends exactly `SALT_LOCK_FEE`.
+
+**Refund cutoff.** An unlaunched game with a started clock enters `REFUNDING` at `block.timestamp >= deadline` if `raised < minRaise`, or for any raise at `block.timestamp >= deadline + LAUNCH_GRACE`. `LAUNCH_GRACE` is 24 hours from the overtime-adjusted deadline. At the grace cutoff, `canLaunch()` returns `LaunchGraceExpired.selector`, `launch()` reverts with it, and `trigger()` does nothing. `canRefund()` and `refund()` use local state even while the Portal is unavailable.
+
+**Live creation floor.** Read the native quote at call time using `launchQuoteConfig(uint8(IPortalTypes.LaunchKind.DIRECT_V2_POOL_TAX), address(0))`. Preview with `graduationFloorV2ForLauncher` using the live quote price, the actual launch parameters including `poolQuote = raised`, and this launcher's address. Use `meetsCreateFloor` for the launch decision. `canLaunch()` and `launch()` use `BelowCreationFloor()` if an available preview misses the floor. A disabled quote, a zero quote price, or a reverted Portal read maps to `CreationFloorUnavailable()`. Share these checks with the callback, which does nothing on either floor failure. Evaluate the grace cutoff before Portal reads.
 
 **Auto-launch.** The Trigger Service has no cancel and no timing guarantee, so `trigger()` re-checks the deadline every time and `launch()` stays public. The launch sends exactly `raised`; `triggerBudget` is kept apart and never counted in it. A callback gets at most `getMaxCallbackGas()` (2,000,000 on testnet), and a callback that runs out becomes FAILED (anyone can `retryTrigger`). PR 4's fork tests measure the gas of `trigger()` → launch. If it is over the cap, auto-launch cannot work and the launch button is the path.
 
@@ -231,10 +249,23 @@ Inherits `LauncherFactoryBase`. Implements `ITugLauncherFactory`.
 | Function | Behaviour |
 |---|---|
 | `constructor(hub, guardian, beacon, pairedVaultFactory, tokenImpl, triggerService)` | the Trigger Service address goes to every launcher (testnet `0x560E9830926C9e0EB98a59c6b9902383Fc0D9Eb2`) |
-| `_newLauncher(creator, data)` | decode `TugConfig`, require canonical encoding; validate (paired vault factory, ranges, max bonus share 5000–10000, distinct non-zero captains, non-zero salt, `captainMinDeposit ≤ walletCap`, accept window and vesting ranges, `captainShareBps` range, `minRaise` clears the creation floor via the Portal's `graduationFloorV2`, so no game is created that can never launch); deploy beacon proxy; `initialize{value: msg.value}`; record game |
+| `_newLauncher(creator, data)` | Decode `TugConfig` and reject noncanonical encoding with `NonCanonicalConfig()`. Validate using the same checks as `validateConfig()). Deploy the beacon proxy, call `initialize{value: msg.value}` and record the game |
 | `launcherDataSchema()` | field list |
 | `upgradeVaultImplementation(impl)` | `onlyGuardian` |
-| Views from Step 1 | `limits, defaultConfig, validateConfig, encodeConfig, predictToken, games…` |
+| Views from Step 1 | `limits()` returns inclusive ranges and the live BNB floor with its availability flag. `defaultConfig()` returns the defaults below. `validateConfig()` returns the same selector that factory validation would revert with. Also expose `encodeConfig`, `predictToken` and game discovery |
+
+| Field | Min | Max | Default |
+|---|---:|---:|---:|
+| `duration` | 60 s | 7 days | 3 min |
+| `acceptWindow` | 60 s | 1 day | 1 hour (2 min for the demo) |
+| `captainVestDuration` | 1 day | 90 days | 30 days |
+| `maxBonusShareBps` | 5000 | 10000 | 7000 |
+| `captainAllocBps` | 0 | 500 | 200 |
+| `captainShareBps` | 0 | 5000 | 2000 |
+
+**Validation.** Require the configured paired vault factory, distinct nonzero captain addresses, and a nonzero salt with a token prediction ending in `7777`. Check all six ranges. Require `walletCap > 0` (`InvalidWalletCap()`), `captainMinDeposit ≤ walletCap` (`CaptainDepositExceedsWalletCap()`), and `minRaise > 0` (`ZeroMinRaise()`). An unavailable floor returns or reverts with `CreationFloorUnavailable()`. A positive configured raise below an available floor returns or reverts with `MinRaiseBelowCreationFloor()`.
+
+**Factory floor preview.** Read the native quote as in Step 3. Before a launcher exists, mirror the Portal multiplier rule below using `vaultFactoryMultiplier(pairedVaultFactory)` and, on fallback, `launcherFactoryMultiplier(address(this))`. Compute the USD creation floor for the fixed supply and pool allocation, then round `createFloorUsdWad × 1e18 / quotePriceUsd` up to BNB wei. A disabled or zero-priced quote or a revert from any needed Portal read means `creationFloorAvailable = false` and `minRaiseFloor = 0`. An enabled zero multiplier yields `creationFloorAvailable = true` and `minRaiseFloor = 0`. A disabled Vault Factory selects the next multiplier according to the Portal rule.
 
 **Tests (fork, in this PR):** `TugBase.sol` (fork BSC testnet, open our factory as admin with `setLauncherFactoryMultiplier`, mine a `7777` salt, fund 5+ wallets, `vm.startPrank` / `vm.stopPrank`) and the PR 3 rows of the fork test checklist below.
 
@@ -257,7 +288,9 @@ Inherits `DirectLaunchVaultBase`, `Initializable`, `ReentrancyGuard`. Implements
 | `claimCaptain()` | sync; pay caller's captain accrual; `baseline −= paid` |
 | `description()` | every fee and recipient |
 | `vaultUISchema()` | `stake`, `unstake`, `claimRewards`, `claimCaptain` |
-| Views from Step 1 | `getVault`, `getStaker`, `getCaptain`, getters |
+| Views from Step 1 | `getVault()` exposes the two reward previews below. `getStaker().pendingRewards` and `getCaptain().claimable` use the same revenue snapshot as the corresponding claim, including any carry the next sync would distribute. Apply the same snapshot to `pendingRewards(address)` and `pendingCaptain(address)` |
+
+**New-stake reward preview.** For each team's `rewardPer1000NewTokensPerBnb`, simulate adding 1,000 credited tokens to that team. From 1 BNB of new vault revenue, the staker portion is `1 ether × (10000 − captainShareBps) / 10000`. Split it by `finalBlueShareBps`. If the other team would still be empty, redirect its share to the joining team. Report `teamPortion × 1000e18 / (teamStaked + 1000e18)` in BNB wei, rounded down, with prior carry excluded. Calculate Blue and Red independently. With both teams empty, each preview shows the full staker portion. A team with zero final-rope share and stake in the other team can have a zero preview.
 
 Every permissioned function also accepts the Guardian. Deploy vaults deterministically behind a beacon.
 
@@ -315,6 +348,9 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 3 | Early contribution earns more pull than equal late one |
 | 3 | Overtime extends on lead flip in last 60 s, stops after 5 |
 | 3 | Refund path when minimum missed, launch impossible |
+| 3 | At the grace cutoff an unlaunched game enters `REFUNDING` even when it reached `minRaise`. Manual launch returns `LaunchGraceExpired()`, the trigger does nothing, and refunds work during a Portal outage |
+| 3 | Factory floor parity across the six multiplier cases below and disabled or unreadable quote cases. Compare `limits().minRaiseFloor` and `creationFloorAvailable` with the Portal |
+| 3 | An available zero floor returns true with zero wei. Zero `minRaise` is rejected independently with `ZeroMinRaise()` |
 | 3 | Second launch reverts |
 | 3 | Base + bonus + captain allocations sum to the reserve within 1 token |
 | 3 | Bonus respects max team share at a blowout |
@@ -323,10 +359,13 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 4 | A post-launch buyer picks a side on first stake and cannot change it |
 | 4 | Team pools receive tax by the fixed rope split, independent of how much is staked in each |
 | 4 | An empty pool's part goes to the other pool; with both empty it is carried to the next sync |
+| 4 | The two new-stake reward previews match their independent hypothetical joins, including an empty opposite team, both teams empty, and a zero effective team share. Claimable views agree with the next sync and eligible carry |
 | 4 | Vault accounting correct across a zero-value ping |
 | 4 | Stranger launcher refused by vault factory |
-| 4 | Auto-launch: a trigger at the deadline launches; a trigger during overtime requests again at the new deadline; a trigger below the minimum raise does nothing; a stale or foreign request id is ignored; only the Trigger Service can call `trigger` |
+| 4 | Auto-launch at the deadline when both raise checks pass. A trigger during overtime requests again at the new deadline. An unmet or unavailable floor, a missed raise, an expired grace period or a stale ID is a no-op. Only the Trigger Service can call `trigger` |
 | 4 | Gas of `trigger()` → launch stays under the Trigger Service callback cap |
+
+**PR 3 factory parity tests.** Move the precedence probe into `test/fork/TugLauncher.fork.t.sol` with the real Tug factory and a freshly registered launcher. Set the Portal's factory flags and multipliers on the fork, then exercise every row of the verified table below. For the both-disabled case, register the launcher before disabling both flags and compare the preview. Use the same live quote price for both sides of the comparison. Compare the factory's BNB wei floor with `ceil(createFloorUsdWad × 1e18 / quotePriceUsd)` from `graduationFloorV2ForLauncher` and assert availability. For positive floors in launchable cases, assert that the Portal preview accepts that wei amount and rejects one wei less. For an enabled zero multiplier assert `(creationFloorAvailable, minRaiseFloor) = (true, 0)`, and test `ZeroMinRaise()` separately. For a disabled or zero-priced quote or a reverted Portal read assert `(false, 0)` and `CreationFloorUnavailable()` from validation and creation.
 
 ---
 
@@ -354,13 +393,25 @@ Frontend (Thu evening), demo videos and the submission (Fri early morning) are o
 - Token address ends in `7777`; never call the token before launch.
 - One launch per launcher; `msg.value == poolQuote + creatorBuyQuote`.
 - Whole reserve handed off in the launch transaction (≤ 1 token left).
-- Tax ≤ 1000 bps each; `antiSniperMode = 0`.
+- Tax ≤ 1000 bps each. Use `taxDuration = 30 days`, `antiFarmerDuration = 1 days` and `antiSniperMode = 0`.
 - ≤ 4 fee slots, each type once, sum 10000; no VAULT + MARKETING.
-- `minRaise` clears the creation floor, `$750 × multiplier × totalSupply / poolToken`: 2.15 tBNB on testnet at a 50% pool share and 1x multiplier. Below it the Portal reverts with `LaunchLiquidityTooLow`. Preview with `graduationFloorV2ForLauncher`.
-- Native BNB quote enabled (`launchQuoteConfig`).
+- The floor multiplier is **enabled Vault Factory → enabled Launcher Factory → 10,000 bps default.** Read the applicable multiplier live. An enabled zero multiplier is a valid zero floor.
+- The positive `minRaise` must clear the creation floor, `$750 × multiplier × totalSupply / poolToken`. At the observed $700 testnet quote price, 50% pool share and 1x multiplier, the minimum is `2,142,857,142,857,142,858` BNB wei. Recheck the live floor before launch with `graduationFloorV2ForLauncher` and `meetsCreateFloor`. The Portal rejects a launch below it with `LaunchLiquidityTooLow`.
+- Read the live native BNB quote with `launchQuoteConfig` and the named direct V2 launch kind. Catch reverts from each required Portal floor, quote or multiplier read. A disabled quote, zero price or reverted read makes the creation floor unavailable. Refunds at the grace cutoff use game state and time alone.
 - Salt lock fee (0.005 tBNB on testnet, 0.01 BNB on mainnet) is lost if a game is cancelled.
 - Trigger Service: `requestTrigger(uint64 executeAfter) payable` with the fee from `getFee()` (0.0002 tBNB on testnet, never hardcoded); callback `trigger(uint256)` checks `msg.sender == triggerService`; gas cap `getMaxCallbackGas()`; no cancel, no timing guarantee.
 - Upgrades Guardian-only, ~24 h review: do not design around upgrades.
+
+The BSC testnet fork probe used a newly registered launcher and confirmed this matrix at block 144827506.
+
+| Vault Factory | Launcher Factory | Portal multiplier (bps) |
+|---|---|---:|
+| Enabled at 10,000 | Enabled at 10,000 | 10,000 |
+| Enabled at 5,000 | Enabled at 10,000 | 5,000 |
+| Disabled | Enabled at 5,000 | 5,000 |
+| Enabled at 10,000 | Enabled at 5,000 | 10,000 |
+| Enabled at 0 | Enabled at 5,000 | 0 |
+| Disabled | Disabled | 10,000 |
 
 ---
 
@@ -392,7 +443,7 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 2 | Staker rewards: one pool or split by team? | Two pools, Blue and Red, split by final rope. Empty pool passes to the other; both empty carries to the next sync |
 | 3 | Captain token allocation? | Yes. 2% of supply (bonus drops from 15% to 13%), split by capped rope, vested linearly over 30 days in the Launcher |
 | 4 | Zero-pull team's bonus? | Other team gets the whole bonus, and its captain the whole captain share |
-| 5 | 70% bonus cap? | Kept (comment resolved) |
+| 5 | 70% maximum bonus share? | Kept (comment resolved) |
 | 6 | How does a game start? | Captain challenge and accept deposits; cancel and refund if B does not accept in time |
 | 7 | Does Flap have to open our factory? | Yes. An unopened factory is refused; Flap opens it with `setLauncherFactoryMultiplier(factory, 10000, true)` (platform constraints) |
 | 8 | What is the liquidity floor? | $750 × multiplier × totalSupply / poolToken. Read from the testnet Portal: BNB at $700, so 2.15 tBNB at a 50% pool share and 1x multiplier. About 7 faucet-days from one address, so funding is spread over 5+ wallets and several faucets |
