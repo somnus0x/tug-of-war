@@ -16,3 +16,7 @@ The Solidity files below were copied unchanged, including their SPDX headers, fr
 - `LauncherBase.sol`
 - `LauncherFactoryBase.sol`
 - `LauncherHelper.sol`
+
+## Trigger Service
+
+- `IFlapTriggerService.sol` was copied verbatim from the full interface published in Flap's Trigger Service documentation on 25 November 2026. [Flap Trigger Service docs](https://docs.flap.sh/en/flap/v2/developers/flap-infrastructures/flap-trigger-service#full-interface)
