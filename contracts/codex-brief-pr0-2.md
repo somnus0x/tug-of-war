@@ -15,7 +15,7 @@ Claude reviews every PR against the plan. Nat runs `forge build` and `forge test
 - Solidity `^0.8.24` (match Flap's example if it pins a higher 0.8.x), Foundry, `forge fmt` clean.
 - Custom errors only, no `require` strings.
 - `src/flap/` is Flap's code, copied unchanged. Never edit it.
-- Build only what the plan's Steps 0–2 describe. Do **not** add: underdog boost, market-cap handicap, challenge board, X Verifier, Trigger Service, Token Locker, VaultEX. They are out of scope.
+- Build only what the plan's Steps 0–2 describe. Do **not** add: underdog boost, market-cap handicap, challenge board, X Verifier, Token Locker, VaultEX. They are out of scope. Trigger Service auto-launch **is** in scope: its interface goes in PR 1 and its logic in PR 3.
 - Never deploy, broadcast, or use a private key. No `.env` committed; add `.env.example` instead.
 - Every PR description has: what changed, how to test, the `forge build` / `forge test` output, and a "Deviations from the plan" section (write "None" if none).
 
@@ -30,6 +30,7 @@ Goal: a clean Foundry project with Flap's base contracts, and proof that Flap's 
    - `LauncherBase`, `LauncherFactoryBase`, `IStrategy`
    - `DirectLaunchVaultBase`, `DirectLaunchVaultFactoryBase`
    - the Portal interfaces, `LaunchExtensionHelper`, and the types they use
+   - `IFlapTriggerService` and `ITriggerReceiver` (Flap's docs import them from `src/misc/IFlapTriggerService.sol`). If the example repo does not include that file, copy the interface from the [Trigger Service docs](https://docs.flap.sh/en/flap/v2/developers/flap-infrastructures/flap-trigger-service) and say so in `src/flap/README.md`
    Keep SPDX headers. Do not copy the Crowd / StakeMine examples into `src/`; they are references only.
 3. Add `src/flap/README.md` naming the source repo, the exact commit hash copied from, and the file list.
 4. Install the same dependencies (OpenZeppelin and anything else the example uses) at the same versions the example pins, with matching remappings.
@@ -54,9 +55,12 @@ Details that matter:
 
 - Teams: `0 = NONE`, `1 = BLUE`, `2 = RED`. Phases: `0 = AWAITING_CAPTAINS`, `1 = BUY_IN`, `2 = AWAITING_LAUNCH`, `3 = REFUNDING`, `4 = LAUNCHED`, `5 = CANCELLED`. Shares in basis points (`10000 = 100%`).
 - `TugConfig` field order exactly as in the plan: `name, symbol, meta, salt, duration, minRaise, walletCap, captainBlue, captainRed, vaultFactory, maxBonusShareBps, captainMinDeposit, acceptWindow, captainAllocBps, captainVestDuration, captainShareBps`.
-- `GameView` must give the "waiting for captains" screen what it needs: which captains have deposited, the first deposit time, and the accept deadline. It has no boost or handicap fields.
+- `GameView` must give the "waiting for captains" screen what it needs: which captains have deposited and the accept deadline (game creation + `acceptWindow`). It has no boost or handicap fields.
 - The launcher's `claimCaptain()` releases vested coins; the vault's `claimCaptain()` pays BNB tax. Say so in their NatSpec.
 - Gates return `(bool ok, bytes4 reason)`, where `reason` is the selector of the custom error the write call would revert with.
+- Either named captain can deposit first. The first deposit is the challenge, the second is the accept.
+- Two clocks. The accept window runs from game creation to `acceptDeadline`, and both captains must deposit before it ends. The game clock starts at the second captain deposit (`gameStart`), and `deadline = gameStart + duration` plus overtime. Both captain deposits get the full 2x pull.
+- Auto-launch: `ITugLauncher` extends Flap's `ITriggerReceiver` (so it has `trigger(uint256 requestId)`) and adds `scheduleAutoLaunch() payable`, `autoLaunchQuote()`, `canScheduleAutoLaunch()`, `withdrawTriggerBudget()`, the getters `triggerService`, `autoLaunchRequestId` and `triggerBudget`, the event `AutoLaunchScheduled(requestId, executeAfter)`, and the errors `GameNotStarted`, `OnlyTriggerService`, `AutoLaunchAlreadyScheduled` and `InsufficientTriggerFee`. `GameView` carries the auto-launch request id and budget. `launch()` stays public as the fallback.
 - NatSpec on every function, event, error and struct field: units (wei, bps, seconds) and when it reverts.
 
 Also in this PR:
@@ -97,4 +101,4 @@ Tests in `test/unit/TugMath.t.sol`, covering at least the plan's list:
 
 ## Not in these PRs
 
-The launcher, factories, vault, fork tests and scripts (plan Steps 3–7) come in later briefs. Three team decisions are still open for PR 3 (when the accept window starts, Trigger Service, and the captain share default). None of them changes PRs 0–2.
+The launcher, factories, vault, fork tests and scripts (plan Steps 3–7) come in later briefs. No team decisions are open. Settled: the accept window counts from game creation, `captainShareBps` defaults to 2000 (20%), and Trigger Service auto-launch is in (interface in PR 1, logic in PR 3).

@@ -52,13 +52,14 @@ docs/frontend-api.md              calls per screen, for the frontend
 
 1. Creator calls `Portal.newLauncher(TugLauncherFactory, abi.encode(TugConfig))` with `msg.value = Portal.SALT_LOCK_FEE()`.
 2. Portal calls `TugLauncherFactory.newLauncher` → deploys `TugLauncher` beacon proxy → `initialize` (launcher locks its own salt).
-3. Captain A calls `TugLauncher.depositCaptain()` (the challenge). Captain B calls it too (the accept), which starts the clock. If B does not accept within the accept window, anyone calls `cancel()` and A gets the deposit back.
-4. Players call `TugLauncher.contribute(team)` until the deadline.
-5. Anyone calls `TugLauncher.launch()` → `Portal.launchTaxTokenV2{value: raised}`. Inside that one transaction:
+3. Either named captain calls `TugLauncher.depositCaptain()` first (the challenge). The other calls it second (the accept), which starts the clock. Both deposits must land within the accept window, counted from game creation. If they do not, anyone calls `cancel()` and a captain who deposited gets it back.
+4. Anyone calls `scheduleAutoLaunch()` with the Trigger Service fee, so Flap's Trigger Service calls the launcher back at the deadline.
+5. Players call `TugLauncher.contribute(team)` until the deadline.
+6. The Trigger Service calls `trigger()`, or anyone calls `launch()` → `Portal.launchTaxTokenV2{value: raised}`. Inside that one transaction:
    - Portal calls `TugVaultFactory.newVault` → deploys `TugVault`.
    - Portal calls `TugLauncher.initializeDistribution` → launcher pulls its 500k reserved tokens (base + bonus + captain pool).
-6. Players call `TugLauncher.claim()`, then `TugVault.stake()`. Captains call `TugLauncher.claimCaptain()` as their allocation vests.
-7. Trading tax (80% vault slot) reaches `TugVault` → captains and stakers claim BNB.
+7. Players call `TugLauncher.claim()`, then `TugVault.stake()`. Captains call `TugLauncher.claimCaptain()` as their allocation vests.
+8. Trading tax (80% vault slot) reaches `TugVault` → captains and stakers claim BNB.
 
 ## Supply, fees and game parameters
 
@@ -77,7 +78,7 @@ docs/frontend-api.md              calls per screen, for the frontend
 | Time weight | 2x → 1x linear from `gameStart` over `duration`, 1x in overtime. Both captain deposits get the full 2x |
 | Overtime | +30 s if lead flips in last 60 s, max 5 |
 | Captain minimum deposit | Set per game (0.1 tBNB for the demo) |
-| Accept window | 1 hour (2 minutes for the demo) |
+| Accept window | 1 hour from game creation (2 minutes for the demo) |
 | Demo duration | 3 minutes |
 
 **One number for everything.** `finalBlueShareBps` is the rope clamped to `[10000 − maxBonusShareBps, maxBonusShareBps]`, fixed at launch. It drives the bonus split, the captain allocation, the captain tax share and the vault pool split.
@@ -119,7 +120,7 @@ Interfaces, shared types and exported ABIs only. No implementation. Lets the fro
 |---|---|
 | `Team`, `Phase` | constants libraries |
 | `TugConfig` | create-game form: `name, symbol, meta, salt, duration, minRaise, walletCap, captainBlue, captainRed, vaultFactory, maxBonusShareBps, captainMinDeposit, acceptWindow, captainAllocBps, captainVestDuration, captainShareBps` |
-| `GameView` | everything the game page renders: identity, config, phase, captains (deposited per team, first deposit time, accept deadline), clock (gameStart, originalDeadline, deadline, extensionsUsed, currentWeightBps), raised and pull per team, players per team, ropeBps, launch results (token, pool, vault, finalBlueShareBps) |
+| `GameView` | everything the game page renders: identity, config, phase, captains (deposited per team, accept deadline = creation + accept window), clock (gameStart, originalDeadline, deadline, extensionsUsed, currentWeightBps), raised and pull per team, players per team, ropeBps, auto-launch (request id, budget), launch results (token, pool, vault, finalBlueShareBps) |
 | `PlayerView` | one wallet: team, contribution, pull, base and bonus entitlement, claimed, claimable, refundable, remainingCap |
 | `CaptainAllocView` | one captain: team, deposited, allocation, vested, claimed, claimable, vestEnd |
 | `RulesView` | taxes, fee slots, captain share of vault revenue, supply split, max bonus share, captain allocation and vesting — shown before contributing |
@@ -128,13 +129,14 @@ Interfaces, shared types and exported ABIs only. No implementation. Lets the fro
 
 | Kind | Functions |
 |---|---|
-| Write | `depositCaptain() payable`, `cancel()`, `contribute(uint8 team) payable`, `launch()`, `refund()`, `claim()`, `claimCaptain()` |
+| Write | `depositCaptain() payable`, `cancel()`, `scheduleAutoLaunch() payable`, `contribute(uint8 team) payable`, `launch()`, `refund()`, `claim()`, `claimCaptain()`, `withdrawTriggerBudget()` |
+| Trigger callback | `trigger(uint256 requestId)` (from `ITriggerReceiver`; Trigger Service only) |
 | One-call views | `getGame() → GameView`, `getPlayer(address) → PlayerView`, `getCaptain(address) → CaptainAllocView`, `getRules() → RulesView` |
-| Button gates | `canDepositCaptain(address, uint256 amount) → (bool, bytes4 reason)`, `canCancel()`, `canContribute(address, uint8 team, uint256 amount)`, `canLaunch()`, `canRefund(address)`, `canClaim(address)`, `canClaimCaptain(address)` |
-| Preview | `previewContribute(uint8 team, uint256 amount) → (pull, newRopeBps, wouldTriggerOvertime)` |
-| Getters | `phase, teamOf, contribution, pullOf, ropeBps, finalBlueShareBps, captainBlue, captainRed, captainIn, gameStart, raised, minRaise, deadline, launched, launching, token, pool, vault, creator, factory` |
-| Events | `CaptainDeposited(captain, team, amount)`, `GameStarted(gameStart, deadline)`, `Cancelled(captain, refunded)`, `Contributed(player, team, amount, pull, weightBps, ropeBps)`, `Overtime(newDeadline, extensionsUsed)`, `Launched(token, pool, vault, raised, finalBlueShareBps)`, `Claimed(player, base, bonus)`, `CaptainVested(captain, amount)`, `Refunded(player, amount)` |
-| Errors | `InvalidTeam, TeamLocked, ZeroContribution, WalletCapExceeded, NotCaptain, CaptainAlreadyIn, BelowCaptainMinimum, CaptainsNotIn, AcceptWindowOpen, NotCancellable, GameCancelled, BuyInClosed, BuyInOpen, BelowMinRaise, MinRaiseMet, AlreadyLaunched, NotLaunched, NothingToClaim, NothingToRefund, TransferFailed` |
+| Button gates | `canDepositCaptain(address, uint256 amount) → (bool, bytes4 reason)`, `canCancel()`, `canScheduleAutoLaunch()`, `canContribute(address, uint8 team, uint256 amount)`, `canLaunch()`, `canRefund(address)`, `canClaim(address)`, `canClaimCaptain(address)` |
+| Preview | `previewContribute(uint8 team, uint256 amount) → (pull, newRopeBps, wouldTriggerOvertime)`, `autoLaunchQuote() → uint256` (Trigger Service fee × 6: the first request plus one per possible overtime) |
+| Getters | `phase, teamOf, contribution, pullOf, ropeBps, finalBlueShareBps, captainBlue, captainRed, captainIn, gameStart, raised, minRaise, deadline, launched, launching, token, pool, vault, creator, factory, triggerService, autoLaunchRequestId, triggerBudget` |
+| Events | `CaptainDeposited(captain, team, amount)`, `GameStarted(gameStart, deadline)`, `AutoLaunchScheduled(requestId, executeAfter)`, `Cancelled(captain, refunded)`, `Contributed(player, team, amount, pull, weightBps, ropeBps)`, `Overtime(newDeadline, extensionsUsed)`, `Launched(token, pool, vault, raised, finalBlueShareBps)`, `Claimed(player, base, bonus)`, `CaptainVested(captain, amount)`, `Refunded(player, amount)` |
+| Errors | `InvalidTeam, TeamLocked, ZeroContribution, WalletCapExceeded, NotCaptain, CaptainAlreadyIn, BelowCaptainMinimum, CaptainsNotIn, AcceptWindowOpen, AcceptWindowClosed, NotCancellable, GameCancelled, GameNotStarted, OnlyTriggerService, AutoLaunchAlreadyScheduled, InsufficientTriggerFee, BuyInClosed, BuyInOpen, BelowMinRaise, MinRaiseMet, AlreadyLaunched, NotLaunched, NothingToClaim, NothingToRefund, TransferFailed` |
 
 ### `ITugLauncherFactory`
 
@@ -162,9 +164,9 @@ Interfaces, shared types and exported ABIs only. No implementation. Lets the fro
 | Screen | Calls |
 |---|---|
 | Create game | `limits`, `defaultConfig` → mine salt with `tokenImplementation` / `predictToken` → `validateConfig` → `Portal.newLauncher{value: SALT_LOCK_FEE}`; launcher address from `TugLauncherCreated` |
-| Waiting for captains | poll `getGame`; captain sees `canDepositCaptain` → `depositCaptain`; after the accept window `canCancel` → `cancel` |
+| Waiting for captains | poll `getGame`; captain sees `canDepositCaptain` → `depositCaptain`; after the accept window `canCancel` → `cancel`; after `GameStarted`, `autoLaunchQuote` → `scheduleAutoLaunch{value: quote}` |
 | Game page | poll `getGame`, `getPlayer(me)`, `getRules`; `previewContribute` while typing; `canContribute` → `contribute`; feed from `Contributed`, `Overtime` |
-| After the clock | `canLaunch` → `launch`, or `canRefund` → `refund` |
+| After the clock | the Trigger Service normally launches; the launch button stays for a late or failed callback (`canLaunch` → `launch`); or `canRefund` → `refund`; the auto-launch funder sees `withdrawTriggerBudget` |
 | Claim and stake | `getPlayer` → `claim`; `getStaker` → approve + `stake`, `unstake`, `claimRewards`; captains: `getCaptain` on the launcher → `claimCaptain`, `getCaptain` on the vault → `claimCaptain` |
 
 **Done when:** `forge build` passes, ABIs exported to `abi/` by one command, a compile test asserts key selectors, and `docs/frontend-api.md` lists the calls per screen.
@@ -195,25 +197,30 @@ Pure library, no storage, no platform imports (shared with OpenFour).
 
 Inherits `LauncherBase`, `Initializable`, `IStrategy`, `ReentrancyGuard`. Implements `ITugLauncher`. Starts from `CrowdLauncher`.
 
-**Storage:** `hub, creator, factory, config, captainIn[2], firstCaptainAt, gameStart, originalDeadline, deadline, extensionsUsed, raised, raisedByTeam[2], pull[2], playersByTeam[2], contribution, pullOf, teamOf, cancelled, launched, launching, launchedAt, distributionInitialized, token, pool, vault, finalBlueShareBps, claimed, captainAlloc[2], captainClaimed[2]`.
+**Storage:** `hub, creator, factory, config, captainIn[2], acceptDeadline, gameStart, originalDeadline, deadline, extensionsUsed, raised, raisedByTeam[2], pull[2], playersByTeam[2], contribution, pullOf, teamOf, cancelled, launched, launching, launchedAt, distributionInitialized, token, pool, vault, finalBlueShareBps, claimed, captainAlloc[2], captainClaimed[2], triggerService, autoLaunchRequestId, triggerBudget, triggerFunder`.
 
 | Function | Access | Behaviour |
 |---|---|---|
-| `initialize(hub, creator, cfg) payable` | factory, `initializer` | store config; `lockSalt{value: SALT_LOCK_FEE}`. No clock yet |
-| `depositCaptain() payable` | named captain, once | `msg.value ≥ captainMinDeposit`, within wallet cap; record as a contribution on the captain's team with full 2x pull; the second deposit sets `gameStart` and `deadline = gameStart + duration` |
-| `cancel()` | anyone | accept window passed with one captain in; mark cancelled, then send that captain's deposit back. Salt lock fee is not returned |
+| `initialize(hub, creator, cfg) payable` | factory, `initializer` | store config; `acceptDeadline = now + acceptWindow`; `lockSalt{value: SALT_LOCK_FEE}`. No game clock yet |
+| `depositCaptain() payable` | named captain, once, either order | before `acceptDeadline`, `msg.value ≥ captainMinDeposit`, within wallet cap; record as a contribution on the captain's team with full 2x pull; the second deposit sets `gameStart` and `deadline = gameStart + duration` |
+| `cancel()` | anyone | `acceptDeadline` passed with fewer than two captains in; mark cancelled, then send back the deposit of the captain who is in, if any. Salt lock fee is not returned |
 | `contribute(team) payable` | anyone | both captains in, before deadline, not launched, `msg.value > 0`, valid team; lock team on first call; enforce wallet cap; update raised, contribution, pull with weight from `gameStart`; overtime if leader changed, `deadline − now ≤ 60`, `extensionsUsed < 5` |
 | `launch()` | anyone | after deadline, `raised ≥ minRaise`, not launched; fix `finalBlueShareBps`; set captain allocations; `launching = true`; `launchTaxTokenV2{value: raised}`; `launching = false`; store token, pool, vault, `launchedAt` |
 | `initializeDistribution(token, amount, , )` | `onlyHub`, only while `launching`, once | pull exactly the reserved amount (base + bonus + captain pool) from the Hub |
 | `refund()` | player or captain | after deadline, `raised < minRaise`, not launched; zero contribution, then send BNB |
 | `claim()` | player or captain | pay base + bonus `entitlement − claimed`; state first |
 | `claimCaptain()` | named captain | pay `vested(captainAlloc, launchedAt, captainVestDuration) − captainClaimed`; nothing at launch |
+| `scheduleAutoLaunch() payable` | anyone, once | game started, not launched, `msg.value ≥ autoLaunchQuote()`; `requestTrigger{value: getFee()}(deadline)`; store the request id; keep the rest as `triggerBudget`; record the caller as `triggerFunder` |
+| `trigger(requestId)` | Trigger Service only | ignore any id but the current one; if `now < deadline` (overtime moved it), request again at the new deadline from `triggerBudget`; else if the raise met the minimum, launch; else do nothing. Never reverts on a state check |
+| `withdrawTriggerBudget()` | `triggerFunder` | after launch, or once refunding: return the unused budget |
 | Views from Step 1 | — | `getGame`, `getPlayer`, `getCaptain`, `getRules`, gates, preview, getters |
 | `_description()` | internal | v1 JSON under 4 KB |
 | `_buildParams()` | private | `quoteToken = 0`, `poolQuote = raised`, `poolToken = 500k`, tax 300/500, `antiSniperMode = 0`, `Distribution.target = EXPLICIT` with `strategy = address(this)`, `encodeCreator(creator)` |
 | `_feeConfigs()` | private | VAULT 8000 with `vaultData = abi.encode(address(this))`, DEFLATION 2000 |
 
 Captain deposits go through `depositCaptain()`, not the initializer, so creation still sends exactly `SALT_LOCK_FEE`.
+
+**Auto-launch.** The Trigger Service has no cancel and no timing guarantee, so `trigger()` re-checks the deadline every time and `launch()` stays public. The launch sends exactly `raised`; `triggerBudget` is kept apart and never counted in it. A callback gets at most `getMaxCallbackGas()` (2,000,000 on testnet), and a callback that runs out becomes FAILED (anyone can `retryTrigger`). PR 4's fork tests measure the gas of `trigger()` → launch. If it is over the cap, auto-launch cannot work and the launch button is the path.
 
 ---
 
@@ -223,7 +230,7 @@ Inherits `LauncherFactoryBase`. Implements `ITugLauncherFactory`.
 
 | Function | Behaviour |
 |---|---|
-| `constructor(hub, guardian, beacon, pairedVaultFactory, tokenImpl)` | |
+| `constructor(hub, guardian, beacon, pairedVaultFactory, tokenImpl, triggerService)` | the Trigger Service address goes to every launcher (testnet `0x560E9830926C9e0EB98a59c6b9902383Fc0D9Eb2`) |
 | `_newLauncher(creator, data)` | decode `TugConfig`, require canonical encoding; validate (paired vault factory, ranges, max bonus share 5000–10000, distinct non-zero captains, non-zero salt, `captainMinDeposit ≤ walletCap`, accept window and vesting ranges, `captainShareBps` range, `minRaise` clears the creation floor via the Portal's `graduationFloorV2`, so no game is created that can never launch); deploy beacon proxy; `initialize{value: msg.value}`; record game |
 | `launcherDataSchema()` | field list |
 | `upgradeVaultImplementation(impl)` | `onlyGuardian` |
@@ -303,7 +310,7 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 3 | Unopened factory cannot create a launcher |
 | 3 | Only the named captains can call `depositCaptain`, once each, at or above the minimum |
 | 3 | `contribute` reverts until both captains are in |
-| 3 | `cancel` works after the accept window with one captain in, and that captain gets the deposit back |
+| 3 | After the accept window (counted from creation) `depositCaptain` reverts; `cancel` works with zero or one captain in, and a captain who deposited gets it back |
 | 3 | No team switch, wallet cap enforced (captain deposits count toward it) |
 | 3 | Early contribution earns more pull than equal late one |
 | 3 | Overtime extends on lead flip in last 60 s, stops after 5 |
@@ -318,6 +325,8 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 4 | An empty pool's part goes to the other pool; with both empty it is carried to the next sync |
 | 4 | Vault accounting correct across a zero-value ping |
 | 4 | Stranger launcher refused by vault factory |
+| 4 | Auto-launch: a trigger at the deadline launches; a trigger during overtime requests again at the new deadline; a trigger below the minimum raise does nothing; a stale or foreign request id is ignored; only the Trigger Service can call `trigger` |
+| 4 | Gas of `trigger()` → launch stays under the Trigger Service callback cap |
 
 ---
 
@@ -327,7 +336,7 @@ Only after Step 7 is done:
 
 1. **OpenFour port** — Thu night, separate from these contracts (see the doc's OpenFour section). One project can enter several tracks, so it stays a should-have after the Flap launch.
 
-**Trigger Service auto-launch is decided before PR 3, not after.** Factories cannot change once deployed, so it goes into the launcher in PR 3 or not at all (open question 5). If it goes in: schedule `launch()` when the second captain deposits, and on each overtime extension reschedule or make the callback a no-op until the new deadline. `launch()` stays public either way.
+**Trigger Service auto-launch is built into the launcher in PR 3** (see Step 3), because factories cannot change once deployed.
 
 **Not used:** Token Locker (Flap describes it as locking tokens "while they keep earning dividends"; this design has no dividend slot, so captain vesting stays in the Launcher) and VaultEX (the vault pays BNB and needs no swaps).
 
@@ -350,6 +359,7 @@ Frontend (Thu evening), demo videos and the submission (Fri early morning) are o
 - `minRaise` clears the creation floor, `$750 × multiplier × totalSupply / poolToken`: 2.15 tBNB on testnet at a 50% pool share and 1x multiplier. Below it the Portal reverts with `LaunchLiquidityTooLow`. Preview with `graduationFloorV2ForLauncher`.
 - Native BNB quote enabled (`launchQuoteConfig`).
 - Salt lock fee (0.005 tBNB on testnet, 0.01 BNB on mainnet) is lost if a game is cancelled.
+- Trigger Service: `requestTrigger(uint64 executeAfter) payable` with the fee from `getFee()` (0.0002 tBNB on testnet, never hardcoded); callback `trigger(uint256)` checks `msg.sender == triggerService`; gas cap `getMaxCallbackGas()`; no cancel, no timing guarantee.
 - Upgrades Guardian-only, ~24 h review: do not design around upgrades.
 
 ---
@@ -394,11 +404,11 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 14 | Can one project enter the Developer, Flap and OpenFour tracks? | Yes. OpenFour stays a should-have after the Flap launch |
 | 15 | Who builds the frontend and the OpenFour port? | A friend of the team, independently, calling the PR 1 interfaces |
 | 16 | How do our testnet factories get opened? | Ping Flap with the addresses after deploy and they approve. No audit needed for testnet |
+| 17 | Captain share of vault revenue? | 20%, as the doc says. `captainShareBps` in `TugConfig`, default 2000, configurable per game like every other default |
+| 18 | Trigger Service auto-launch? | Yes, built into the launcher in PR 3, with the launch button kept as the fallback |
+| 19 | Must one captain deposit first? | No. Either named captain can go first; the first deposit is the challenge, the second the accept |
+| 20 | When does the accept window start? | At game creation. Both captains must deposit within it, or the game can be cancelled |
 
 ## Open questions
 
-| # | Question | Ask | Blocks | Suggestion |
-|---|---|---|---|---|
-| 1 | Does the accept window start at creation or at the first captain deposit? | Team | Step 3 | First captain deposit (fits the doc). Creation is simpler and matches CrowdLauncher's deadline |
-| 2 | Build Trigger Service auto-launch into the launcher? | Team | Step 3 | Skip unless the docs show a simple reschedule; overtime moves the deadline, and the public launch button covers it |
-| 3 | Captain share of vault revenue (open comment) | Team | Nothing | `captainShareBps` in `TugConfig`, default 2000. Flap's CrowdVault lets creators keep 10–90%, so 20% is on the low side |
+None. Every question that blocks code is settled.
