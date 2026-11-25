@@ -22,5 +22,12 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", "tools", "vite.config.ts", "vitest.config.ts", "doctor.config.ts"]
+  "include": [
+    "src",
+    "tools",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "doctor.config.ts",
+    "wagmi.config.ts"
+  ]
 }

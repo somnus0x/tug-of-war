@@ -17,5 +17,10 @@
     "ignoreCase": true,
     "order": "asc"
   },
-  "ignorePatterns": ["src/routeTree.gen.ts", "src/contracts/generated.ts", "pnpm-lock.yaml"]
+  "ignorePatterns": [
+    "src/routeTree.gen.ts",
+    "src/contracts/generated.ts",
+    "src/contracts/abi",
+    "pnpm-lock.yaml"
+  ]
 }
