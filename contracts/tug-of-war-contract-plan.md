@@ -211,7 +211,7 @@ Inherits `LauncherBase`, `Initializable`, `IStrategy`, `ReentrancyGuard`. Implem
 | `claim()` | player or captain | pay base + bonus `entitlement − claimed`; state first |
 | `claimCaptain()` | named captain | pay `vested(captainAlloc, launchedAt, captainVestDuration) − captainClaimed`; nothing at launch |
 | `scheduleAutoLaunch() payable` | anyone, once | game started, not launched, `msg.value ≥ autoLaunchQuote()`; `requestTrigger{value: getFee()}(deadline)`; store the request id; keep the rest as `triggerBudget`; record the caller as `triggerFunder` |
-| `trigger(requestId)` | Trigger Service only | ignore any id but the current one; if `now < deadline` (overtime moved it), request again at the new deadline from `triggerBudget`; else if the raise met the minimum, launch; else do nothing. Never reverts on a state check |
+| `trigger(requestId)` | Trigger Service only (a Flap `retryTrigger` arrives this way too) | do nothing if the id is not the current one or the game already launched; if `now < deadline` (overtime moved it), request again at the new deadline from `triggerBudget`; else if the raise met the minimum, launch; else do nothing. Never reverts on a state check. Shares the launch code with `launch()`, so whichever runs first launches and the other does nothing (`trigger`) or reverts `AlreadyLaunched` (`launch`) |
 | `withdrawTriggerBudget()` | `triggerFunder` | after launch, or once refunding: return the unused budget |
 | Views from Step 1 | — | `getGame`, `getPlayer`, `getCaptain`, `getRules`, gates, preview, getters |
 | `_description()` | internal | v1 JSON under 4 KB |
