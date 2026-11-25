@@ -1,0 +1,594 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "eslint",
+    "typescript",
+    "react",
+    "import",
+    "unicorn",
+    "jsx-a11y",
+    "promise",
+    "vitest",
+    "oxc"
+  ],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "import/no-default-export": "error",
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": ["**/*.css", "@/app/env"]
+      }
+    ],
+    "react/exhaustive-deps": "error",
+    "react/rules-of-hooks": "error",
+    "react/no-multi-comp": "error",
+    "react/react-in-jsx-scope": "off",
+    "unicorn/filename-case": [
+      "error",
+      {
+        "case": "kebabCase"
+      }
+    ],
+    "eslint/max-lines": [
+      "error",
+      {
+        "max": 300
+      }
+    ],
+    "eslint/no-console": "error",
+    "eslint/no-debugger": "error",
+    "eslint/no-empty": "error",
+    "eslint/eqeqeq": "error",
+    "eslint/no-restricted-properties": [
+      "error",
+      {
+        "property": "toFixed",
+        "message": "Format through @/lib/format."
+      },
+      {
+        "property": "toLocaleString",
+        "message": "Format through @/lib/format."
+      }
+    ],
+    "eslint/no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "viem",
+            "importNames": ["formatEther", "formatUnits"],
+            "message": "Format through @/lib/format."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["*.config.ts"],
+      "rules": {
+        "import/no-default-export": "off"
+      }
+    },
+    {
+      "files": ["src/routes/**"],
+      "rules": {
+        "unicorn/filename-case": "off"
+      }
+    },
+    {
+      "files": ["src/routes/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@/contracts", "@/contracts/**"],
+                "message": "Routes compose features; they do not call contracts."
+              },
+              {
+                "group": ["wagmi", "wagmi/**", "@wagmi/core", "@wagmi/core/**", "viem/actions"],
+                "message": "Read and write through @/contracts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/app/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "@/routes",
+                  "@/routes/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/contracts",
+                  "@/contracts/**",
+                  "@/scene",
+                  "@/scene/**",
+                  "@/ui",
+                  "@/ui/**",
+                  "@/copy",
+                  "@/copy/**"
+                ],
+                "message": "app/ is wiring: it imports lib/ and the route tree only."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/**"],
+      "excludeFiles": ["src/features/wallet/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["wagmi", "wagmi/**", "@wagmi/core", "@wagmi/core/**", "viem/actions"],
+                "message": "Read and write through @/contracts."
+              },
+              {
+                "group": ["@/routes", "@/routes/**", "@/app", "@/app/**"],
+                "message": "Features sit below routes and app."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/game/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["wagmi", "wagmi/**", "@wagmi/core", "@wagmi/core/**", "viem/actions"],
+                "message": "Read and write through @/contracts."
+              },
+              {
+                "group": ["@/routes", "@/routes/**", "@/app", "@/app/**"],
+                "message": "Features sit below routes and app."
+              },
+              {
+                "group": ["@/features/vault/**", "@/features/create/**", "@/features/home/**"],
+                "message": "Features do not import each other; only features/wallet is shared."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/vault/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["wagmi", "wagmi/**", "@wagmi/core", "@wagmi/core/**", "viem/actions"],
+                "message": "Read and write through @/contracts."
+              },
+              {
+                "group": ["@/routes", "@/routes/**", "@/app", "@/app/**"],
+                "message": "Features sit below routes and app."
+              },
+              {
+                "group": ["@/features/game/**", "@/features/create/**", "@/features/home/**"],
+                "message": "Features do not import each other; only features/wallet is shared."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/create/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["wagmi", "wagmi/**", "@wagmi/core", "@wagmi/core/**", "viem/actions"],
+                "message": "Read and write through @/contracts."
+              },
+              {
+                "group": ["@/routes", "@/routes/**", "@/app", "@/app/**"],
+                "message": "Features sit below routes and app."
+              },
+              {
+                "group": ["@/features/game/**", "@/features/vault/**", "@/features/home/**"],
+                "message": "Features do not import each other; only features/wallet is shared."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/home/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["wagmi", "wagmi/**", "@wagmi/core", "@wagmi/core/**", "viem/actions"],
+                "message": "Read and write through @/contracts."
+              },
+              {
+                "group": ["@/routes", "@/routes/**", "@/app", "@/app/**"],
+                "message": "Features sit below routes and app."
+              },
+              {
+                "group": ["@/features/game/**", "@/features/vault/**", "@/features/create/**"],
+                "message": "Features do not import each other; only features/wallet is shared."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/wallet/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["@/routes", "@/routes/**"],
+                "message": "Features sit below routes."
+              },
+              {
+                "group": [
+                  "@/features/game/**",
+                  "@/features/vault/**",
+                  "@/features/create/**",
+                  "@/features/home/**"
+                ],
+                "message": "Features do not import each other; only features/wallet is shared."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/contracts/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "@/routes",
+                  "@/routes/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/scene",
+                  "@/scene/**",
+                  "@/ui",
+                  "@/ui/**",
+                  "@/copy",
+                  "@/copy/**"
+                ],
+                "message": "contracts/ sits below the UI."
+              },
+              {
+                "group": ["@/app/**", "!@/app/env"],
+                "message": "contracts/ may use @/app/env only."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/scene/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "wagmi",
+                  "wagmi/**",
+                  "@wagmi/core",
+                  "@wagmi/core/**",
+                  "viem/actions",
+                  "@rainbow-me/**",
+                  "@/routes",
+                  "@/routes/**",
+                  "@/app",
+                  "@/app/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/contracts",
+                  "@/contracts/**",
+                  "@/ui",
+                  "@/ui/**",
+                  "@/copy",
+                  "@/copy/**"
+                ],
+                "message": "This layer takes plain values."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/ui/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "wagmi",
+                  "wagmi/**",
+                  "@wagmi/core",
+                  "@wagmi/core/**",
+                  "viem/actions",
+                  "@rainbow-me/**",
+                  "@/routes",
+                  "@/routes/**",
+                  "@/app",
+                  "@/app/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/contracts",
+                  "@/contracts/**",
+                  "@/scene",
+                  "@/scene/**",
+                  "@/copy",
+                  "@/copy/**"
+                ],
+                "message": "This layer takes plain values."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/copy/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "react",
+                  "react/**",
+                  "react-dom",
+                  "react-dom/**",
+                  "wagmi",
+                  "wagmi/**",
+                  "@wagmi/core",
+                  "@wagmi/core/**",
+                  "viem/actions",
+                  "@rainbow-me/**",
+                  "@/routes",
+                  "@/routes/**",
+                  "@/app",
+                  "@/app/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/contracts",
+                  "@/contracts/**",
+                  "@/scene",
+                  "@/scene/**",
+                  "@/ui",
+                  "@/ui/**"
+                ],
+                "message": "copy/ holds strings as functions of values and imports lib/ only."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/lib/**"],
+      "rules": {
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "viem",
+                "importNames": ["formatEther", "formatUnits"],
+                "message": "Format through @/lib/format."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "wagmi",
+                  "wagmi/**",
+                  "@wagmi/core",
+                  "@wagmi/core/**",
+                  "viem/actions",
+                  "@rainbow-me/**",
+                  "@/routes",
+                  "@/routes/**",
+                  "@/app",
+                  "@/app/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/contracts",
+                  "@/contracts/**",
+                  "@/scene",
+                  "@/scene/**",
+                  "@/ui",
+                  "@/ui/**",
+                  "@/copy",
+                  "@/copy/**"
+                ],
+                "message": "lib/ is the bottom layer and imports nothing above it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/lib/format.ts"],
+      "rules": {
+        "eslint/no-restricted-properties": "off",
+        "eslint/no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "wagmi",
+                  "wagmi/**",
+                  "@wagmi/core",
+                  "@wagmi/core/**",
+                  "viem/actions",
+                  "@rainbow-me/**",
+                  "@/routes",
+                  "@/routes/**",
+                  "@/app",
+                  "@/app/**",
+                  "@/features",
+                  "@/features/**",
+                  "@/contracts",
+                  "@/contracts/**",
+                  "@/scene",
+                  "@/scene/**",
+                  "@/ui",
+                  "@/ui/**",
+                  "@/copy",
+                  "@/copy/**"
+                ],
+                "message": "lib/ is the bottom layer and imports nothing above it."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "ignorePatterns": ["dist", "src/routeTree.gen.ts", "src/contracts/generated.ts"]
+}
