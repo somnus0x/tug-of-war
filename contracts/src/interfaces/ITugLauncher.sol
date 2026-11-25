@@ -22,6 +22,15 @@ interface ITugLauncher is ITriggerReceiver {
     /// @param executeAfter Earliest execution Unix timestamp in seconds.
     event AutoLaunchScheduled(uint256 indexed requestId, uint64 executeAfter);
 
+    /// @notice An overtime reschedule stopped because the trigger budget could not pay the fee or the request reverted.
+    /// @param requestId Trigger Service request ID whose callback could not reschedule.
+    event AutoLaunchStopped(uint256 indexed requestId);
+
+    /// @notice The automatic launch funder withdrew the unused budget.
+    /// @param funder Wallet receiving the withdrawal.
+    /// @param amount Unused budget paid in BNB wei.
+    event TriggerBudgetWithdrawn(address indexed funder, uint256 amount);
+
     /// @notice The accept window expired and the game was cancelled.
     /// @param captain Captain who deposited, or zero if neither captain deposited.
     /// @param refunded BNB wei returned to that captain.
@@ -134,8 +143,9 @@ interface ITugLauncher is ITriggerReceiver {
     /// @dev Reverts for a non-captain, repeat deposit, closed or cancelled game, or an amount outside the wallet limits.
     function depositCaptain() external payable;
 
-    /// @notice Cancel after the accept deadline if fewer than two captains deposited and return any captain deposit.
-    /// @dev Reverts while acceptance is open, when the game cannot cancel, or if the BNB refund transfer fails.
+    /// @notice Cancel at or after the accept deadline if fewer than two captains deposited and return any deposit.
+    /// @dev The phase stays AWAITING_CAPTAINS until this call succeeds. CANCELLED and GameCancelled apply after
+    ///      cancellation. Reverts while acceptance is open, when the game cannot cancel, or if the refund fails.
     function cancel() external;
 
     /// @notice Add BNB wei and weighted pull to a team before the buy-in deadline.
@@ -144,8 +154,9 @@ interface ITugLauncher is ITriggerReceiver {
     function contribute(uint8 team) external payable;
 
     /// @notice Launch through the Portal during the launch grace period using the BNB raised as seed.
-    /// @dev Reverts when the game cannot launch, including BelowMinRaise, CreationFloorUnavailable,
-    ///      BelowCreationFloor, LaunchGraceExpired and AlreadyLaunched. Portal launch errors may also propagate.
+    /// @dev Reverts with GameNotStarted, BuyInOpen, GameCancelled, BelowMinRaise, CreationFloorUnavailable,
+    ///      BelowCreationFloor, LaunchGraceExpired or AlreadyLaunched when applicable.
+    ///      Portal launch errors may also propagate.
     function launch() external;
 
     /// @notice Recover the caller's BNB contribution when the game enters refunding.
@@ -168,11 +179,15 @@ interface ITugLauncher is ITriggerReceiver {
 
     /// @notice Return the unused automatic launch budget in BNB wei to its funder.
     /// @dev Reverts for a different caller, before launch or refunding, for a zero balance, or on transfer failure.
+    ///      Emits TriggerBudgetWithdrawn on success.
     function withdrawTriggerBudget() external;
 
     /// @notice Process the current request, reschedule for overtime, or launch if eligible.
-    /// @dev Reverts with OnlyTriggerService for any other caller. Stale requests, refunding, and an unavailable
-    ///      or unmet floor are no-ops, as is a request delivered after launch or at or after the grace cutoff.
+    /// @dev State checks return without reverting. Caller checks revert with OnlyTriggerService for any other caller.
+    ///      Stale requests, refunding, and an unavailable or unmet floor are no-ops, as are callbacks after launch
+    ///      or at or after the grace cutoff. For an overtime reschedule, if triggerBudget is below getFee() or
+    ///      requestTrigger reverts, emit AutoLaunchStopped and return with the request ID and budget unchanged.
+    ///      Manual launch remains available when eligible.
     /// @param requestId Trigger Service request ID.
     function trigger(uint256 requestId) external override;
 
@@ -202,6 +217,8 @@ interface ITugLauncher is ITriggerReceiver {
     function canDepositCaptain(address captain, uint256 amount) external view returns (bool ok, bytes4 reason);
 
     /// @notice Check whether the game can be cancelled.
+    /// @dev With fewer than two deposits at or after the accept deadline, returns (true, bytes4(0)) while phase
+    ///      remains AWAITING_CAPTAINS. CANCELLED and GameCancelled apply after cancel succeeds.
     /// @return ok Whether the accept window expired with fewer than two deposits.
     /// @return reason Cancellation error selector, or bytes4(0) on success.
     function canCancel() external view returns (bool ok, bytes4 reason);

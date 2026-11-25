@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 
+import {IPortalFloor} from "src/interfaces/IPortalFloor.sol";
 import {ITugLauncher} from "src/interfaces/ITugLauncher.sol";
 import {ITugLauncherFactory} from "src/interfaces/ITugLauncherFactory.sol";
 import {ITugVault} from "src/interfaces/ITugVault.sol";
@@ -43,12 +44,21 @@ contract InterfacesTest is Test {
         _assertSelector(ITugLauncher.getCaptain.selector, "getCaptain(address)");
         _assertSelector(ITugLauncher.getRules.selector, "getRules()");
         _assertSelector(ITugLauncher.canDepositCaptain.selector, "canDepositCaptain(address,uint256)");
+        _assertSelector(ITugLauncher.canCancel.selector, "canCancel()");
         _assertSelector(ITugLauncher.canScheduleAutoLaunch.selector, "canScheduleAutoLaunch()");
         _assertSelector(ITugLauncher.canContribute.selector, "canContribute(address,uint8,uint256)");
         _assertSelector(ITugLauncher.canLaunch.selector, "canLaunch()");
         _assertSelector(ITugLauncher.canRefund.selector, "canRefund(address)");
+        _assertSelector(ITugLauncher.canClaim.selector, "canClaim(address)");
+        _assertSelector(ITugLauncher.canClaimCaptain.selector, "canClaimCaptain(address)");
         _assertSelector(ITugLauncher.previewContribute.selector, "previewContribute(uint8,uint256)");
+        _assertSelector(ITugLauncher.autoLaunchQuote.selector, "autoLaunchQuote()");
         _assertSelector(ITugLauncher.captainIn.selector, "captainIn(uint8)");
+    }
+
+    function test_AutoLaunchEventSelectors() public pure {
+        assertEq(ITugLauncher.AutoLaunchStopped.selector, keccak256("AutoLaunchStopped(uint256)"));
+        assertEq(ITugLauncher.TriggerBudgetWithdrawn.selector, keccak256("TriggerBudgetWithdrawn(address,uint256)"));
     }
 
     function test_FactoryConfigSelectors() public pure {
@@ -71,6 +81,22 @@ contract InterfacesTest is Test {
         _assertSelector(ITugVault.getStaker.selector, "getStaker(address)");
         _assertSelector(ITugVault.getCaptain.selector, "getCaptain(address)");
         _assertSelector(ITugVault.teamStake.selector, "teamStake(uint8)");
+        _assertSelector(ITugVault.pendingRewards.selector, "pendingRewards(address)");
+        _assertSelector(ITugVault.pendingCaptain.selector, "pendingCaptain(address)");
+        _assertSelector(ITugVault.stakeOf.selector, "stakeOf(address)");
+    }
+
+    function test_PortalFloorSelectors() public pure {
+        _assertSelector(IPortalFloor.launchQuoteConfig.selector, "launchQuoteConfig(uint8,address)");
+        _assertSelector(
+            IPortalFloor.graduationFloorV2.selector,
+            "graduationFloorV2((address,uint256,uint256,uint256,uint256,address))"
+        );
+        _assertSelector(
+            IPortalFloor.graduationFloorV2ForLauncher.selector,
+            "graduationFloorV2ForLauncher((address,uint256,uint256,uint256,uint256,address),address)"
+        );
+        _assertSelector(IPortalFloor.vaultFactoryMultiplier.selector, "vaultFactoryMultiplier(address)");
     }
 
     function test_FloorAndGraceErrorSelectors() public pure {

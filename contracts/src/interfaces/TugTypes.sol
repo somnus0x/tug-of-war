@@ -9,6 +9,8 @@ library Team {
 }
 
 /// @notice Launcher phases returned by the game view and phase getter.
+/// @dev With fewer than two deposits at or after the accept deadline, the phase stays
+///      AWAITING_CAPTAINS and canCancel succeeds. CANCELLED begins when cancel succeeds.
 library Phase {
     uint8 internal constant AWAITING_CAPTAINS = 0;
     uint8 internal constant BUY_IN = 1;
@@ -96,7 +98,10 @@ struct TugConfig {
 /// @param acceptDeadline Exclusive Unix deadline for captain deposits, in seconds.
 /// @param gameStart Unix timestamp of the second captain deposit, in seconds. Zero until then.
 /// @param originalDeadline Unix buy-in deadline in seconds before overtime. Zero before the game starts.
-/// @param deadline Current Unix buy-in deadline in seconds, including overtime. Zero before the game starts.
+/// @param deadline Current Unix buy-in deadline in seconds, including overtime. Zero before game start.
+///        Buy-in requires block.timestamp < deadline. Eligible launches and refunds open at
+///        block.timestamp >= deadline. During buy-in, a lead flip can trigger overtime when
+///        deadline minus block.timestamp is at most overtimeWindow.
 /// @param extensionsUsed Number of overtime extensions applied.
 /// @param currentWeightBps Contribution weight at the current time, in basis points.
 /// @param raised Total BNB raised, in wei.
@@ -257,7 +262,8 @@ struct VaultView {
 }
 
 /// @notice Stake, rewards and approval for one wallet.
-/// @param team Locked Team ID, or Team.NONE if the wallet has no team.
+/// @param team Effective locked Team ID. Use the recorded vault team when set, otherwise launcher.teamOf(staker).
+///        Team.NONE means the wallet is free to choose on first stake.
 /// @param staked Amount credited to the wallet in token wei.
 /// @param pendingRewards BNB wei claimable after the same sync used by claimRewards, including eligible carry.
 /// @param tokenBalance Wallet's liquid token balance in token wei.

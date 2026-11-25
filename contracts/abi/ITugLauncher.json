@@ -1153,6 +1153,19 @@
   },
   {
     "type": "event",
+    "name": "AutoLaunchStopped",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Cancelled",
     "inputs": [
       {
@@ -1363,6 +1376,25 @@
     "inputs": [
       {
         "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TriggerBudgetWithdrawn",
+    "inputs": [
+      {
+        "name": "funder",
         "type": "address",
         "indexed": true,
         "internalType": "address"
