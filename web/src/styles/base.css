@@ -12,6 +12,17 @@ body {
 
 body {
   min-height: 100dvh;
+  background: var(--ink-0);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
 }
 
 h1,

@@ -1,3 +1,23 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
+
+  --ink-0: #120c22;
+  --ink-1: #1f1739;
+  --ink-2: #3a2f63;
+  --mute: #a197cf;
+  --cream: #f5f0dc;
+  --blue: #4a8dff;
+  --blue-d: #2350b8;
+  --red: #ff5468;
+  --red-d: #a8243a;
+  --lime: #c6ff3d;
+  --gold: #ffc83d;
+  --rope-d: #c99412;
+
+  --font-heading:
+    'Pixelify Sans', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+  --font-digits:
+    'VT323', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+  --font-body:
+    'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
 }

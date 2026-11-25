@@ -18,6 +18,7 @@
     "abi": "cp ../contracts/abi/ITugLauncher.json ../contracts/abi/ITugLauncherFactory.json ../contracts/abi/ITugVault.json ../contracts/abi/IPortal.json src/contracts/abi/ && wagmi generate"
   },
   "dependencies": {
+    "@rainbow-me/rainbowkit": "^2.2.11",
     "@tanstack/react-query": "^5.108.4",
     "@tanstack/react-router": "^1.170.46",
     "react": "^19.3.1",
