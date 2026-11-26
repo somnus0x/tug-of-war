@@ -81,6 +81,9 @@ export const formatCoins = (amount: TokenWei, decimals: number): string =>
 export const formatCount = (count: number): string =>
   String(Number.isSafeInteger(count) && count > 0 ? count : 0).replace(THOUSANDS, ',')
 
+export const formatBigCount = (count: bigint): string =>
+  (count > 0n ? count : 0n).toString().replace(THOUSANDS, ',')
+
 export const formatClock = (seconds: number): string => {
   const total = wholeSeconds(seconds)
   const secs = pad2(total % MINUTE)
