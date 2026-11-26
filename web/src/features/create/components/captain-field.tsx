@@ -35,7 +35,7 @@ export const CaptainField = ({
       <CreateField
         label={<TeamMark team={team} label={captainLabel} />}
         ariaLabel={captainLabel}
-        isAddress
+        wraps
         value={value}
         error={error}
         placeholder={FIELDS.addressPlaceholder}

@@ -4,7 +4,13 @@ import { describe, expect, it } from 'vitest'
 
 import { CREATE_COPY } from '@/copy/create'
 
-import { announcementOf, createButtonOf, locksInputs } from './create-button'
+import {
+  announcementOf,
+  createButtonOf,
+  hasBlockingErrors,
+  locksInputs,
+  shownTries,
+} from './create-button'
 
 const BASE: CreateButtonInput = {
   isUnavailable: false,
@@ -89,6 +95,38 @@ describe('send stages', () => {
       state: 'pending',
     })
     expect(kindOf({ stage: { kind: 'ready' }, sending: 'checking' })).toBe('checking')
+  })
+})
+
+describe('shownTries', () => {
+  it('keeps the tries count wherever the found address shows', () => {
+    expect(shownTries({ kind: 'searching', tries: 12 }, null)).toBe(12)
+    expect(shownTries({ kind: 'idle' }, { tries: 76_926 })).toBe(76_926)
+    expect(shownTries({ kind: 'idle' }, null)).toBeNull()
+  })
+})
+
+describe('hasBlockingErrors', () => {
+  it('blocks a retry while a factory reason sits on a field', () => {
+    const fieldProblem = {
+      field: 'minRaise',
+      text: 'Below Flap’s liquidity floor (2.45 BNB right now).',
+    }
+    expect(hasBlockingErrors({}, fieldProblem)).toBe(true)
+    expect(hasBlockingErrors({ name: 'Enter a name.' }, null)).toBe(true)
+    expect(hasBlockingErrors({}, null)).toBe(false)
+    expect(
+      createButtonOf({
+        ...BASE,
+        sendFailed: true,
+        showsErrors: hasBlockingErrors({}, fieldProblem),
+      }),
+    ).toEqual({
+      kind: 'fix',
+      label: 'Create game · 0.005 BNB fee',
+      state: 'disabled',
+      reason: 'Fix the fields above.',
+    })
   })
 })
 

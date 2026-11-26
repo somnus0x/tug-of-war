@@ -186,6 +186,12 @@ describe('walletsNeededOf', () => {
     expect(CREATE_COPY.walletsNeeded('6')).toBe(
       'At this cap the game needs at least 6 wallets to reach the minimum.',
     )
+    expect(CREATE_COPY.walletsNeeded('1')).toBe(
+      'At this cap the game needs at least 1 wallet to reach the minimum.',
+    )
+    expect(CREATE_COPY.walletsNeeded('2')).toBe(
+      'At this cap the game needs at least 2 wallets to reach the minimum.',
+    )
   })
 })
 

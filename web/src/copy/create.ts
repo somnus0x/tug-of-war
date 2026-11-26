@@ -47,7 +47,7 @@ export const CREATE_COPY = {
     bnb: 'BNB',
   },
   walletsNeeded: (count: string) =>
-    `At this cap the game needs at least ${count} wallets to reach the minimum.`,
+    `At this cap the game needs at least ${count} ${count === '1' ? 'wallet' : 'wallets'} to reach the minimum.`,
   errors: {
     name: 'Enter a name.',
     nameTooLong: 'Use a shorter name or symbol.',

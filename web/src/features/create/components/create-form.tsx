@@ -21,7 +21,12 @@ import { useCreateFlow } from '../hooks/use-create-flow'
 import { fieldOfText, useCreateForm } from '../hooks/use-create-form'
 import { useSendCreate } from '../hooks/use-send-create'
 import { configKey } from '../model/config'
-import { announcementOf, createButtonOf, locksInputs } from '../model/create-button'
+import {
+  announcementOf,
+  createButtonOf,
+  hasBlockingErrors,
+  locksInputs,
+} from '../model/create-button'
 import { sendFailedFor } from '../model/send-attempt'
 import { upperSymbol } from '../model/validate'
 import { CaptainField } from './captain-field'
@@ -97,7 +102,7 @@ export const CreateForm = ({
   })
   const isSending = sender.stage !== 'idle'
   const isDisabled = isUnavailable || isSending || locksInputs(flow.stage)
-  const hasErrors = Object.keys(check.errors).length > 0
+  const hasErrors = hasBlockingErrors(check.errors, flow.fieldProblem)
   const showsErrors = flow.submitted && hasErrors
   const liveKey = flow.prepared === null ? null : configKey(flow.prepared.config)
   const sendFailed = sendFailedFor(sender.failure, liveKey)

@@ -17,7 +17,7 @@ export type CreateFieldProps = {
   inputMode?: 'text' | 'decimal'
   isDisabled: boolean
   isWide?: boolean
-  isAddress?: boolean
+  wraps?: boolean
   maxLength?: number | undefined
   action?: ReactNode
   onChange: (text: string) => void
@@ -35,14 +35,14 @@ export const CreateField = ({
   inputMode = 'text',
   isDisabled,
   isWide = false,
-  isAddress = false,
+  wraps = false,
   maxLength,
   action,
   onChange,
   onBlur,
 }: CreateFieldProps) => {
   const inputId = useId()
-  const addressRef = useAutoHeight()
+  const wrapRef = useAutoHeight()
   const hintId = useId()
   const errorId = useId()
   const describedBy =
@@ -56,9 +56,9 @@ export const CreateField = ({
       </label>
       <div className="create-field__row">
         <div className={classNames('create-field__box', error !== undefined && 'is-invalid')}>
-          {isAddress ? (
+          {wraps ? (
             <textarea
-              ref={addressRef}
+              ref={wrapRef}
               id={inputId}
               className="create-field__input create-field__input--address"
               rows={1}

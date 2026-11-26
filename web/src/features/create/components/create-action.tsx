@@ -9,6 +9,8 @@ import { formatCount } from '@/lib/format'
 import { Banner } from '@/ui/banner'
 import { TileButton } from '@/ui/tile-button'
 
+import { shownTries } from '../model/create-button'
+
 type CreateActionProps = {
   flow: CreateFlow
   button: CreateButton
@@ -32,14 +34,15 @@ export const CreateAction = ({
   const reasonId = useId()
   const { stage } = flow
   const isSearching = stage.kind === 'searching'
+  const tries = shownTries(stage, flow.salt)
   return (
     <div className="create-action">
       <div className="create-search">
         <div className="create-search__top">
           <span className="create-search__label">{SEARCH.label}</span>
-          {isSearching ? (
-            <b className="create-search__tries">{SEARCH.tries(formatCount(stage.tries))}</b>
-          ) : null}
+          {tries === null ? null : (
+            <b className="create-search__tries">{SEARCH.tries(formatCount(tries))}</b>
+          )}
         </div>
         <div
           className={`create-search__bar ${flow.salt === null ? 'is-waiting' : 'is-done'} ${isSearching ? 'is-running' : ''}`}

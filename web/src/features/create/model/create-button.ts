@@ -111,3 +111,11 @@ export const announcementOf = (
   }
   return showsErrors ? say.errors : ''
 }
+
+export const hasBlockingErrors = (errors: object, fieldProblem: object | null): boolean =>
+  Object.keys(errors).length > 0 || fieldProblem !== null
+
+export const shownTries = (
+  stage: CreateStage,
+  found: { readonly tries: number } | null,
+): number | null => (stage.kind === 'searching' ? stage.tries : (found?.tries ?? null))

@@ -39,6 +39,7 @@ export const ImageField = ({
         placeholder={FIELDS.cidPlaceholder}
         isDisabled={isDisabled}
         isWide
+        wraps
         onChange={onCidChange}
         onBlur={onBlur}
       />
