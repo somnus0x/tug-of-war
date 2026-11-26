@@ -42,7 +42,8 @@ interface ITugLauncher is ITriggerReceiver {
     /// @param amount Contribution in BNB wei.
     /// @param pull Pull added by this contribution, in weighted BNB wei.
     /// @param weightBps Weight applied to the contribution, in basis points.
-    /// @param ropeBps Blue's share of total pull after this contribution, in basis points.
+    /// @param ropeBps Blue's share of total pull after this contribution, in basis points, rounded down.
+    ///        Compare getGame().pullByTeam to determine the current leader.
     event Contributed(
         address indexed player, uint8 indexed team, uint256 amount, uint256 pull, uint16 weightBps, uint16 ropeBps
     );
@@ -265,10 +266,10 @@ interface ITugLauncher is ITriggerReceiver {
     /// @param team Team.BLUE or Team.RED.
     /// @param amount Proposed contribution in BNB wei.
     /// @return pull Weighted contribution in BNB wei.
-    /// @return newRopeBps Blue's projected share of total pull in basis points.
-    /// @return wouldTriggerOvertime Whether a contribution during buy-in changes the leader, counting a tie as
-    ///         Team.NONE, with deadline minus block.timestamp at most overtimeWindow and extensionsUsed below
-    ///         maxExtensions.
+    /// @return newRopeBps Blue's projected share of total pull in basis points, rounded down.
+    /// @return wouldTriggerOvertime Whether a contribution during buy-in changes the leader based on exact team pulls,
+    ///         counting a tie as Team.NONE, with deadline minus block.timestamp at most overtimeWindow and
+    ///         extensionsUsed below maxExtensions.
     function previewContribute(uint8 team, uint256 amount)
         external
         view

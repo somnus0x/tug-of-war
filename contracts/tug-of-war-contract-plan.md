@@ -342,6 +342,7 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | PR | Test |
 |---|---|
 | 3 | Unopened factory cannot create a launcher |
+| 3 | With an otherwise valid config, `validateConfig` accepts `maxBonusShareBps` values of 5,000 and 10,000. At 4,999 and 10,001 it returns `(false, MaxBonusShareOutOfRange.selector)`, and creation reverts with the same error |
 | 3 | Only the named captains can call `depositCaptain`, once each, at or above the minimum |
 | 3 | `contribute` reverts until both captains are in |
 | 3 | At the accept deadline with zero or one captain in, `depositCaptain` reverts, `phase()` stays `AWAITING_CAPTAINS`, and `canCancel()` is `(true, bytes4(0))`. A successful cancel returns any captain deposit and then exposes `CANCELLED` and `GameCancelled()` |
