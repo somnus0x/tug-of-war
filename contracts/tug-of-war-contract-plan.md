@@ -79,7 +79,7 @@ docs/frontend-api.md              calls per screen, for the frontend
 | Fee slots | VAULT 8000, DEFLATION 2000 |
 | Vault split | 20% captains, 80% stakers. Both split Blue / Red by final rope |
 | Time weight | 2x → 1x linear from `gameStart` over `duration`, 1x in overtime. Both captain deposits get the full 2x |
-| Overtime | +30 s if lead flips in last 60 s, max 5 |
+| Overtime | Add 30 s when a contribution in the final 60 s changes the leader, counting a tie as `NONE`. Up to 5 extensions in total |
 | Launch grace | 24 hours from the final buy-in deadline. Unlaunched games enter refunding at the cutoff |
 | Captain minimum deposit | Set per game (0.1 tBNB for the demo) |
 | Accept window | 1 hour from game creation (2 minutes for the demo) |
@@ -181,7 +181,7 @@ Gates return `(true, bytes4(0))` or the applicable state or validation error sel
 | Create game | `limits`, `defaultConfig` → mine salt with `tokenImplementation` / `predictToken` → `validateConfig` → `Portal.newLauncher{value: SALT_LOCK_FEE}`; launcher address from `TugLauncherCreated` |
 | Waiting for captains | Poll `getGame` and use `canDepositCaptain` → `depositCaptain`. At the accept cutoff with fewer than two deposits the phase stays `AWAITING_CAPTAINS` and `canCancel` → `cancel` becomes available. After `GameStarted`, use `autoLaunchQuote` → `scheduleAutoLaunch{value: quote}` |
 | Game page | poll `getGame`, `getPlayer(me)`, `getRules`; `previewContribute` while typing; `canContribute` → `contribute`; feed from `Contributed`, `Overtime` |
-| After the clock | Use `canLaunch` → `launch` during the grace period if the trigger is late, auto-launch stopped, or the live floor recovers. Use `canRefund` → `refund` once refunding opens. The auto-launch funder can call `withdrawTriggerBudget` after launch or when refunding opens |
+| After the clock | Use `canLaunch` → `launch` whenever the gate succeeds during grace, regardless of automatic launch scheduling. The first eligible call launches. A later manual call reverts with `AlreadyLaunched`, and a later trigger does nothing. `AutoLaunchStopped` is an activity-feed hint. Use `canRefund` → `refund` once refunding opens. The auto-launch funder can call `withdrawTriggerBudget` after launch or when refunding opens |
 | Claim and stake | `getPlayer` → `claim`; `getStaker` → approve + `stake`, `unstake`, `claimRewards`; captains: `getCaptain` on the launcher → `claimCaptain`, `getCaptain` on the vault → `claimCaptain` |
 
 **Done when:** `forge build` passes, ABIs exported to `abi/` by one command, a compile test asserts key selectors, and `docs/frontend-api.md` lists the calls per screen.
@@ -219,7 +219,7 @@ Inherits `LauncherBase`, `Initializable`, `IStrategy`, `ReentrancyGuard`. Implem
 | `initialize(hub, creator, cfg) payable` | factory, `initializer` | store config; `acceptDeadline = now + acceptWindow`; `lockSalt{value: SALT_LOCK_FEE}`. No game clock yet |
 | `depositCaptain() payable` | named captain, once, either order | before `acceptDeadline`, `msg.value ≥ captainMinDeposit`, within wallet cap; record as a contribution on the captain's team with full 2x pull; the second deposit sets `gameStart` and `deadline = gameStart + duration` |
 | `cancel()` | anyone | At `block.timestamp >= acceptDeadline` with fewer than two deposits, `phase()` stays `AWAITING_CAPTAINS` and `canCancel()` returns `(true, bytes4(0))` until cancellation succeeds. Mark cancelled, then return any captain deposit. The salt lock fee stays spent. `CANCELLED` and `GameCancelled()` apply after `cancel()` succeeds |
-| `contribute(team) payable` | anyone | Require both captains in, `block.timestamp < deadline`, an unlaunched game, `msg.value > 0` and a valid team. Lock the team on first contribution, enforce the wallet cap, and update raised, contribution and weighted pull. A lead flip extends buy-in when `deadline − block.timestamp ≤ overtimeWindow` and `extensionsUsed < maxExtensions` |
+| `contribute(team) payable` | anyone | Require both captains in, `block.timestamp < deadline`, an unlaunched game, `msg.value > 0` and a valid team. Lock the team on first contribution, enforce the wallet cap, and update raised, contribution and weighted pull. Extend by `overtimeExtension` only when `leader(pullBlue, pullRed)` differs before and after the contribution, counting a tie as `NONE`, and `deadline − block.timestamp ≤ overtimeWindow` and `extensionsUsed < maxExtensions`. The five-extension limit covers every kind of leader change |
 | `launch()` | anyone | From the final deadline until the grace cutoff, with `raised ≥ minRaise` and a met live creation floor. Fix `finalBlueShareBps` and captain allocations, set `launching = true`, call `launchTaxTokenV2{value: raised}`, then clear `launching` and store token, pool, vault and `launchedAt` |
 | `initializeDistribution(token, amount, , )` | `onlyHub`, only while `launching`, once | pull exactly the reserved amount (base + bonus + captain pool) from the Hub |
 | `refund()` | player or captain | In `REFUNDING`, zero the caller's contribution before sending the BNB. Refund eligibility uses game state and time |
@@ -347,7 +347,7 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 3 | At the accept deadline with zero or one captain in, `depositCaptain` reverts, `phase()` stays `AWAITING_CAPTAINS`, and `canCancel()` is `(true, bytes4(0))`. A successful cancel returns any captain deposit and then exposes `CANCELLED` and `GameCancelled()` |
 | 3 | No team switch, wallet cap enforced (captain deposits count toward it) |
 | 3 | Early contribution earns more pull than equal late one |
-| 3 | Overtime extends on lead flip in last 60 s, stops after 5 |
+| 3 | Within the overtime window, tie → lead, lead → tie and Blue → Red each extend. Keeping the same leader adds no time. A mix of ties and swaps stops after 5 extensions in total |
 | 3 | Refund path when minimum missed, launch impossible |
 | 3 | At the grace cutoff an unlaunched game enters `REFUNDING` even when it reached `minRaise`. Manual launch returns `LaunchGraceExpired()`, the trigger does nothing, and refunds work during a Portal outage |
 | 3 | Factory floor parity across the six multiplier cases below and disabled or unreadable quote cases. Compare `limits().minRaiseFloor` and `creationFloorAvailable` with the Portal |
@@ -461,6 +461,7 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 18 | Trigger Service auto-launch? | Yes, built into the launcher in PR 3, with the launch button kept as the fallback |
 | 19 | Must one captain deposit first? | No. Either named captain can go first; the first deposit is the challenge, the second the accept |
 | 20 | When does the accept window start? | At game creation. Both captains must deposit within it, or the game can be cancelled |
+| 21 | Does a tie count as a lead change for overtime? | Yes. Moving into or out of a tie extends the deadline, within the same limit of 5 extensions. |
 
 ## Open questions
 

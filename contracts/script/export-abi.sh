@@ -10,6 +10,7 @@ trap 'exit 1' HUP INT TERM
 for interface in ITugLauncher ITugLauncherFactory ITugVault; do
     forge inspect "src/interfaces/$interface.sol:$interface" abi --json > "$staging/$interface.json"
 done
+forge inspect "src/flap/IPortal.sol:IPortal" abi --json > "$staging/IPortal.json"
 
 for artifact in "$staging/"*.json; do
     mv "$artifact" abi/

@@ -100,8 +100,9 @@ struct TugConfig {
 /// @param originalDeadline Unix buy-in deadline in seconds before overtime. Zero before the game starts.
 /// @param deadline Current Unix buy-in deadline in seconds, including overtime. Zero before game start.
 ///        Buy-in requires block.timestamp < deadline. Eligible launches and refunds open at
-///        block.timestamp >= deadline. During buy-in, a lead flip can trigger overtime when
-///        deadline minus block.timestamp is at most overtimeWindow.
+///        block.timestamp >= deadline. During buy-in, a contribution extends the deadline if it changes the
+///        leader, counting a tie as Team.NONE, with deadline minus block.timestamp at most overtimeWindow
+///        and extensionsUsed below maxExtensions.
 /// @param extensionsUsed Number of overtime extensions applied.
 /// @param currentWeightBps Contribution weight at the current time, in basis points.
 /// @param raised Total BNB raised, in wei.
@@ -198,7 +199,8 @@ struct CaptainAllocView {
 /// @param taxDuration Trading tax duration in seconds from launch.
 /// @param antiFarmerDuration Anti-farmer duration in seconds from launch.
 /// @param startWeightBps Initial contribution weight in basis points.
-/// @param overtimeWindow Number of seconds before the current deadline in which a lead flip can extend it.
+/// @param overtimeWindow Inclusive window in seconds before the current deadline in which a change in leader,
+///        counting a tie as Team.NONE, can extend buy-in.
 /// @param overtimeExtension Seconds added per overtime extension.
 /// @param maxExtensions Maximum number of overtime extensions.
 /// @param launchGrace Number of seconds after the final deadline before an unlaunched game opens refunds.

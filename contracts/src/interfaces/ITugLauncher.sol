@@ -47,9 +47,9 @@ interface ITugLauncher is ITriggerReceiver {
         address indexed player, uint8 indexed team, uint256 amount, uint256 pull, uint16 weightBps, uint16 ropeBps
     );
 
-    /// @notice A lead flip extended the buy-in clock.
+    /// @notice A change in leader extended the buy-in clock. A tie counts as Team.NONE.
     /// @param newDeadline New Unix deadline in seconds.
-    /// @param extensionsUsed Number of overtime extensions used after this flip.
+    /// @param extensionsUsed Total overtime extensions used after this change.
     event Overtime(uint64 newDeadline, uint8 extensionsUsed);
 
     /// @notice The Portal created the token, pool and vault.
@@ -266,7 +266,9 @@ interface ITugLauncher is ITriggerReceiver {
     /// @param amount Proposed contribution in BNB wei.
     /// @return pull Weighted contribution in BNB wei.
     /// @return newRopeBps Blue's projected share of total pull in basis points.
-    /// @return wouldTriggerOvertime Whether the contribution would extend this deadline.
+    /// @return wouldTriggerOvertime Whether a contribution during buy-in changes the leader, counting a tie as
+    ///         Team.NONE, with deadline minus block.timestamp at most overtimeWindow and extensionsUsed below
+    ///         maxExtensions.
     function previewContribute(uint8 team, uint256 amount)
         external
         view
