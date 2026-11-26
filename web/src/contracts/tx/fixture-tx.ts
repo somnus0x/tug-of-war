@@ -1,7 +1,7 @@
 import type { SimulatorState } from '../fixtures/simulator'
 import type { Gate } from '../types'
 import type { ActionParams } from './actions'
-import type { LauncherActionName } from '@/lib/actions'
+import type { LauncherActionName, TxActionName } from '@/lib/actions'
 import type { Address, Hash } from 'viem'
 
 import {
@@ -28,7 +28,7 @@ import {
   canWithdrawTriggerBudget,
 } from '../fixtures/simulator'
 
-export type FixtureMode = 'normal' | 'reject' | 'revert' | 'slow'
+export type FixtureMode = 'normal' | 'reject' | 'revert' | 'slow' | 'raced'
 
 export const FIXTURE_DELAYS = {
   simulating: 300,
@@ -37,7 +37,9 @@ export const FIXTURE_DELAYS = {
   slow: 8000,
 } as const
 
-const MODES: readonly FixtureMode[] = ['reject', 'revert', 'slow']
+export const FIXTURE_MODES = ['reject', 'revert', 'slow', 'raced'] as const
+
+const MODES: readonly FixtureMode[] = FIXTURE_MODES
 
 export const fixtureModeFromSearch = (searchStr: string): FixtureMode => {
   const value = new URLSearchParams(searchStr).get('tx')
@@ -72,7 +74,7 @@ export const fixtureGate = <Name extends LauncherActionName>(
   return gate(state, params)
 }
 
-const PLAUSIBLE_REVERTS: Record<LauncherActionName, string> = {
+const PLAUSIBLE_REVERTS: Record<TxActionName, string> = {
   depositCaptain: 'AcceptWindowClosed',
   cancel: 'NotCancellable',
   scheduleAutoLaunch: 'InsufficientTriggerFee',
@@ -82,13 +84,19 @@ const PLAUSIBLE_REVERTS: Record<LauncherActionName, string> = {
   claim: 'NothingToClaim',
   claimCaptain: 'NothingToClaim',
   withdrawTriggerBudget: 'TriggerBudgetLocked',
+  stake: 'TransferFailed',
+  unstake: 'InsufficientStake',
+  claimRewards: 'NothingToClaim',
+  claimVaultCaptain: 'NothingToClaim',
+  approve: 'TransferFailed',
+  createGame: 'MinRaiseBelowCreationFloor',
 }
 
-export const plausibleRevert = (name: LauncherActionName, gate: Gate): string =>
+export const plausibleRevert = (name: TxActionName, gate: Gate): string =>
   gate.ok ? PLAUSIBLE_REVERTS[name] : gate.reason
 
 export const revertError = (
-  name: LauncherActionName,
+  name: TxActionName,
   launcher: Address,
   errorName: string,
   args: readonly unknown[],
@@ -109,5 +117,5 @@ export const revertError = (
 export const rejectionError = (): UserRejectedRequestError =>
   new UserRejectedRequestError(new Error('User rejected the request.'))
 
-export const fixtureHash = (name: LauncherActionName, seed: number): Hash =>
+export const fixtureHash = (name: TxActionName, seed: number): Hash =>
   keccak256(toHex(`${name}:${seed}`))

@@ -61,9 +61,16 @@ export const TeamPicker = ({ game, draft, account, isBusy }: TeamPickerProps) =>
               <span className="team-option__body">
                 <TeamMark team={team} label={GAME_COPY.team[team]} size="tile" />
                 <small className="team-option__note" id={`${noteId}-${team}`}>
-                  {isLockedOut
-                    ? PULL_COPY.lockedOut
-                    : PULL_COPY.captain(shortAddress(captainOf(game, team), account))}
+                  {isLockedOut ? (
+                    PULL_COPY.lockedOut
+                  ) : (
+                    <>
+                      <span className="team-option__captain-word">{PULL_COPY.captainWord} </span>
+                      <span className="team-option__address">
+                        {shortAddress(captainOf(game, team), account)}
+                      </span>
+                    </>
+                  )}
                 </small>
               </span>
             </label>

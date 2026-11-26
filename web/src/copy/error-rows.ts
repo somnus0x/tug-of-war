@@ -255,6 +255,22 @@ export const ERROR_ROWS: Readonly<Record<string, readonly Row[]>> = {
   CaptainAllocOutOfRange: [{ actions: ['createGame'], message: settingsRejected }],
   CaptainShareOutOfRange: [{ actions: ['createGame'], message: settingsRejected }],
   CaptainVestDurationOutOfRange: [{ actions: ['createGame'], message: settingsRejected }],
+  InvalidSaltLockPayment: [
+    {
+      actions: ['createGame'],
+      message: text('The creation fee changed. Try again.', 'Nothing was taken.'),
+    },
+  ],
+  DescriptionTooLong: [
+    { actions: ['createGame'], message: text('The coin name and symbol are too long.') },
+  ],
+  InvalidDistribution: [
+    {
+      actions: ['launch'],
+      message: text('Flap’s Portal rejected the launch.', 'Try again shortly.'),
+    },
+  ],
+  GameIndexOutOfRange: [{ actions: 'any', message: text('That game could not be found.') }],
 }
 
 export const UNREACHABLE_ERRORS: readonly string[] = ['OnlyTriggerService']

@@ -20,8 +20,21 @@ const envSchema = z.object({
     'must be a 0x address with 40 hex digits',
   ),
   VITE_WC_PROJECT_ID: z.string().trim().min(1, 'must not be empty'),
-  VITE_FIXTURES: z.enum(['0', '1']).transform((value) => value === '1'),
+  VITE_FIXTURES: z
+    .enum(['', '0', '1'])
+    .optional()
+    .transform((value) => value === '1'),
   VITE_BASE: basePathSchema,
+  VITE_TRADE_URL: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value === undefined || value === '' ? null : value))
+    .refine((value) => value === null || value.includes('{token}'), 'must contain {token}'),
+  VITE_AUTO_LAUNCH: z
+    .string()
+    .optional()
+    .transform((value) => value?.trim() === '1'),
 })
 
 export type Env = z.infer<typeof envSchema>

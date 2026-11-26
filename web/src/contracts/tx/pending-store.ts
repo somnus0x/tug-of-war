@@ -1,13 +1,13 @@
-import type { LauncherActionName } from '@/lib/actions'
+import type { TxActionName } from '@/lib/actions'
 import type { Address, Hash } from 'viem'
 
 import { isAddress, isHash } from 'viem'
 
-import { LAUNCHER_ACTIONS } from '@/lib/actions'
+import { TX_ACTIONS } from '@/lib/actions'
 
 export type PendingTx = {
   readonly hash: Hash
-  readonly action: LauncherActionName
+  readonly action: TxActionName
   readonly launcher: Address
   readonly account: Address
   readonly chainId: number
@@ -22,8 +22,8 @@ export const PENDING_KEY = 'tug.pending-tx'
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null
 
-const isAction = (value: unknown): value is LauncherActionName =>
-  LAUNCHER_ACTIONS.some((name) => name === value)
+const isAction = (value: unknown): value is TxActionName =>
+  TX_ACTIONS.some((name) => name === value)
 
 const isPendingTx = (value: unknown): value is PendingTx =>
   isRecord(value) &&

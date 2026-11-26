@@ -37,6 +37,7 @@ export type PullForm = {
   readonly validation: PullValidation
   readonly capUsedUp: boolean
   readonly mayNotLand: boolean
+  readonly preview: ContributePreview | null
 }
 
 export type BalanceRead = BnbWei | 'loading' | 'failed' | null
@@ -138,6 +139,9 @@ const validationOf = ({
   return gates.preview === null ? { kind: 'checking' } : { kind: 'ready', preview: gates.preview }
 }
 
+export const shownPreviewOf = ({ draft, gates }: PullFormInput): ContributePreview | null =>
+  draft === null || draft.amount === 0n ? null : gates.preview
+
 export const derivePullForm = (input: PullFormInput): PullForm => {
   const presets = presetsOf(input)
   return {
@@ -147,6 +151,7 @@ export const derivePullForm = (input: PullFormInput): PullForm => {
     validation: validationOf(input),
     capUsedUp: isCapUsedUp(input.player),
     mayNotLand: input.secondsLeft !== null && input.secondsLeft <= MAY_NOT_LAND_SECONDS,
+    preview: shownPreviewOf(input),
   }
 }
 

@@ -1,0 +1,70 @@
+.waiting-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  margin: 0 0 10px;
+  color: var(--cream);
+  font-size: var(--text-body);
+  line-height: 1.4;
+}
+
+.waiting-note b {
+  flex-basis: 100%;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.copy-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+.copy-link .tile-button {
+  min-height: var(--touch-target);
+}
+
+.copy-link__status {
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.captain-deposit__counts {
+  margin: 0 var(--outline) 4px;
+  color: var(--cream);
+  font-size: var(--text-body);
+}
+
+.captain-deposit .tile-button--full {
+  min-height: var(--touch-target);
+}
+
+.waiting-missed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.waiting-missed__banner {
+  margin: 0;
+  padding: 6px 10px;
+  background: var(--gold);
+  color: var(--ink-0);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.waiting-cancelled {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.waiting-cancelled .tile-button {
+  min-height: var(--touch-target);
+  text-decoration: none;
+}

@@ -1,8 +1,8 @@
 import type { QueryGroup } from './actions'
-import type { LauncherActionName } from '@/lib/actions'
+import type { TxActionName } from '@/lib/actions'
 import type { Address } from 'viem'
 
-import { refreshGroups } from './actions'
+import { txRefreshGroups } from './tx-calls'
 
 export type InvalidationKey = readonly (string | number)[]
 
@@ -15,11 +15,11 @@ export const keyForGroup = (
 ): InvalidationKey => (group === 'balance' ? ['balance'] : [group, chainId, launcher])
 
 export const invalidationKeys = (
-  name: LauncherActionName,
+  name: TxActionName,
   chainId: number,
   launcher: Address,
 ): readonly InvalidationKey[] =>
-  refreshGroups(name).map((group) => keyForGroup(group, chainId, launcher))
+  txRefreshGroups(name).map((group) => keyForGroup(group, chainId, launcher))
 
 export const walletScopedKeys = (chainId: number, launcher: Address): readonly InvalidationKey[] =>
   WALLET_GROUPS.map((group) => keyForGroup(group, chainId, launcher))

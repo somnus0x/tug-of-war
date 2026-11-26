@@ -15,6 +15,11 @@ export default defineConfig(({ command, mode }) => {
     if (!result.ok) {
       throw new Error(formatEnvIssues(result.issues))
     }
+    if (result.env.VITE_FIXTURES) {
+      throw new Error(
+        'VITE_FIXTURES=1 turns on mock data, which is for the dev server and tests only. Set VITE_FIXTURES=0 or leave it empty to build.',
+      )
+    }
   }
   return {
     base: parseBasePath(loaded.VITE_BASE),
@@ -26,6 +31,18 @@ export default defineConfig(({ command, mode }) => {
     },
     build: {
       target: 'es2022',
+      rolldownOptions: {
+        treeshake: {
+          moduleSideEffects: [
+            { test: /\/src\/contracts\/fixtures\//, external: false, sideEffects: false },
+            {
+              test: /\/src\/contracts\/tx\/fixture-[^/]+\.ts$/,
+              external: false,
+              sideEffects: false,
+            },
+          ],
+        },
+      },
     },
   }
 })

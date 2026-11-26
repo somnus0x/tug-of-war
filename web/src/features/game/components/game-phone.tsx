@@ -13,11 +13,13 @@ export const GamePhone = ({ slots, hasBar, rulesLast }: GamePhoneProps) => {
   return (
     <div className={hasBar ? 'game game--phone game--with-bar' : 'game game--phone'}>
       {slots.hud}
+      {slots.banner}
       {slots.scene}
       {slots.headline}
       {slots.capNote}
       <div className="game__sections">
         {hasBar ? slots.picker : slots.pull}
+        {slots.autoLaunch}
         {slots.you}
         {slots.feed}
         {rulesLast ? null : slots.rules}

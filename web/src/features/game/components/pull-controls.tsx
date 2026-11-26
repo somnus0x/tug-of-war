@@ -75,7 +75,7 @@ export const PullControls = (props: PullControlsProps) => {
       rules={rules}
       team={draft.team}
       amount={amount}
-      preview={form.validation.kind === 'ready' ? form.validation.preview : null}
+      preview={form.preview}
       isCompact={layout === 'bar'}
     />
   )
@@ -92,14 +92,6 @@ export const PullControls = (props: PullControlsProps) => {
         isBusy={isBusy}
         describedBy={describedBy}
       />
-      {notice === null ? null : (
-        <p
-          id={noticeId}
-          className={classNames('pull-controls__notice', `pull-controls__notice--${notice.tone}`)}
-        >
-          {notice.text}
-        </p>
-      )}
       {layout === 'box' ? preview : null}
       <TileButton
         type="submit"
@@ -110,6 +102,14 @@ export const PullControls = (props: PullControlsProps) => {
       >
         {action.label ?? label}
       </TileButton>
+      {notice === null ? null : (
+        <p
+          id={noticeId}
+          className={classNames('pull-controls__notice', `pull-controls__notice--${notice.tone}`)}
+        >
+          {notice.text}
+        </p>
+      )}
       {showLate ? (
         <p className="pull-controls__late" id={lateId}>
           {PULL_COPY.mayNotLand}

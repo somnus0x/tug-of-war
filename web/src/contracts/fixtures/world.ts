@@ -17,7 +17,7 @@ import { fixtureInput, resolveFixture } from './catalog'
 import { AUTO_LAUNCH_QUOTE, FIXTURE_RULES } from './constants'
 import { buildHistory, historyFits } from './history'
 import { EMPTY_OVERLAY, overlayGame, overlayPlayer, playerOverlayOf } from './overlay'
-import { captainRead, resolveViewer, viewerAddress, viewerPlayer, viewerRead } from './viewers'
+import { captainRead, historyStakeOf, resolveViewer, viewerAddress, viewerRead } from './viewers'
 
 export type FixtureWorldOptions = { readonly nowSeconds?: () => number }
 
@@ -52,9 +52,9 @@ const wallClockSeconds = (): number => Math.floor(Date.now() / 1000)
 const keyOf = (launcher: Address, scope: SourceScope): string =>
   `${launcher.toLowerCase()}|${resolveFixture(scope.fixture)}`
 
-const viewerStake = (name: ViewerName, game: Game): HistoryStake | null => {
+const viewerStake = (name: ViewerName, game: Game, loadTime: number): HistoryStake | null => {
   const address = viewerAddress(name)
-  const player = viewerPlayer(name, game, FIXTURE_RULES)
+  const player = historyStakeOf(name, game, FIXTURE_RULES, loadTime)
   const isCaptain = [game.config.captainBlue, game.config.captainRed].some(
     (captain) => captain.toLowerCase() === address?.toLowerCase(),
   )
@@ -73,7 +73,7 @@ const withStake = (team: TeamInput, stake: HistoryStake): TeamInput => ({
 const inputFor = (fixture: FixtureName, name: ViewerName, launcher: Address, loadTime: number) => {
   const input = fixtureInput(fixture)
   const base = buildGame(input, { launcher, loadTime, now: loadTime })
-  const viewer = viewerStake(name, base)
+  const viewer = viewerStake(name, base, loadTime)
   const fits =
     viewer === null ||
     historyFits({ seed: fixture, game: base, rules: FIXTURE_RULES, loadTime, viewer })
@@ -120,10 +120,12 @@ export const createFixtureWorld = (options: FixtureWorldOptions = {}): FixtureWo
     at?: number,
   ): PlayerRead => {
     const snapshot = game(launcher, scope, at)
-    const captain =
-      account === undefined ? null : captainRead(snapshot.game, FIXTURE_RULES, account)
+    const before = buildGame(snapshot.input, { launcher, loadTime, now: snapshot.now })
+    const baseline = { ...snapshot.game, captainDeposited: before.captainDeposited }
+    const captain = account === undefined ? null : captainRead(baseline, FIXTURE_RULES, account)
     const base =
-      captain ?? viewerRead(resolveViewer(scope.viewer, true), snapshot.game, FIXTURE_RULES)
+      captain ??
+      viewerRead(resolveViewer(scope.viewer, true), snapshot.game, FIXTURE_RULES, loadTime)
     const overlay = playerOverlayOf(overlayOf(launcher, scope), account)
     return overlayPlayer(base, overlay, snapshot.game, FIXTURE_RULES)
   }
@@ -163,7 +165,7 @@ export const createFixtureWorld = (options: FixtureWorldOptions = {}): FixtureWo
         game: base,
         rules: FIXTURE_RULES,
         loadTime,
-        viewer: viewerStake(name, base),
+        viewer: viewerStake(name, base, loadTime),
       })
       histories.set(key, built)
       return built

@@ -157,6 +157,50 @@
   font-size: var(--text-small);
 }
 
+.team-sign__top {
+  margin-top: 3px;
+  font-size: var(--text-small);
+  line-height: 1.25;
+}
+
+.team-sign__top-title {
+  display: block;
+  color: var(--mute);
+  font-family: var(--font-heading);
+  font-size: var(--text-small);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.team-sign__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: puller;
+}
+
+.team-sign__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0 8px;
+  counter-increment: puller;
+}
+
+.team-sign__row::before {
+  color: var(--gold);
+  font-family: var(--font-heading);
+  content: counter(puller);
+}
+
+.team-sign__pull {
+  color: var(--cream);
+  font-weight: 600;
+}
+
+.team-sign__nobody {
+  color: var(--mute);
+}
+
 .cap-note {
   padding: 4px 10px;
   background: var(--gold);
@@ -220,4 +264,64 @@
 
 .rules-panel__details[open] .rules-panel__summary {
   margin-bottom: 6px;
+}
+
+.you-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: var(--outline);
+  padding: 8px 10px;
+  background: var(--ink-0);
+  box-shadow: 0 0 0 var(--outline) var(--lime);
+}
+
+.you-box__title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--lime);
+  font-family: var(--font-heading);
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.you-box__title em {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-left: auto;
+  color: var(--mute);
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.you-box__figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.you-box__figures dt {
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.you-box__figures dd {
+  margin: 0;
+  color: var(--cream);
+  font-family: var(--font-digits);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.you-box__note {
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--text-small);
 }

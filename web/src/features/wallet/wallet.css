@@ -2,13 +2,31 @@
   visibility: hidden;
 }
 
+.wallet-account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  column-gap: 10px;
+  min-width: 0;
+  max-height: 24px;
+  overflow: hidden;
+  line-height: 24px;
+}
+
 .wallet-account__address {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-body);
   font-size: var(--text-body);
   font-weight: 600;
 }
 
 .wallet-account__balance {
+  white-space: nowrap;
   color: var(--lime);
   font-family: var(--font-digits);
   font-size: 20px;
@@ -20,10 +38,17 @@
   gap: 6px;
   font-family: var(--font-heading);
   color: var(--mute);
+  min-width: 0;
   white-space: nowrap;
 }
 
+.network-name > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .network-name__tag {
+  flex: none;
   padding: 1px 6px;
   background: var(--gold);
   color: var(--ink-0);

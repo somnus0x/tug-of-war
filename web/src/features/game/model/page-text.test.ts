@@ -5,7 +5,13 @@ import { bps } from '@/lib/units'
 import { gameOf, withPull } from './fixture-games'
 import { announceStateOf, announcementOf, capNoteOf, pageHeadline, sceneLabelOf } from './page-text'
 
-const calm = { lead: 'blue', extensionsUsed: 0, ended: false } as const
+const calm = {
+  lead: 'blue',
+  extensionsUsed: 0,
+  ended: false,
+  captains: 'both',
+  cancelled: false,
+} as const
 
 describe('pageHeadline', () => {
   it('reads the leader share with the pull split', () => {
@@ -54,6 +60,19 @@ describe('announcementOf', () => {
   it('announces a change of leader and a level rope', () => {
     expect(announcementOf(calm, { ...calm, lead: 'red' }, 30)).toBe('Red takes the lead.')
     expect(announcementOf(calm, { ...calm, lead: 'tie' }, 30)).toBe('The pull is level.')
+  })
+
+  it('announces a captain arriving, the start and a cancel', () => {
+    const waiting = { ...calm, lead: 'tie', captains: 'none' } as const
+    expect(announcementOf(waiting, { ...waiting, captains: 'blue' }, 30)).toBe(
+      'Blue’s captain is in.',
+    )
+    expect(
+      announcementOf({ ...waiting, captains: 'blue' }, { ...waiting, captains: 'both' }, 30),
+    ).toBe('Both captains are in. The clock has started.')
+    expect(announcementOf(waiting, { ...waiting, cancelled: true }, 30)).toBe(
+      'This game was cancelled.',
+    )
   })
 
   it('announces an extension and the end of the clock', () => {

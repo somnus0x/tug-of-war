@@ -4,12 +4,15 @@ import { WALLET_COPY } from '@/copy/wallet'
 import { formatBnb, shortAddress } from '@/lib/format'
 import { TileButton } from '@/ui/tile-button'
 
+import { accountLabelOf } from './account-label'
+import { useHeaderAccount } from './use-header-account'
 import { useWallet } from './use-wallet'
 
 import './wallet.css'
 
 export const WalletButton = () => {
   const wallet = useWallet()
+  const account = useHeaderAccount(wallet)
 
   const switchNetwork = (): void => {
     void wallet.switchNetwork()
@@ -34,18 +37,20 @@ export const WalletButton = () => {
             </TileButton>
           )
         }
-        if (wallet.status === 'connected' && wallet.address !== undefined) {
-          const address = shortAddress(wallet.address)
+        if (account !== undefined) {
+          const address = shortAddress(account.address)
           const balance =
-            wallet.balance === undefined ? '' : WALLET_COPY.balance(formatBnb(wallet.balance))
+            account.balance === undefined ? '' : WALLET_COPY.balance(formatBnb(account.balance))
           return (
             <TileButton
               variant="ghost"
-              onClick={openAccountModal}
-              ariaLabel={WALLET_COPY.accountLabel(address, balance)}
+              onClick={openAccountModal ?? openConnectModal}
+              ariaLabel={accountLabelOf(address, balance, openAccountModal !== undefined)}
             >
-              <span className="wallet-account__address">{address}</span>
-              {balance === '' ? null : <span className="wallet-account__balance">{balance}</span>}
+              <span className="wallet-account">
+                <span className="wallet-account__address">{address}</span>
+                {balance === '' ? null : <span className="wallet-account__balance">{balance}</span>}
+              </span>
             </TileButton>
           )
         }

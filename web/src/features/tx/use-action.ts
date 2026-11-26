@@ -3,7 +3,7 @@ import type { TxErrorInfo } from '@/contracts/tx/classify-error'
 import type { TxState } from '@/contracts/tx/lifecycle'
 import type { ActionOutcomes } from '@/contracts/tx/outcome'
 import type { TxMessage } from '@/copy/tx'
-import type { LauncherActionName } from '@/lib/actions'
+import type { TxActionName } from '@/lib/actions'
 import type { TileState } from '@/ui/tile-button-classes'
 import type { ToastInput, ToastKind } from '@/ui/toast-store'
 import type { Address, Hash } from 'viem'
@@ -27,8 +27,9 @@ import { useWallet } from '@/features/wallet/use-wallet'
 import { errorValues, successMessage } from './tx-messages'
 import { txToasts } from './tx-toasts'
 
-export type ActionInput<Name extends LauncherActionName> = ActionParams[Name] & {
+export type ActionInput<Name extends TxActionName> = ActionParams[Name] & {
   readonly launcher: Address
+  readonly target?: Address | undefined
 }
 
 export type Action = {
@@ -45,7 +46,7 @@ export const tileStateOf = <Outcome>(state: TxState<Outcome>): TileState => {
 }
 
 export const progressLabel = <Outcome>(
-  action: LauncherActionName,
+  action: TxActionName,
   state: TxState<Outcome>,
 ): string | undefined => {
   switch (state.stage) {
@@ -69,13 +70,28 @@ const toastOf = (kind: ToastKind, message: TxMessage, hash: Hash | undefined): T
 
 export type ActionOptions = {
   readonly onSuccess?: () => void
+  readonly onQuietInfo?: () => void
+  readonly onFailure?: () => void
+  readonly onSuccessToast?: (id: number) => void
+  readonly failureText?: (message: TxMessage) => TxMessage
 }
 
-export const useAction = <Name extends LauncherActionName>(
+export type ActionPlace = {
+  readonly launcher: Address
+  readonly target?: Address | undefined
+}
+
+export type ParamAction<Name extends TxActionName> = {
+  readonly state: TileState
+  readonly label: string | undefined
+  readonly run: (params: ActionParams[Name]) => void
+}
+
+export const useActionWith = <Name extends TxActionName>(
   action: Name,
-  input: ActionInput<Name>,
+  input: ActionPlace,
   options: ActionOptions = {},
-): Action => {
+): ParamAction<Name> => {
   const wallet = useWallet()
   const account = useViewerAccount(wallet.address)
   const game = useGame(input.launcher).data?.game
@@ -93,6 +109,7 @@ export const useAction = <Name extends LauncherActionName>(
 
   const tx = useTx(action, {
     launcher: input.launcher,
+    target: input.target,
     ensureNetwork: async () =>
       wallet.status !== 'wrongNetwork' || (await wallet.switchNetwork()).ok,
     onSubmitted: (hash: Hash) => {
@@ -101,13 +118,20 @@ export const useAction = <Name extends LauncherActionName>(
     },
     onSuccess: (outcome: ActionOutcomes[Name] | null, hash: Hash) => {
       clearSent()
-      txToasts.push(toastOf('ok', successMessage(action, outcome, context), hash))
+      const shown = txToasts.push(toastOf('ok', successMessage(action, outcome, context), hash))
+      options.onSuccessToast?.(shown)
       options.onSuccess?.()
     },
     onFailure: (error: TxErrorInfo, hash: Hash | undefined) => {
       clearSent()
+      if (error.tone === 'info' && options.onQuietInfo !== undefined) {
+        options.onQuietInfo()
+        return
+      }
       const kind = error.tone === 'info' ? 'info' : 'err'
-      txToasts.push(toastOf(kind, errorMessage(action, error, errorValues(context)), hash))
+      const message = errorMessage(action, error, errorValues(context))
+      txToasts.push(toastOf(kind, options.failureText?.(message) ?? message, hash))
+      options.onFailure?.()
     },
   })
 
@@ -123,12 +147,27 @@ export const useAction = <Name extends LauncherActionName>(
   return {
     state,
     label: progress ?? idleLabel,
-    run: () => {
+    run: (params) => {
       if (needsConnect) {
         wallet.connect()
         return
       }
-      tx.run(input)
+      tx.run(params)
+    },
+  }
+}
+
+export const useAction = <Name extends TxActionName>(
+  action: Name,
+  input: ActionInput<Name>,
+  options: ActionOptions = {},
+): Action => {
+  const runner = useActionWith(action, input, options)
+  return {
+    state: runner.state,
+    label: runner.label,
+    run: () => {
+      runner.run(input)
     },
   }
 }

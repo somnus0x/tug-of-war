@@ -8,10 +8,11 @@ import type { BnbWei } from '@/lib/units'
 import type { Address } from 'viem'
 
 import { weightBpsAt } from '@/lib/clock'
+import { TOTAL_SUPPLY } from '@/lib/launch'
 import { bnbWei, bps, mulBps, pullWei, tokenWei } from '@/lib/units'
 
 import { finalBlueShareOf, ropeBpsOf } from './builder'
-import { FIXTURE_ADDRESSES, TOTAL_SUPPLY } from './constants'
+import { FIXTURE_ADDRESSES } from './constants'
 import { playerKey, playerOverlayOf } from './overlay'
 import { previewContribute } from './simulator'
 
@@ -166,6 +167,19 @@ const depositedByCaptains = (game: Game): BnbWei =>
       (game.captainDeposited.red ? game.raisedByTeam.red : 0n),
   )
 
+const returnCaptainDeposits = (overlay: GameOverlay, game: Game): GameOverlay =>
+  [game.config.captainBlue, game.config.captainRed].reduce(
+    (current, captain) =>
+      playerOverlayOf(current, captain).contribution === 0n
+        ? current
+        : withPlayer(current, captain, (player) => ({
+            ...player,
+            contribution: 0n,
+            spent: player.spent - player.contribution,
+          })),
+    overlay,
+  )
+
 type Effects = {
   readonly [Name in LauncherActionName]: (input: EffectInput<Name>) => EffectResult<Name>
 }
@@ -174,7 +188,7 @@ const EFFECTS: Effects = {
   contribute,
   depositCaptain,
   cancel: (input) => ({
-    overlay: { ...input.overlay, cancelled: true },
+    overlay: returnCaptainDeposits({ ...input.overlay, cancelled: true }, input.state.game),
     outcome: { refunded: depositedByCaptains(input.state.game) },
   }),
   scheduleAutoLaunch: (input) => ({
@@ -199,11 +213,24 @@ const EFFECTS: Effects = {
     }
   },
   refund: (input) => ({
-    overlay: withPlayer(input.overlay, input.state.account, (current) => ({
-      ...current,
-      refunded: true,
-      spent: current.spent - input.player.refundable,
-    })),
+    overlay: withPlayer(
+      {
+        ...input.overlay,
+        refunds: [
+          ...(input.overlay.refunds ?? []),
+          {
+            account: input.state.account ?? FIXTURE_ADDRESSES.funder,
+            amount: input.player.refundable,
+          },
+        ],
+      },
+      input.state.account,
+      (current) => ({
+        ...current,
+        refunded: true,
+        spent: current.spent - input.player.refundable,
+      }),
+    ),
     outcome: { amount: input.player.refundable },
   }),
   claim: (input) => ({

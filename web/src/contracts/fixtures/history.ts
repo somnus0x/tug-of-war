@@ -7,6 +7,8 @@ import { keccak256, toHex } from 'viem'
 import { BPS_DENOMINATOR, bnbWei, bps, mulBps, pullWei } from '@/lib/units'
 
 import { blockKey, logId } from '../logs'
+import { overtimeMarks, overtimeTimes, quietChangesOf } from './overtime-marks'
+import { curveOf, squeezeWeights, timeAtWeight, weightFloorOf } from './pull-weights'
 
 export type HistoryStake = {
   readonly address: Address
@@ -40,6 +42,7 @@ type Entry = {
 const UNIT = 10n ** 15n
 const SIDES: readonly LogSide[] = ['blue', 'red']
 const CAPTAIN_LEAD_SECONDS = 240
+const SPLIT_MARGIN = 20
 
 const randomFrom = (seed: string): (() => number) => {
   let state = 2166136261
@@ -159,7 +162,14 @@ const sideEntries = (
     game.raisedByTeam[side] - used.bnb,
     game.pullByTeam[side] - used.pull,
   )
-  return crowd === null ? null : [...fixed, ...crowd]
+  if (crowd === null) {
+    return null
+  }
+  const floor = weightFloorOf(game, input.rules, input.loadTime)
+  return [
+    ...fixed,
+    ...squeezeWeights(crowd, floor + SPLIT_MARGIN, input.rules.startWeightBps, UNIT),
+  ]
 }
 
 const withTopUps = (entries: readonly Entry[], random: () => number): Entry[] =>
@@ -188,13 +198,16 @@ const schedule = (input: HistoryInput, entries: readonly Entry[]): number[] => {
   }
   const captains = entries.filter((entry) => entry.captain).length
   const end = Math.min(game.deadline, loadTime) - 1
-  const span = Math.max(1, end - game.gameStart)
-  const fans = entries.length - captains
-  return entries.map((_, index) =>
-    index < captains
-      ? game.gameStart - CAPTAIN_LEAD_SECONDS * (captains - 1 - index)
-      : game.gameStart + Math.max(1, Math.floor((span * (index - captains + 1)) / (fans + 1))),
-  )
+  const curve = curveOf(input.game, input.rules)
+  let previous = game.gameStart + 1
+  return entries.map((entry, index) => {
+    if (index < captains) {
+      return game.gameStart - CAPTAIN_LEAD_SECONDS * (captains - 1 - index)
+    }
+    const at = Math.min(end, Math.max(previous, timeAtWeight(weightOf(entry), curve)))
+    previous = at
+    return at
+  })
 }
 
 const hashOf = (seed: string, index: number): Hash => keccak256(toHex(`${seed}:tx:${index}`))
@@ -216,12 +229,23 @@ const ordered = (input: HistoryInput, viewer: HistoryStake | null): Entry[] | nu
 }
 
 const toLogs = (input: HistoryInput, entries: readonly Entry[]): FixtureHistory => {
-  const times = schedule(input, entries)
+  const marks = overtimeMarks(entries, input.game.extensionsUsed)
+  const { game, rules, loadTime } = input
+  const times = overtimeTimes(
+    schedule(input, entries),
+    marks,
+    {
+      originalDeadline: game.originalDeadline,
+      extension: rules.overtimeExtension,
+      window: rules.overtimeWindow,
+      end: Math.min(game.deadline, loadTime) - 1,
+    },
+    quietChangesOf(entries, marks),
+  )
   const logs: GameLog[] = []
   const blockTimes: Record<string, number> = {}
   let lastBlock = 0n
   let indexInBlock = 0
-  const overtimes = input.game.extensionsUsed
   entries.forEach((entry, index) => {
     const blockNumber = BigInt(times[index] ?? 0)
     indexInBlock = blockNumber === lastBlock ? indexInBlock + 1 : 0
@@ -250,15 +274,15 @@ const toLogs = (input: HistoryInput, entries: readonly Entry[]): FixtureHistory 
             weightBps: bps(weightOf(entry)),
           },
     )
-    const fromEnd = entries.length - index
-    if (!entry.captain && fromEnd <= overtimes) {
+    const extensionsUsed = marks.get(index)
+    if (extensionsUsed !== undefined) {
       logs.push({
         id: logId(txHash, logIndex + 1),
         txHash,
         blockNumber,
         logIndex: logIndex + 1,
         kind: 'overtime',
-        extensionsUsed: overtimes - fromEnd + 1,
+        extensionsUsed,
       })
     }
   })

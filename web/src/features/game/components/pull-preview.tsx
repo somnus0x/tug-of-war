@@ -8,7 +8,7 @@ import { useChainSelect } from '@/contracts/queries/use-chain-clock'
 import { GAME_COPY } from '@/copy/game'
 import { PULL_COPY } from '@/copy/pull'
 import { weightBpsAt } from '@/lib/clock'
-import { formatBnbExact, formatPull, formatSpan, formatWeight } from '@/lib/format'
+import { formatBnbExact, formatPull, formatShare, formatSpan, formatWeight } from '@/lib/format'
 
 type PullPreviewProps = {
   game: Game
@@ -54,6 +54,12 @@ export const PullPreview = ({
           <div className="pull-preview__row">
             <dt>{PULL_COPY.adds(formatBnbExact(amount))}</dt>
             <dd>{PULL_COPY.addsPull(formatPull(preview.pull), GAME_COPY.team[team])}</dd>
+          </div>
+        ) : null}
+        {isReady ? (
+          <div className="pull-preview__row">
+            <dt>{PULL_COPY.ropeAfter}</dt>
+            <dd>{PULL_COPY.ropeAfterShare(formatShare(preview.newRopeBps))}</dd>
           </div>
         ) : null}
         {(team === null || amount === null) && !isCompact ? (

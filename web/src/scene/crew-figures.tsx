@@ -1,12 +1,14 @@
 import type { FigureMotions } from './arrival-motion'
 import type { FigureSlot, SceneGeometry } from './geometry'
 import type { Pose } from './sprites'
+import type { TagTops } from './tag-layout'
 import type { Fan, Side } from './types'
 
 import { memo } from 'react'
 
 import { NO_MOTIONS } from './arrival-motion'
 import { Figure } from './figure'
+import { baseTagTop } from './tag-layout'
 
 type CrewFiguresProps = {
   side: Side
@@ -16,6 +18,7 @@ type CrewFiguresProps = {
   geometry: SceneGeometry
   youLabel: string
   captainLabel: string
+  tagTops: TagTops
   entries: ReadonlyMap<string, FigureMotions>
   slides: boolean
 }
@@ -29,6 +32,7 @@ export const CrewFigures = memo(
     geometry,
     youLabel,
     captainLabel,
+    tagTops,
     entries,
     slides,
   }: CrewFiguresProps) => {
@@ -49,6 +53,8 @@ export const CrewFigures = memo(
             sceneWidth={geometry.width}
             youLabel={fan.me ? youLabel : null}
             captainLabel={fan.captain ? captainLabel : null}
+            youTop={tagTops.get(fan.address)?.you ?? baseTagTop(slot, geometry.tag)}
+            captainTop={tagTops.get(fan.address)?.captain ?? baseTagTop(slot, geometry.tag)}
             motions={entries.get(fan.address) ?? NO_MOTIONS}
             slides={slides}
           />

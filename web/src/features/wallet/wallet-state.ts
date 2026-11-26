@@ -72,27 +72,60 @@ export const classifySwitchError = (error: unknown): SwitchErrorKind => {
   return found ?? 'failed'
 }
 
+export type StepResult = { ok: true } | { ok: false; error: unknown }
+
+export type SwitchPlan = { next: 'switch' | 'add' } | { done: SwitchResult }
+
+const failureOf = (error: unknown): SwitchResult => {
+  const kind = classifySwitchError(error)
+  return { ok: false, reason: kind === 'unknownChain' ? 'failed' : kind }
+}
+
+export const planSwitch = (results: readonly StepResult[]): SwitchPlan => {
+  const [first, added, second] = results
+  if (first === undefined) {
+    return { next: 'switch' }
+  }
+  if (first.ok) {
+    return { done: { ok: true } }
+  }
+  if (classifySwitchError(first.error) !== 'unknownChain') {
+    return { done: failureOf(first.error) }
+  }
+  if (added === undefined) {
+    return { next: 'add' }
+  }
+  if (!added.ok) {
+    return { done: failureOf(added.error) }
+  }
+  if (second === undefined) {
+    return { next: 'switch' }
+  }
+  return second.ok ? { done: { ok: true } } : { done: failureOf(second.error) }
+}
+
 type SwitchSteps = {
   switchChain: () => Promise<unknown>
   addChain: () => Promise<unknown>
 }
 
+const runStep = async (step: () => Promise<unknown>): Promise<StepResult> => {
+  try {
+    await step()
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error }
+  }
+}
+
 export const switchWithFallback = async (steps: SwitchSteps): Promise<SwitchResult> => {
-  try {
-    await steps.switchChain()
-    return { ok: true }
-  } catch (error) {
-    const kind = classifySwitchError(error)
-    if (kind !== 'unknownChain') {
-      return { ok: false, reason: kind }
+  const advance = async (results: readonly StepResult[]): Promise<SwitchResult> => {
+    const plan = planSwitch(results)
+    if ('done' in plan) {
+      return plan.done
     }
+    const result = await runStep(plan.next === 'add' ? steps.addChain : steps.switchChain)
+    return advance([...results, result])
   }
-  try {
-    await steps.addChain()
-    await steps.switchChain()
-    return { ok: true }
-  } catch (error) {
-    const kind = classifySwitchError(error)
-    return { ok: false, reason: kind === 'unknownChain' ? 'failed' : kind }
-  }
+  return advance([])
 }

@@ -1,6 +1,6 @@
 import type { BnbWei, Bps, PullWei, TokenWei } from './units'
 
-import { bnbWei } from './units'
+import { bnbWei, tokenWei } from './units'
 
 const BNB_DECIMALS = 18
 const ONE_BNB = 10n ** 18n
@@ -81,6 +81,9 @@ export const formatCoins = (amount: TokenWei, decimals: number): string =>
 export const formatCount = (count: number): string =>
   String(Number.isSafeInteger(count) && count > 0 ? count : 0).replace(THOUSANDS, ',')
 
+export const formatBigCount = (count: bigint): string =>
+  (count > 0n ? count : 0n).toString().replace(THOUSANDS, ',')
+
 export const formatClock = (seconds: number): string => {
   const total = wholeSeconds(seconds)
   const secs = pad2(total % MINUTE)
@@ -154,3 +157,32 @@ export const formatDateTime = (seconds: number, timeZone?: string): string =>
     hourCycle: 'h23',
     ...(timeZone === undefined ? {} : { timeZone }),
   }).format(new Date(wholeSeconds(seconds) * 1000))
+
+const COIN_INPUT = /^(?:\d{1,3}(?:,\d{3})+|\d+)?(?:\.\d*)?$/
+
+export const parseCoins = (text: string): TokenWei | null => {
+  const trimmed = text.trim()
+  if (trimmed === '' || trimmed === '.' || !COIN_INPUT.test(trimmed)) {
+    return null
+  }
+  const wei = parseBnb(trimmed.replaceAll(',', ''))
+  return wei === null ? null : tokenWei(wei)
+}
+
+export const formatCoinsExact = (amount: TokenWei): string =>
+  withDecimals(amount, BNB_DECIMALS).replace(/\.?0+$/, '')
+
+export const formatCoinsDraft = (amount: TokenWei): string =>
+  fixedDown(amount, 4).replace(/\.?0+$/, '')
+
+export const formatCoinsGrouped = (amount: TokenWei): string => {
+  const [whole = '0', fraction] = formatCoinsDraft(amount).split('.')
+  const grouped = whole.replace(THOUSANDS, ',')
+  return fraction === undefined ? grouped : `${grouped}.${fraction}`
+}
+
+export const formatCoinsFull = (amount: TokenWei): string => {
+  const [whole = '0', fraction] = formatCoinsExact(amount).split('.')
+  const grouped = whole.replace(THOUSANDS, ',')
+  return fraction === undefined ? grouped : `${grouped}.${fraction}`
+}

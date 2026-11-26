@@ -12,7 +12,7 @@ type GameAnnouncerProps = {
 type Said = { readonly message: string; readonly revision: number }
 
 const keyOf = (state: AnnounceState): string =>
-  `${state.lead}|${String(state.extensionsUsed)}|${String(state.ended)}`
+  `${state.lead}|${String(state.extensionsUsed)}|${String(state.ended)}|${state.captains}|${String(state.cancelled)}`
 
 export const GameAnnouncer = ({ state, extensionSeconds }: GameAnnouncerProps) => {
   const [seen, setSeen] = useState<AnnounceState | null>(state)

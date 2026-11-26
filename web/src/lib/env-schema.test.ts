@@ -8,13 +8,7 @@ import { formatEnvIssues, readEnv } from './env-schema'
 
 const EXAMPLE_PATH = fileURLToPath(new URL('../../.env.example', import.meta.url))
 
-const REQUIRED_NAMES = [
-  'VITE_CHAIN_ID',
-  'VITE_RPC_URLS',
-  'VITE_TUG_FACTORY',
-  'VITE_WC_PROJECT_ID',
-  'VITE_FIXTURES',
-]
+const REQUIRED_NAMES = ['VITE_CHAIN_ID', 'VITE_RPC_URLS', 'VITE_TUG_FACTORY', 'VITE_WC_PROJECT_ID']
 
 const readExample = (): Record<string, string> => {
   const entries = readFileSync(EXAMPLE_PATH, 'utf8')
@@ -56,6 +50,64 @@ describe('readEnv', () => {
     expect(issueNames({ ...readExample(), VITE_TUG_FACTORY: '0x123' })).toEqual([
       'VITE_TUG_FACTORY',
     ])
+  })
+})
+
+const tradeUrl = (value: string | undefined) => {
+  const result = readEnv({ ...readExample(), VITE_TRADE_URL: value })
+  return result.ok ? result.env.VITE_TRADE_URL : result.issues.map((issue) => issue.name)
+}
+
+describe('VITE_TRADE_URL', () => {
+  it('is optional and empty means no link', () => {
+    expect(tradeUrl(undefined)).toBeNull()
+    expect(tradeUrl('')).toBeNull()
+    expect(tradeUrl('  ')).toBeNull()
+  })
+
+  it('keeps a template with the token placeholder', () => {
+    expect(tradeUrl('https://example.test/coin/{token}')).toBe('https://example.test/coin/{token}')
+  })
+
+  it('rejects a template without the token placeholder', () => {
+    expect(tradeUrl('https://example.test/coin/')).toEqual(['VITE_TRADE_URL'])
+  })
+})
+
+const autoLaunch = (value: string | undefined) => {
+  const result = readEnv({ ...readExample(), VITE_AUTO_LAUNCH: value })
+  return result.ok ? result.env.VITE_AUTO_LAUNCH : result.issues.map((issue) => issue.name)
+}
+
+describe('VITE_AUTO_LAUNCH', () => {
+  it('is off unless set to 1', () => {
+    expect(autoLaunch(undefined)).toBe(false)
+    expect(autoLaunch('')).toBe(false)
+    expect(autoLaunch('0')).toBe(false)
+    expect(autoLaunch('yes')).toBe(false)
+    expect(autoLaunch('1')).toBe(true)
+  })
+})
+
+const fixtures = (value: string | undefined) => {
+  const result = readEnv({ ...readExample(), VITE_FIXTURES: value })
+  return result.ok ? result.env.VITE_FIXTURES : result.issues.map((issue) => issue.name)
+}
+
+describe('VITE_FIXTURES', () => {
+  it('is optional and off when absent, empty or 0', () => {
+    expect(fixtures(undefined)).toBe(false)
+    expect(fixtures('')).toBe(false)
+    expect(fixtures('0')).toBe(false)
+  })
+
+  it('is on when set to 1', () => {
+    expect(fixtures('1')).toBe(true)
+  })
+
+  it('rejects any other value', () => {
+    expect(fixtures('yes')).toEqual(['VITE_FIXTURES'])
+    expect(fixtures('2')).toEqual(['VITE_FIXTURES'])
   })
 })
 

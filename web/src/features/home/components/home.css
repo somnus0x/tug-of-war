@@ -1,0 +1,216 @@
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1200px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.home-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 0 4px;
+}
+
+.home-title__text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.home-title h1 {
+  margin: 0;
+  color: var(--lime);
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.home-title p,
+.home-note {
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--text-small);
+  line-height: 1.35;
+}
+
+.home-title a {
+  text-decoration: none;
+}
+
+.home-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-row {
+  min-width: 0;
+  min-height: 64px;
+  background: var(--ink-0);
+}
+
+.home-row--empty {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.home-row__status {
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.home-row__link {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) 150px minmax(0, 1.6fr) 120px 130px 70px;
+  grid-template-areas: 'title phase captains rope raised clock';
+  align-items: center;
+  gap: 6px 14px;
+  min-height: 64px;
+  padding: 8px 12px;
+  color: var(--cream);
+  text-decoration: none;
+}
+
+.home-row__link:hover {
+  background: var(--ink-1);
+}
+
+.home-row__link:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
+}
+
+.home-row__title {
+  grid-area: title;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-row__name {
+  overflow: hidden;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-row__symbol {
+  overflow: hidden;
+  color: var(--mute);
+  font-size: var(--text-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-row__phase {
+  grid-area: phase;
+  justify-self: start;
+  padding: 2px 6px;
+  background: var(--ink-2);
+  font-size: var(--text-small);
+  white-space: nowrap;
+}
+
+.home-row__phase--live {
+  background: var(--lime);
+  color: var(--ink-0);
+}
+
+.home-row__phase--ended {
+  background: var(--gold);
+  color: var(--ink-0);
+}
+
+.home-row__captains {
+  grid-area: captains;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  min-width: 0;
+  font-size: var(--text-small);
+}
+
+.home-row__rope {
+  position: relative;
+  grid-area: rope;
+  min-width: 0;
+}
+
+.home-rope {
+  display: block;
+  width: 100%;
+  height: 12px;
+}
+
+.home-rope__blue {
+  fill: var(--blue);
+}
+
+.home-rope__red {
+  fill: var(--red);
+}
+
+.home-rope__centre {
+  fill: var(--ink-2);
+}
+
+.home-rope__marker {
+  fill: var(--gold);
+}
+
+.home-row__raised {
+  grid-area: raised;
+  font-family: var(--font-digits);
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.home-row__clock {
+  grid-area: clock;
+  min-height: 1em;
+  font-family: var(--font-digits);
+  font-size: 18px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+@media (max-width: 759px) {
+  .home-row__link {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title phase'
+      'captains captains'
+      'rope rope'
+      'raised clock';
+  }
+
+  .home-row,
+  .home-row__link {
+    min-height: 132px;
+  }
+}
+
+.home-row__captains .team-mark__word {
+  text-transform: none;
+}
+
+.home-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

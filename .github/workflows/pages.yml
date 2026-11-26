@@ -48,9 +48,9 @@ jobs:
           VITE_BASE: ${{ vars.VITE_BASE || '/tug-of-war/' }}
           VITE_CHAIN_ID: ${{ vars.VITE_CHAIN_ID || '97' }}
           VITE_RPC_URLS: ${{ vars.VITE_RPC_URLS || 'https://bsc-testnet-rpc.publicnode.com,https://bsc-testnet.drpc.org,https://data-seed-prebsc-1-s1.bnbchain.org:8545,https://data-seed-prebsc-2-s1.bnbchain.org:8545' }}
-          VITE_TUG_FACTORY: ${{ vars.VITE_TUG_FACTORY || '0x0000000000000000000000000000000000000000' }}
+          VITE_TUG_FACTORY: ${{ vars.VITE_TUG_FACTORY || '0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431' }}
           VITE_WC_PROJECT_ID: ${{ vars.VITE_WC_PROJECT_ID || 'replace-with-reown-project-id' }}
-          VITE_FIXTURES: ${{ vars.VITE_FIXTURES || '1' }}
+          VITE_FIXTURES: ${{ vars.VITE_FIXTURES || '0' }}
 
       - if: github.ref == 'refs/heads/main'
         uses: actions/configure-pages@v6

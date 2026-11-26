@@ -1,9 +1,9 @@
 .shell-header {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
+  grid-template-areas: 'brand network wallet';
   align-items: center;
-  justify-content: space-between;
-  gap: 12px 16px;
+  gap: 12px 14px;
   padding: 12px 16px;
   padding-top: max(12px, env(safe-area-inset-top));
   background: var(--ink-1);
@@ -12,7 +12,9 @@
 
 .shell-brand {
   display: flex;
+  grid-area: brand;
   flex-direction: column;
+  justify-self: start;
   min-width: 0;
   color: var(--cream);
   text-decoration: none;
@@ -24,6 +26,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .shell-brand__tagline {
@@ -31,15 +34,76 @@
   font-size: var(--text-small);
 }
 
+.shell-network {
+  display: flex;
+  grid-area: network;
+  justify-self: end;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .shell-wallet {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  grid-area: wallet;
   justify-content: flex-end;
-  gap: 8px 14px;
   min-width: 0;
+}
+
+.shell-wallet .tile-button {
+  max-width: calc(100% - 2 * var(--outline));
+  white-space: nowrap;
 }
 
 .shell-main {
   padding: 16px;
+}
+
+@media (max-width: 759px) {
+  .shell-header {
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-areas:
+      'brand wallet'
+      'network network';
+    gap: 4px 12px;
+    padding: 8px 12px;
+    padding-top: max(8px, env(safe-area-inset-top));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+
+  .shell-brand__name {
+    font-size: 18px;
+  }
+
+  .shell-network {
+    justify-self: start;
+    font-size: var(--text-small);
+  }
+
+  .shell-wallet .tile-button {
+    min-height: var(--touch-target);
+    padding: 6px 10px;
+  }
+
+  .shell-wallet .tile-button--primary {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 359px) {
+  .shell-header {
+    column-gap: 8px;
+  }
+
+  .shell-brand__tagline {
+    font-size: 11px;
+  }
+
+  .shell-wallet .tile-button {
+    padding: 6px 8px;
+  }
+
+  .shell-wallet .tile-button--primary {
+    font-size: 20px;
+  }
 }

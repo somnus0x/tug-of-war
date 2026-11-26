@@ -10,7 +10,6 @@ import { FigureTag } from './figure-tag'
 import { createPainter, paintSprite } from './paint'
 import { PaintedPaths } from './painted-paths'
 import { FIGURE_WIDTH, TAG_WHITE, TEAM_PALETTES, figureRows } from './sprites'
-import { tagHeight } from './tag-size'
 import { TimelineGroup } from './timeline-group'
 import { useSlide } from './use-slide'
 
@@ -23,6 +22,8 @@ type FigureProps = {
   sceneWidth: number
   youLabel: string | null
   captainLabel: string | null
+  youTop: number
+  captainTop: number
   motions: FigureMotions
   slides: boolean
 }
@@ -70,6 +71,8 @@ export const Figure = memo(
     sceneWidth,
     youLabel,
     captainLabel,
+    youTop,
+    captainTop,
     motions,
     slides,
   }: FigureProps) => {
@@ -92,8 +95,6 @@ export const Figure = memo(
     const bracket = youLabel === null ? null : ground + 2
     const paths = useMemo(() => paintBody(side, pose, slot, bracket), [side, pose, slot, bracket])
     const centre = slot.x + (FIGURE_WIDTH * slot.scale) / 2
-    const youTop = slot.y - 4 - tagSize - 8
-    const captainTop = youLabel === null ? youTop : youTop - tagHeight(tagSize) - 5
     return (
       <g ref={slideRef} className={`scene__figure scene__figure--${side}`}>
         <TimelineGroup
@@ -129,7 +130,7 @@ export const Figure = memo(
                 size={tagSize}
                 text={captainLabel}
                 tone="captain"
-                reach={side === 'blue' ? 'left' : 'right'}
+                reach="centre"
                 sceneWidth={sceneWidth}
               />
             )}

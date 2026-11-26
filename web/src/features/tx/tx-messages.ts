@@ -2,7 +2,7 @@ import type { ActionOutcomes } from '@/contracts/tx/outcome'
 import type { Game, Player, Rules } from '@/contracts/types'
 import type { ErrorValues } from '@/copy/errors'
 import type { TxMessage } from '@/copy/tx'
-import type { LauncherActionName } from '@/lib/actions'
+import type { TxActionName } from '@/lib/actions'
 
 import { GAME_COPY } from '@/copy/game'
 import { TX_COPY } from '@/copy/tx'
@@ -18,7 +18,7 @@ export type MessageContext = {
 }
 
 type Builders = {
-  readonly [Name in LauncherActionName]: (
+  readonly [Name in TxActionName]: (
     outcome: ActionOutcomes[Name],
     context: MessageContext,
   ) => TxMessage
@@ -63,9 +63,26 @@ const BUILDERS: Builders = {
     }),
   withdrawTriggerBudget: (outcome) =>
     TX_COPY.success.budgetWithdrawn({ amount: formatBnb(outcome.amount) }),
+  stake: (outcome, context) =>
+    TX_COPY.success.staked({
+      amount: formatCoins(outcome.amount, COIN_DECIMALS),
+      symbol: symbolOf(context),
+      team: GAME_COPY.team[outcome.team],
+    }),
+  unstake: (outcome, context) =>
+    TX_COPY.success.unstaked({
+      amount: formatCoins(outcome.amount, COIN_DECIMALS),
+      symbol: symbolOf(context),
+    }),
+  claimRewards: (outcome) =>
+    TX_COPY.success.rewardsClaimed({ amount: formatBnb(outcome.amount, { precise: true }) }),
+  claimVaultCaptain: (outcome) =>
+    TX_COPY.success.captainShareClaimed({ amount: formatBnb(outcome.amount, { precise: true }) }),
+  approve: () => TX_COPY.success.approved,
+  createGame: () => TX_COPY.success.done('createGame'),
 }
 
-export const successMessage = <Name extends LauncherActionName>(
+export const successMessage = <Name extends TxActionName>(
   action: Name,
   outcome: ActionOutcomes[Name] | null,
   context: MessageContext,

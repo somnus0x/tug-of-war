@@ -29,6 +29,11 @@ export type OverlayPull = {
   readonly extensionsUsed: number | null
 }
 
+export type OverlayRefund = {
+  readonly account: Address
+  readonly amount: bigint
+}
+
 export type GameOverlay = {
   readonly raisedByTeam: TeamPair<bigint>
   readonly pullByTeam: TeamPair<bigint>
@@ -42,6 +47,7 @@ export type GameOverlay = {
   readonly budgetWithdrawn: boolean
   readonly players: Readonly<Record<string, PlayerOverlay>>
   readonly pulls: readonly OverlayPull[]
+  readonly refunds?: readonly OverlayRefund[]
 }
 
 export const EMPTY_PLAYER_OVERLAY: PlayerOverlay = {
@@ -166,7 +172,9 @@ export const overlayPlayer = (
     return base
   }
   const team = base.player.team === 'none' ? overlay.team : base.player.team
-  const contribution = bnbWei(base.player.contribution + overlay.contribution)
+  const contribution = bnbWei(
+    overlay.refunded ? 0n : base.player.contribution + overlay.contribution,
+  )
   const pull = pullWei(base.player.pull + overlay.pull)
   const cap = game.config.walletCap
   const shares =

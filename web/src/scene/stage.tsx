@@ -1,4 +1,5 @@
 import type { SceneProps, SceneText } from './types'
+import type { VacantSides } from './vacant-sides'
 
 import { memo, useMemo } from 'react'
 
@@ -20,7 +21,10 @@ import { SceneSky } from './scene-sky'
 import { sceneVars } from './scene-vars'
 import { Stand } from './stand'
 import { StandLabels } from './stand-labels'
+import { layoutTags, tagRequestsOf } from './tag-layout'
 import { useArrivalPlays } from './use-arrival-plays'
+import { VacantCaptain } from './vacant-captain'
+import { isVacant } from './vacant-sides'
 
 import './scene.css'
 import './scene-motion.css'
@@ -28,6 +32,8 @@ import './scene-motion.css'
 export type StageProps = SceneProps & {
   text: SceneText
   label: string
+  vacant?: VacantSides
+  vacantLabel?: string
 }
 
 export const Stage = memo(
@@ -44,6 +50,8 @@ export const Stage = memo(
     reducedMotion,
     text,
     label,
+    vacant = 'none',
+    vacantLabel = '',
   }: StageProps) => {
     const geometry = GEOMETRY[mode]
     const marker = markerX(ropeBps, geometry)
@@ -64,6 +72,10 @@ export const Stage = memo(
     const labels = useMemo(
       () => sceneLabels(crowd, walletCap, maxBonusShareBps, mode, text),
       [crowd, walletCap, maxBonusShareBps, mode, text],
+    )
+    const tagTops = useMemo(
+      () => layoutTags(tagRequestsOf(crowd, placement, text), geometry.tag, geometry.width),
+      [crowd, placement, text, geometry],
     )
     const pose = pulling ? 'pull' : 'idle'
     const plays = useArrivalPlays(crew, pulling || stage === 'waiting', playLength(reducedMotion))
@@ -99,6 +111,7 @@ export const Stage = memo(
               geometry={geometry}
               tailX={railTail('red', placement.red, marker, stage)}
             />
+            <CapPosts geometry={geometry} posts={posts} />
             <Rope geometry={geometry} line={line} marker={marker} slides={slides} />
             <CrewFigures
               side="blue"
@@ -108,6 +121,7 @@ export const Stage = memo(
               geometry={geometry}
               youLabel={text.you}
               captainLabel={text.captain}
+              tagTops={tagTops}
               entries={acts.figures.blue}
               slides={slides}
             />
@@ -119,10 +133,21 @@ export const Stage = memo(
               geometry={geometry}
               youLabel={text.you}
               captainLabel={text.captain}
+              tagTops={tagTops}
               entries={acts.figures.red}
               slides={slides}
             />
-            <CapPosts geometry={geometry} posts={posts} />
+            {(['blue', 'red'] as const).map((side) =>
+              isVacant(vacant, side) ? (
+                <VacantCaptain
+                  key={side}
+                  side={side}
+                  marker={marker}
+                  geometry={geometry}
+                  label={vacantLabel}
+                />
+              ) : null,
+            )}
             <ArrivalChips
               chips={acts.chips}
               geometry={geometry}
