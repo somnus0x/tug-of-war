@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest'
 import { buildGame } from '@/contracts/fixtures/builder'
 import { fixtureInput } from '@/contracts/fixtures/catalog'
 import { HOME_COPY } from '@/copy/home'
+import { bps, pullWei } from '@/lib/units'
 
-import { homeLinkOf, homeRowOf, phaseKindOf, ropeMarkerPercent } from './home-row'
+import { homeLinkOf, homeRowOf, phaseKindOf, ropeLabelOf, ropeMarkerPercent } from './home-row'
 
 const LOAD = 1_800_000_000
 const LAUNCHER = '0x0000000000000000000000000000000000000001'
@@ -49,7 +50,7 @@ describe('homeRowOf', () => {
       `${game.config.captainBlue.slice(0, 6)}…${game.config.captainBlue.slice(-4)}`,
     )
     expect(homeRowOf(game, LOAD, game.config.captainRed).captainRed).toBe('You')
-    expect(row.ropeLabel).toMatch(/^Blue holds \d+\.\d% of the pull$/)
+    expect(row.ropeLabel).toMatch(/^(Blue|Red) holds \d+\.\d% of the pull$/)
   })
 })
 
@@ -67,6 +68,28 @@ describe('idle rope', () => {
   it('describes the pull once the game is live', () => {
     const game = gameOf('live-mid')
     expect(homeRowOf(game, LOAD).ropeBps).toBe(game.ropeBps)
+  })
+})
+
+const withPull = (blue: bigint, red: bigint, ropeBps: number) => ({
+  ...gameOf('live-mid'),
+  pullByTeam: { blue: pullWei(blue), red: pullWei(red) },
+  ropeBps: bps(ropeBps),
+})
+
+describe('ropeLabelOf', () => {
+  it('calls equal pull level, as the game page does', () => {
+    expect(ropeLabelOf(withPull(10n ** 18n, 10n ** 18n, 5000))).toBe('Level at 50.0%')
+  })
+
+  it('names the leader on a one-wei lead even when the rope rounds to the middle', () => {
+    expect(ropeLabelOf(withPull(10n ** 18n + 1n, 10n ** 18n, 5000))).toBe(
+      'Blue holds 50.0% of the pull',
+    )
+    expect(ropeLabelOf(withPull(10n ** 18n, 10n ** 18n + 1n, 5000))).toBe(
+      'Red holds 50.0% of the pull',
+    )
+    expect(ropeLabelOf(withPull(1n, 3n, 2500))).toBe('Red holds 75.0% of the pull')
   })
 })
 

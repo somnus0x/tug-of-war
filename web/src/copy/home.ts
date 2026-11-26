@@ -24,7 +24,6 @@ export const HOME_COPY = {
   },
   raised: (amount: string) => `${amount} BNB raised`,
   timeLeft: (clock: string) => `${clock} left`,
-  ropeLabel: (blueShare: string) => `Blue holds ${blueShare} of the pull`,
   ropeIdle: 'The rope has not moved.',
   openGame: (name: string, symbol: string, phase: string) =>
     `${name} (${symbol}), ${phase}. Open the game.`,

@@ -3,10 +3,11 @@ import type { Game } from '@/contracts/types'
 import type { Bps } from '@/lib/units'
 import type { Address } from 'viem'
 
+import { GAME_COPY } from '@/copy/game'
 import { HOME_COPY } from '@/copy/home'
 import { secondsLeft } from '@/lib/clock'
 import { formatBnb, formatClock, formatShare, shortAddress } from '@/lib/format'
-import { HALF_BPS } from '@/lib/units'
+import { BPS_DENOMINATOR, HALF_BPS, bps } from '@/lib/units'
 
 export type PhaseKind = 'waiting' | 'live' | 'ended' | 'refunding' | 'launched' | 'cancelled'
 
@@ -43,6 +44,16 @@ const countdownOf = (game: Game, phase: PhaseKind, chainNow: number | null): str
   return HOME_COPY.timeLeft(formatClock(secondsLeft(game.deadline, chainNow)))
 }
 
+export const ropeLabelOf = (game: Game): string => {
+  const { blue, red } = game.pullByTeam
+  if (blue === red) {
+    return GAME_COPY.level(formatShare(bps(BPS_DENOMINATOR / 2)))
+  }
+  const leader = blue > red ? 'blue' : 'red'
+  const share = leader === 'blue' ? game.ropeBps : bps(BPS_DENOMINATOR - game.ropeBps)
+  return GAME_COPY.holds(GAME_COPY.team[leader], formatShare(share))
+}
+
 const ropeIsIdle = (phase: PhaseKind): boolean => phase === 'waiting' || phase === 'cancelled'
 
 export const homeRowOf = (game: Game, chainNow: number | null, me?: Address): HomeRow => {
@@ -56,7 +67,7 @@ export const homeRowOf = (game: Game, chainNow: number | null, me?: Address): Ho
     captainBlue: shortAddress(game.config.captainBlue, me),
     captainRed: shortAddress(game.config.captainRed, me),
     ropeBps: idle ? HALF_BPS : game.ropeBps,
-    ropeLabel: idle ? HOME_COPY.ropeIdle : HOME_COPY.ropeLabel(formatShare(game.ropeBps)),
+    ropeLabel: idle ? HOME_COPY.ropeIdle : ropeLabelOf(game),
     raised: HOME_COPY.raised(formatBnb(game.raised)),
     countdown: countdownOf(game, phase, chainNow),
   }
