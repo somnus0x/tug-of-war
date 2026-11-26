@@ -3,6 +3,18 @@
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+  margin: 9px;
+  padding: 12px 14px;
+  background: var(--ink-0);
+  box-shadow:
+    0 0 0 var(--outline) var(--cream),
+    0 0 0 calc(2 * var(--outline)) var(--ink-0),
+    0 0 0 calc(3 * var(--outline)) var(--ink-2);
+}
+
+.game__bar .ended {
+  margin: 6px;
+  padding: 8px 10px;
 }
 
 .ended__text {
@@ -12,14 +24,33 @@
 }
 
 .ended__title {
-  color: var(--cream);
+  color: var(--lime);
   font-family: var(--font-heading);
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.05;
+}
+
+.ended--refund .ended__title,
+.ended--hold .ended__title {
+  color: var(--gold);
+}
+
+.game__bar .ended__title {
+  font-size: 22px;
+}
+
+.ended__coin {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--text-small);
 }
 
 .ended__body {
-  color: var(--mute);
+  color: var(--cream);
   font-size: var(--text-body);
   line-height: 1.4;
 }

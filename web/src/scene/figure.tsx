@@ -10,7 +10,7 @@ import { FigureTag } from './figure-tag'
 import { createPainter, paintSprite } from './paint'
 import { PaintedPaths } from './painted-paths'
 import { FIGURE_WIDTH, TAG_WHITE, TEAM_PALETTES, figureRows } from './sprites'
-import { tagHeight } from './tag-size'
+import { captainReachOf, tagHeight } from './tag-size'
 import { TimelineGroup } from './timeline-group'
 import { useSlide } from './use-slide'
 
@@ -129,7 +129,7 @@ export const Figure = memo(
                 size={tagSize}
                 text={captainLabel}
                 tone="captain"
-                reach={side === 'blue' ? 'left' : 'right'}
+                reach={captainReachOf(side, youLabel !== null)}
                 sceneWidth={sceneWidth}
               />
             )}

@@ -54,16 +54,32 @@
   grid-template-areas:
     'start clock'
     'end end';
-  gap: 8px 12px;
+  gap: 4px 10px;
   min-height: 0;
-  padding: 10px 12px 8px;
+  padding: 6px 10px;
 }
 
 .game-hud--phone .game-hud__start {
   flex-direction: column;
   grid-area: start;
-  gap: 6px;
+  gap: 4px;
   align-items: stretch;
+}
+
+.game-hud--phone .raise-meter {
+  gap: 3px;
+}
+
+.game-hud--phone .raise-meter__bar {
+  height: 10px;
+}
+
+.game-hud--phone .raise-meter__top b {
+  font-size: var(--text-small);
+}
+
+.game-hud--phone .game-clock {
+  gap: 2px;
 }
 
 .game-hud--phone .game-clock {
@@ -81,7 +97,7 @@
 
 .game-hud--phone .game-hud__coin {
   max-width: none;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .game-clock {
@@ -118,7 +134,7 @@
 }
 
 .game-hud--phone .game-clock__digits {
-  font-size: 44px;
+  font-size: 36px;
 }
 
 .game-clock--urgent .game-clock__label {
@@ -226,6 +242,16 @@
 
 .raise-meter--short .raise-meter__segment--on {
   background: var(--gold);
+}
+
+.raise-meter--missed .raise-meter__top b,
+.raise-meter__note {
+  color: var(--gold);
+}
+
+.raise-meter__note {
+  font-size: var(--text-small);
+  line-height: 1.25;
 }
 
 .game-hud--phone .raise-meter {

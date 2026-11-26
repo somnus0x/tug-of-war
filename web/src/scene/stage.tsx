@@ -106,6 +106,7 @@ export const Stage = memo(
               geometry={geometry}
               tailX={railTail('red', placement.red, marker, stage)}
             />
+            <CapPosts geometry={geometry} posts={posts} />
             <Rope geometry={geometry} line={line} marker={marker} slides={slides} />
             <CrewFigures
               side="blue"
@@ -140,7 +141,6 @@ export const Stage = memo(
                 />
               ) : null,
             )}
-            <CapPosts geometry={geometry} posts={posts} />
             <ArrivalChips
               chips={acts.chips}
               geometry={geometry}

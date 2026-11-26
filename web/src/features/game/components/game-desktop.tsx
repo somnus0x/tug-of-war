@@ -7,6 +7,7 @@ type GameDesktopProps = {
 export const GameDesktop = ({ slots }: GameDesktopProps) => (
   <div className="game game--desktop">
     {slots.hud}
+    {slots.banner}
     <div className="game__stage">
       {slots.scene}
       {slots.capNote}

@@ -106,3 +106,7 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.game-banner .banner {
+  margin: var(--outline);
+}

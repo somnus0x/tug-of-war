@@ -21,6 +21,7 @@ import { AutoLaunchCard } from './auto-launch-card'
 import { CapNote } from './cap-note'
 import { EndedSlot } from './ended-slot'
 import { GameAnnouncer } from './game-announcer'
+import { GameBanner } from './game-banner'
 import { GameDesktop } from './game-desktop'
 import { GameFeed } from './game-feed'
 import { GameHeadline } from './game-headline'
@@ -80,6 +81,16 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
   const isEnded = ENDED_PHASES.has(game.phase)
   const hasBar = mode === 'phone' && (game.phase === 'buyIn' || isEnded)
   const slots = {
+    banner: (
+      <GameBanner
+        launcher={launcher}
+        game={game}
+        rules={rules}
+        account={account}
+        player={player}
+        isClosing={face === 'closing' || face === 'ended'}
+      />
+    ),
     hud: <GameHud game={game} rules={rules} face={face} mode={mode} />,
     scene: (
       <GameScene
@@ -142,7 +153,7 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
       hasBar && pullState === 'open' ? (
         <PullPicker game={game} account={account} draft={draft} isBusy={pullTx.state !== 'idle'} />
       ) : null,
-    you: <ViewerReadout launcher={launcher} account={account} />,
+    you: <ViewerReadout launcher={launcher} account={account} phase={game.phase} />,
     feed: (
       <GameFeed
         launcher={launcher}

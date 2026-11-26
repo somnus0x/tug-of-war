@@ -7,6 +7,7 @@ import { keccak256, toHex } from 'viem'
 import { BPS_DENOMINATOR, bnbWei, bps, mulBps, pullWei } from '@/lib/units'
 
 import { blockKey, logId } from '../logs'
+import { overtimeMarks, overtimeTimes } from './overtime-marks'
 
 export type HistoryStake = {
   readonly address: Address
@@ -216,12 +217,18 @@ const ordered = (input: HistoryInput, viewer: HistoryStake | null): Entry[] | nu
 }
 
 const toLogs = (input: HistoryInput, entries: readonly Entry[]): FixtureHistory => {
-  const times = schedule(input, entries)
+  const marks = overtimeMarks(entries, input.game.extensionsUsed)
+  const { game, rules, loadTime } = input
+  const times = overtimeTimes(schedule(input, entries), marks, {
+    originalDeadline: game.originalDeadline,
+    extension: rules.overtimeExtension,
+    window: rules.overtimeWindow,
+    end: Math.min(game.deadline, loadTime) - 1,
+  })
   const logs: GameLog[] = []
   const blockTimes: Record<string, number> = {}
   let lastBlock = 0n
   let indexInBlock = 0
-  const overtimes = input.game.extensionsUsed
   entries.forEach((entry, index) => {
     const blockNumber = BigInt(times[index] ?? 0)
     indexInBlock = blockNumber === lastBlock ? indexInBlock + 1 : 0
@@ -250,15 +257,15 @@ const toLogs = (input: HistoryInput, entries: readonly Entry[]): FixtureHistory 
             weightBps: bps(weightOf(entry)),
           },
     )
-    const fromEnd = entries.length - index
-    if (!entry.captain && fromEnd <= overtimes) {
+    const extensionsUsed = marks.get(index)
+    if (extensionsUsed !== undefined) {
       logs.push({
         id: logId(txHash, logIndex + 1),
         txHash,
         blockNumber,
         logIndex: logIndex + 1,
         kind: 'overtime',
-        extensionsUsed: overtimes - fromEnd + 1,
+        extensionsUsed,
       })
     }
   })

@@ -6,6 +6,13 @@ const POINTER_INSET = 8
 
 const EDGE_PAD = 2
 
+export const captainReachOf = (side: 'blue' | 'red', sharesFigureWithYou: boolean): TagReach => {
+  if (sharesFigureWithYou) {
+    return 'centre'
+  }
+  return side === 'blue' ? 'left' : 'right'
+}
+
 export const tagHeight = (size: number): number => size + 4
 
 const tagWidth = (text: string, size: number): number =>

@@ -6,12 +6,13 @@ import { EMPTY_GATES } from '@/contracts/gate-plan'
 import { useGameLogs } from '@/contracts/queries/use-game-logs'
 import { useGates } from '@/contracts/queries/use-game-queries'
 import { ENDED_COPY } from '@/copy/ended'
+import { Coin } from '@/scene/coin'
 import { PixelBox } from '@/ui/pixel-box'
 
 import { useChainNow } from '../hooks/use-chain-now'
 import { isZeroAddress } from '../model/derive-live'
 import { deriveEndedPanel } from '../model/ended-panel'
-import { endedViewOf } from '../model/ended-view'
+import { endedToneOf, endedViewOf } from '../model/ended-view'
 import { autoLaunchStatusOf, refundedAmountOf } from '../model/game-events'
 import { deriveRoles } from '../model/roles'
 import { EndedAction } from './ended-action'
@@ -61,12 +62,19 @@ export const EndedSlot = ({
   if (view === null) {
     return null
   }
+  const tone = endedToneOf(state.panel)
   const body = (
-    <div className="ended">
+    <div className={`ended ended--${tone}`}>
       <div className="ended__text" aria-live="polite" aria-atomic="true">
         <b className="ended__title">{view.title}</b>
         <span className="ended__body">{view.body}</span>
       </div>
+      {view.action?.kind === 'launch' ? (
+        <p className="ended__coin">
+          <Coin scale={2} />
+          <span>{ENDED_COPY.oneCoin(game.config.name, game.config.symbol)}</span>
+        </p>
+      ) : null}
       {view.action === null ? null : (
         <EndedAction
           action={view.action}
@@ -83,5 +91,5 @@ export const EndedSlot = ({
       )}
     </div>
   )
-  return isCompact ? body : <PixelBox heading={ENDED_COPY.heading}>{body}</PixelBox>
+  return isCompact ? body : <PixelBox>{body}</PixelBox>
 }

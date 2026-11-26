@@ -37,11 +37,12 @@
 }
 
 .feed-row__who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  align-items: center;
   min-width: 0;
-  overflow: hidden;
   color: var(--mute);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .feed-row__who b {
@@ -59,7 +60,8 @@
 
 .feed-row__flag {
   display: inline-block;
-  margin-left: 6px;
+  margin-left: 2px;
+  white-space: nowrap;
   padding: 0 5px;
   background: var(--gold);
   color: var(--ink-0);

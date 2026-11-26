@@ -29,6 +29,21 @@ export const poolCoinsOf = (rules: Rules): string =>
 const refundTitle = (reason: 'minMissed' | 'graceExpired'): string =>
   reason === 'minMissed' ? ENDED_COPY.minMissed : ENDED_COPY.graceExpired
 
+export type EndedTone = 'go' | 'refund' | 'hold'
+
+export const endedToneOf = (panel: EndedPanel): EndedTone => {
+  switch (panel.kind) {
+    case 'canLaunch':
+    case 'autoLaunchScheduled':
+    case 'launched':
+      return 'go'
+    case 'floorBlocked':
+      return 'hold'
+    default:
+      return 'refund'
+  }
+}
+
 export const endedViewOf = (
   panel: EndedPanel,
   game: Game,

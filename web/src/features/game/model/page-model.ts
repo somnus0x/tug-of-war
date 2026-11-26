@@ -1,7 +1,7 @@
 import type { Clock } from './derive-live'
 import type { Game, Rules } from '@/contracts/types'
 import type { Phase } from '@/lib/phase'
-import type { SceneStage } from '@/scene/types'
+import type { SceneMode, SceneStage } from '@/scene/types'
 
 import { deriveLive } from './derive-live'
 
@@ -39,6 +39,19 @@ export const clockTargetOf = (game: Game): number | null => {
   }
   return game.phase === 'buyIn' ? game.deadline : null
 }
+
+const LAMP_PHASES: ReadonlySet<Phase> = new Set([
+  'buyIn',
+  'awaitingLaunch',
+  'refunding',
+  'launched',
+])
+
+export const lampsShownOf = (phase: Phase, face: ClockFace, mode: SceneMode): boolean =>
+  LAMP_PHASES.has(phase) && (mode === 'desktop' || (phase === 'buyIn' && isUrgentFace(face)))
+
+export const isMinMissed = (game: Game): boolean =>
+  game.phase === 'refunding' && game.raised < game.config.minRaise
 
 export const isUrgentFace = (face: ClockFace): boolean =>
   face === 'final' || face === 'overtime' || face === 'lastOvertime' || face === 'closing'

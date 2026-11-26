@@ -4,6 +4,7 @@ export const ENDED_COPY = {
   leaderCanLaunch: (leader: string) => `${leader}. Anyone can launch the coin now.`,
   autoLaunchOnWay: 'Auto-launch is scheduled. Anyone can also launch now.',
   launchCoin: 'Launch the coin',
+  oneCoin: (name: string, symbol: string) => `One coin for both crews: ${name} (${symbol})`,
   onHold: 'Launch is on hold',
   belowFloor: (graceEnd: string) =>
     `The raise is below Flap’s liquidity floor right now. If that does not change by ${graceEnd}, everyone can take back the BNB they put in.`,

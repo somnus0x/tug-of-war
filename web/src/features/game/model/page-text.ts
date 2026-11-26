@@ -46,6 +46,24 @@ const pullHeadline = (game: Game): string => {
   return lead === 'tie' ? GAME_COPY.level(share) : GAME_COPY.holds(GAME_COPY.team[lead], share)
 }
 
+const ENDED_PHASES: ReadonlySet<Game['phase']> = new Set([
+  'awaitingLaunch',
+  'refunding',
+  'launched',
+])
+
+const finalHeadline = (game: Game): PageHeadline => {
+  const { lead, shareBps } = headlineOf(game.pullByTeam, game.ropeBps)
+  const share = formatShare(shareBps)
+  return {
+    title:
+      lead === 'tie'
+        ? GAME_COPY.finalLevel(share)
+        : GAME_COPY.finalHolds(GAME_COPY.team[lead], share),
+    detail: GAME_COPY.finalSplit(formatPull(game.pullByTeam.blue), formatPull(game.pullByTeam.red)),
+  }
+}
+
 const waitingTitle = (game: Game): string => {
   const { blue, red } = game.captainDeposited
   if (blue === red) {
@@ -62,6 +80,9 @@ export const pageHeadline = (game: Game): PageHeadline => {
   }
   if (game.phase === 'cancelled') {
     return { title: GAME_COPY.phase.cancelled, detail: null }
+  }
+  if (ENDED_PHASES.has(game.phase)) {
+    return finalHeadline(game)
   }
   return {
     title: pullHeadline(game),

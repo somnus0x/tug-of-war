@@ -13,6 +13,7 @@ import { useOvertimeStamp } from '../hooks/use-overtime-stamp'
 import { useSceneCrew } from '../hooks/use-scene-crew'
 import { leadOf } from '../model/derive-live'
 import { sceneStageOf } from '../model/page-model'
+import { topPullersOf } from '../model/top-pullers'
 import { TeamSign } from './team-sign'
 
 const vacantOf = (game: Game): VacantSides => {
@@ -52,7 +53,12 @@ export const GameScene = ({
     extensionSeconds,
     reducedMotion,
   )
-  const { crew, unknownWallets } = useSceneCrew({ launcher, game, account, player })
+  const { crew, unknownWallets, wallets, isComplete } = useSceneCrew({
+    launcher,
+    game,
+    account,
+    player,
+  })
   const stage = sceneStageOf(game.phase)
   return (
     <div className={`game-scene game-scene--${mode}`}>
@@ -75,8 +81,18 @@ export const GameScene = ({
       />
       {mode === 'desktop' ? (
         <>
-          <TeamSign game={game} side="blue" account={account} />
-          <TeamSign game={game} side="red" account={account} />
+          <TeamSign
+            game={game}
+            side="blue"
+            account={account}
+            top={topPullersOf(wallets, isComplete, 'blue', account)}
+          />
+          <TeamSign
+            game={game}
+            side="red"
+            account={account}
+            top={topPullersOf(wallets, isComplete, 'red', account)}
+          />
         </>
       ) : null}
     </div>

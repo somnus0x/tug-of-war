@@ -66,6 +66,16 @@
   overflow-wrap: anywhere;
 }
 
+.team-option__address {
+  white-space: nowrap;
+}
+
+@media (max-width: 759px) {
+  .team-option__captain-word {
+    display: none;
+  }
+}
+
 .team-option.is-selected::after {
   content: '';
   flex: none;
