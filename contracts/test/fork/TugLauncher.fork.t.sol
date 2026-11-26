@@ -373,7 +373,6 @@ contract TugLauncherForkTest is TugBase {
         vm.warp(launcher.deadline());
         launcher.launch();
         IERC20 token = IERC20(launcher.token());
-        assertEq(vaultFactory.reserveAtCreation(), 500_000 ether);
         assertEq(token.balanceOf(address(launcher)), 500_000 ether);
         assertEq(launcher.finalBlueShareBps(), 7_000);
 

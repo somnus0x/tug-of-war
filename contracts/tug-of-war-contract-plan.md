@@ -239,7 +239,7 @@ Captain deposits go through `depositCaptain()`, not the initializer, so creation
 
 **Live creation floor.** Use [`IPortalFloor`](src/interfaces/IPortalFloor.sol) to read the native quote at call time with `launchQuoteConfig(uint8(IPortalTypes.LaunchKind.DIRECT_V2_POOL_TAX), address(0))`. Preview with `graduationFloorV2ForLauncher` using the live quote price, the actual launch parameters including `poolQuote = raised`, and this launcher's address. Use `meetsCreateFloor` for the launch decision. `canLaunch()` and `launch()` use `BelowCreationFloor()` if an available preview misses the floor. A disabled quote, a zero quote price, or a reverted Portal read maps to `CreationFloorUnavailable()`. Share these checks with the callback, which does nothing on either floor failure. Evaluate the grace cutoff before Portal reads.
 
-**Auto-launch.** The Trigger Service has no cancel and no timing guarantee, so `trigger()` re-checks the deadline every time and `launch()` stays public. The launch sends exactly `raised`; `triggerBudget` is kept apart and never counted in it. A callback gets at most `getMaxCallbackGas()` (2,000,000 on testnet), and a callback that runs out becomes FAILED (anyone can `retryTrigger`). On BSC testnet at block 144938757, a callback capped at the live 2,000,000 gas reverted with `0xbbdf0a77` (origin unconfirmed). Uncapped, the same call launched with the stand-in vault and used 4,643,735 gas. Manual launch is the default and the UI hides scheduling.
+**Auto-launch.** The Trigger Service has no cancel and no timing guarantee, so `trigger()` re-checks the deadline every time and `launch()` stays public. The launch sends exactly `raised`; `triggerBudget` is kept apart and never counted in it. A callback gets at most `getMaxCallbackGas()` (2,000,000 on testnet), and a callback that runs out becomes FAILED (anyone can `retryTrigger`). On BSC testnet at block 144938757, a callback capped at the live 2,000,000 gas reverted with `0xbbdf0a77` (origin unconfirmed). Uncapped, the same call launched with the stand-in vault and used 4,643,735 gas. With the real vault (PR 4, block 144951209), the uncapped launch used 4,529,190 gas. Manual launch is the default and the UI hides scheduling.
 
 ---
 
@@ -276,20 +276,20 @@ Inherits `LauncherFactoryBase`. Implements `ITugLauncherFactory`.
 
 Inherits `DirectLaunchVaultBase`, `Initializable`, `ReentrancyGuard`. Implements `ITugVault`. Accounting pattern from `StakeMineVault` (`_syncRevenue`, `_spendBaseline`). One vault, two ledgers: Flap allows one vault per token.
 
-**Storage:** `token, launcher, captainShareBps, finalBlueShareBps, baseline, accRewardPerShare[2], totalStaked[2], stakeOf, rewardDebt, stakerTeam, captainAccrued[2], captainClaimed[2], undistributed, totals`.
+**Storage:** `token, launcher, captainShareBps, finalBlueShareBps, baseline, accRewardPerShare[2], totalStaked[2], stakeOf, rewardDebt, owed, stakerTeam, captainAccrued[2], captainClaimed[2], undistributed, totals`.
 
 | Function | Behaviour |
 |---|---|
 | `initialize(token, launcher)` | factory only; read `captainShareBps` and `finalBlueShareBps` from the launcher |
 | `receive()` | empty; never reverts |
 | `sync()` / `_sync()` | `delta = balance − baseline`; `captainShareBps` (20%) of `delta` to captains split by `finalBlueShareBps`; staker part = rest of `delta` + `undistributed`, split Blue / Red by `finalBlueShareBps` into `accRewardPerShare[team]`; a team with no stakers passes its part to the other; neither → `undistributed` (captains are never charged twice on carried revenue); `baseline = balance` |
-| `stake(amount, team)` | sync; team from `launcher.teamOf`, otherwise chosen on first stake and fixed; settle pending; pull tokens; credit actual received amount |
-| `unstake(amount)` | sync; settle; return tokens; rewards stop from this point |
-| `claimRewards()` | sync; pay pending BNB from the caller's team pool; `baseline −= paid` |
+| `stake(amount, team)` | Sync, resolve the locked team, and settle pending rewards into `owed`. Pull tokens and credit the actual amount received. |
+| `unstake(amount)` | Sync, settle rewards into `owed`, and return tokens. The tokens removed stop earning rewards. |
+| `claimRewards()` | Sync, settle into `owed`, zero the caller's owed balance, lower `baseline` by the payout, and send the BNB. Staker rewards are paid through this call. |
 | `claimCaptain()` | sync; pay caller's captain accrual; `baseline −= paid` |
 | `description()` | every fee and recipient |
 | `vaultUISchema()` | `stake`, `unstake`, `claimRewards`, `claimCaptain` |
-| Views from Step 1 | `getVault()` exposes the two reward previews below. `getStaker().pendingRewards` and `getCaptain().claimable` use the same revenue snapshot as the corresponding claim, including any carry the next sync would distribute. Apply the same snapshot to `pendingRewards(address)` and `pendingCaptain(address)` |
+| Views from Step 1 | `getVault()` exposes the two reward previews below. `getStaker().pendingRewards` and `pendingRewards(address)` include `owed` plus new rewards from the same revenue snapshot as a claim, including eligible carry. Use that snapshot for `getCaptain().claimable` and `pendingCaptain(address)` too. |
 
 **New-stake reward preview.** For each team's `rewardPer1000NewTokensPerBnb`, simulate adding 1,000 credited tokens to that team. From 1 BNB of new vault revenue, the staker portion is `1 ether × (10000 − captainShareBps) / 10000`. Split it by `finalBlueShareBps`. If the other team would still be empty, redirect its share to the joining team. Report `teamPortion × 1000e18 / (teamStaked + 1000e18)` in BNB wei, rounded down, with prior carry excluded. Calculate Blue and Red independently. With both teams empty, each preview shows the full staker portion. A team with zero final-rope share and stake in the other team can have a zero preview.
 
@@ -318,9 +318,11 @@ Inherits `DirectLaunchVaultFactoryBase`.
 - `Deploy.s.sol` — deploy both factories and beacons, link them.
 - `MineSalt.s.sol` — salt ending in `7777`.
 - `CreateGame.s.sol` — create a game through the Portal.
-- `DemoGame.s.sol` — scripted game: both captains deposit, at least two wallets per team contribute, launch, trade so tax flows, claim, stake.
+- `DemoGame.s.sol` runs both captain deposits, contributions from at least two wallets per team, launch, trading, `dispatch()` on the tax processor, claims, and staking.
 
-Factories cannot be changed after deployment, and a change means a new factory and a new Flap audit. Deploy once, after PRs 3 and 4 pass, with every config range final. Then ping Flap with both factory addresses and ask for a Trigger Service callback cap above PR 4's measured `trigger()` → launch gas, with headroom. Flap approves testnet factories on request.
+**Tax on launch day.** The 1-day anti-farmer window does not block tax. At block 144951209, trades right after launch succeeded and `dispatch()` delivered 0.670 BNB to the vault (40 BNB opening buy). At demo size (0.1 tBNB buys, full sells), the processor first held BNB after 2 rounds at block 144951880. The buys totaled 0.2 tBNB and the trader spent 0.016823 tBNB net before gas. Dispatch delivered 0.008397 BNB.
+
+Factories cannot be changed after deployment, and a change means a new factory and a new Flap audit. Deploy once, after PRs 3 and 4 pass, with every config range final. Then ping Flap with both factory addresses and ask for a 6,000,000-gas Trigger Service callback cap (PR 4 measured 4,529,190 for `trigger()` → launch with the real vault). Ask whether a keeper calls `dispatch()` on testnet and confirm whether the Token Dock rule applies to user stakes held by the vault. Flap approves testnet factories on request.
 
 **Small amounts first.** Only `launch()` needs the floor; the raised BNB goes into the pool and is not returned.
 
@@ -328,7 +330,7 @@ Factories cannot be changed after deployment, and a change means a new factory a
 |---|---|---|
 | Fork tests (PRs 3–4) | Everything, including the full journey | None (`vm.deal`, admin opens the factory) |
 | Testnet dry run | Create, captain deposits, contributions, overtime, cancel, and refund with a raise below `minRaise` | ~0.1 plus a 0.005 salt fee per game |
-| Testnet launch | One real game create → deposits → launch → trade → claim → stake | ≥ 2.15 (default 1x multiplier) |
+| Testnet launch | One real game create → deposits → launch → trade → claim → stake | ≥ 2.15 (default 1x multiplier) + ~0.016823 net trading spend measured on the fork, before gas |
 | Live demo | A second launch on stage, unless the demo reuses the first token or a video | Same as above |
 
 **Done when:** factories are deployed and opened on testnet, the dry run passed, one real game ran create → deposits → launch → claim → stake, tax reached the vault, and the addresses are in the README.
@@ -366,7 +368,7 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 4 | Stranger launcher refused by vault factory |
 | 4 | Auto-launch at the deadline when both raise checks pass. A trigger during overtime requests again at the new deadline. An unmet or unavailable floor, a missed raise, an expired grace period or a stale ID is a no-op. Only the Trigger Service can call `trigger`. These call `trigger()` without the gas cap. |
 | 4 | Raise the Trigger Service fee after scheduling so the overtime reschedule is underfunded. Assert `AutoLaunchStopped` and launch manually when eligible. These call `trigger()` without the gas cap. |
-| 4 | Measure `trigger()` → launch with the real `TugVault` against the live `getMaxCallbackGas()`, and record both numbers. PR 3's stand-in measured 4,643,735 against 2,000,000. Do not assert that it fits. |
+| 4 | Measure `trigger()` → launch with the real `TugVault` against the live `getMaxCallbackGas()`, and record both numbers. PR 3's stand-in measured 4,643,735 against 2,000,000. Do not assert that it fits. PR 4 measured 4,529,190 with the real vault. |
 
 **PR 3 factory parity tests.** Move the precedence probe into `test/fork/TugLauncher.fork.t.sol` with the real Tug factory and a freshly registered launcher. Set the Portal's factory flags and multipliers on the fork, then exercise every row of the verified table below. For the both-disabled case, register the launcher before disabling both flags and compare the preview. Use the same live quote price for both sides of the comparison. Compare the factory's BNB wei floor with `ceil(createFloorUsdWad × 1e18 / quotePriceUsd)` from `graduationFloorV2ForLauncher` and assert availability. For positive floors in launchable cases, assert that the Portal preview accepts that wei amount and rejects one wei less. For an enabled zero multiplier assert `(creationFloorAvailable, minRaiseFloor) = (true, 0)`, and test `ZeroMinRaise()` separately. For a disabled or zero-priced quote or a reverted Portal read assert `(false, 0)` and `CreationFloorUnavailable()` from validation and creation.
 
@@ -459,7 +461,7 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 15 | Who builds the frontend and the OpenFour port? | A friend of the team, independently, calling the PR 1 interfaces |
 | 16 | How do our testnet factories get opened? | Ping Flap with the addresses after deploy and they approve. No audit needed for testnet |
 | 17 | Captain share of vault revenue? | 20%, as the doc says. `captainShareBps` in `TugConfig`, default 2000, configurable per game like every other default |
-| 18 | Trigger Service auto-launch? | Built into the launcher. On BSC testnet at block 144938757, a callback capped at the live 2,000,000 gas reverted with `0xbbdf0a77` (origin unconfirmed). Uncapped, the same call launched with the stand-in vault and used 4,643,735 gas. Manual launch is the default and the UI hides scheduling. Ask Flap for a callback cap with headroom over PR 4's real-vault measurement. |
+| 18 | Trigger Service auto-launch? | Built into the launcher. On BSC testnet at block 144938757, a callback capped at the live 2,000,000 gas reverted with `0xbbdf0a77` (origin unconfirmed). Uncapped, the same call launched with the stand-in vault and used 4,643,735 gas. Manual launch is the default and the UI hides scheduling. With the real `TugVault` at block 144951209, the capped callback reverted with `0xbbdf0a77`, and the uncapped launch used 4,529,190 gas. Ask Flap for a 6,000,000-gas callback cap, about 32% above that. |
 | 19 | Must one captain deposit first? | No. Either named captain can go first; the first deposit is the challenge, the second the accept |
 | 20 | When does the accept window start? | At game creation. Both captains must deposit within it, or the game can be cancelled |
 | 21 | Does a tie count as a lead change for overtime? | Yes. Moving into or out of a tie extends the deadline, within the same limit of 5 extensions. |
