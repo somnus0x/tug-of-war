@@ -47,8 +47,9 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
     mapping(address => uint256) public stakeOf;
     mapping(address => uint8) public stakerTeam;
 
-    // Store the accumulator at the last settlement. Round the earned interval down once per payout.
+    // Store the accumulator at the last settlement. Round each earned interval down.
     mapping(address => uint256) private _rewardDebt;
+    mapping(address => uint256) private _owed;
 
     error OnlyFactory();
     error InvalidVaultSetup();
@@ -83,7 +84,7 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
         if (lockedTeam != Team.NONE && lockedTeam != team) revert WrongTeam();
 
         _sync();
-        uint256 rewards = _settle(msg.sender, team);
+        _settle(msg.sender, team);
         stakerTeam[msg.sender] = team;
 
         address token = taxToken;
@@ -96,7 +97,6 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
         stakeOf[msg.sender] += received;
         if (team == Team.BLUE) _totalStaked.blue += received;
         else _totalStaked.red += received;
-        if (rewards != 0) _payRewards(msg.sender, team, rewards);
         emit Staked(msg.sender, team, received);
     }
 
@@ -107,12 +107,11 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
         uint8 team = stakerTeam[msg.sender];
 
         _sync();
-        uint256 rewards = _settle(msg.sender, team);
+        _settle(msg.sender, team);
         stakeOf[msg.sender] = staked - amount;
         if (team == Team.BLUE) _totalStaked.blue -= amount;
         else _totalStaked.red -= amount;
 
-        if (rewards != 0) _payRewards(msg.sender, team, rewards);
         (bool sent, bytes memory result) = taxToken.call(abi.encodeCall(IERC20.transfer, (msg.sender, amount)));
         if (!sent || (result.length != 0 && (result.length != 32 || uint256(bytes32(result)) != 1))) {
             revert TransferFailed();
@@ -123,9 +122,12 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
     function claimRewards() external nonReentrant {
         _sync();
         uint8 team = stakerTeam[msg.sender];
-        uint256 rewards = _settle(msg.sender, team);
+        _settle(msg.sender, team);
+        uint256 rewards = _owed[msg.sender];
         if (rewards == 0) revert NothingToClaim();
-        _payRewards(msg.sender, team, rewards);
+        _owed[msg.sender] = 0;
+        _payBnb(msg.sender, rewards);
+        emit RewardsClaimed(msg.sender, team, rewards);
     }
 
     function claimCaptain() external nonReentrant {
@@ -187,10 +189,11 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
     }
 
     function pendingRewards(address staker) public view returns (uint256) {
+        uint256 owed = _owed[staker];
         uint256 staked = stakeOf[staker];
-        if (staked == 0) return 0;
+        if (staked == 0) return owed;
         uint256 accumulator = _forTeam(_previewSync().accRewardPerShare, stakerTeam[staker]);
-        return FixedPointMathLib.fullMulDiv(staked, accumulator - _rewardDebt[staker], REWARD_SCALE);
+        return owed + FixedPointMathLib.fullMulDiv(staked, accumulator - _rewardDebt[staker], REWARD_SCALE);
     }
 
     function pendingCaptain(address captain) external view returns (uint256) {
@@ -228,7 +231,7 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
 
         VaultMethodSchema memory unstakeMethod;
         unstakeMethod.name = "unstake";
-        unstakeMethod.description = "Withdraw staked tokens and settle BNB rewards";
+        unstakeMethod.description = "Withdraw staked tokens. Rewards stay claimable.";
         unstakeMethod.isWriteMethod = true;
         unstakeMethod.inputs = new FieldDescriptor[](1);
         unstakeMethod.inputs[0] = FieldDescriptor("amount", "uint256", "Tokens to withdraw", 18);
@@ -287,15 +290,11 @@ contract TugVault is DirectLaunchVaultBase, Initializable, ReentrancyGuard, ITug
         emit Synced(next.revenue, next.toCaptains, next.toStakers.blue, next.toStakers.red, next.undistributed);
     }
 
-    function _settle(address staker, uint8 team) private returns (uint256 rewards) {
+    function _settle(address staker, uint8 team) private {
         uint256 accumulator = _forTeam(_accRewardPerShare, team);
-        rewards = FixedPointMathLib.fullMulDiv(stakeOf[staker], accumulator - _rewardDebt[staker], REWARD_SCALE);
+        uint256 earned = FixedPointMathLib.fullMulDiv(stakeOf[staker], accumulator - _rewardDebt[staker], REWARD_SCALE);
         _rewardDebt[staker] = accumulator;
-    }
-
-    function _payRewards(address staker, uint8 team, uint256 rewards) private {
-        _payBnb(staker, rewards);
-        emit RewardsClaimed(staker, team, rewards);
+        if (earned != 0) _owed[staker] += earned;
     }
 
     function _payBnb(address to, uint256 amount) private {

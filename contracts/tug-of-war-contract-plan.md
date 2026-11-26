@@ -276,20 +276,20 @@ Inherits `LauncherFactoryBase`. Implements `ITugLauncherFactory`.
 
 Inherits `DirectLaunchVaultBase`, `Initializable`, `ReentrancyGuard`. Implements `ITugVault`. Accounting pattern from `StakeMineVault` (`_syncRevenue`, `_spendBaseline`). One vault, two ledgers: Flap allows one vault per token.
 
-**Storage:** `token, launcher, captainShareBps, finalBlueShareBps, baseline, accRewardPerShare[2], totalStaked[2], stakeOf, rewardDebt, stakerTeam, captainAccrued[2], captainClaimed[2], undistributed, totals`.
+**Storage:** `token, launcher, captainShareBps, finalBlueShareBps, baseline, accRewardPerShare[2], totalStaked[2], stakeOf, rewardDebt, owed, stakerTeam, captainAccrued[2], captainClaimed[2], undistributed, totals`.
 
 | Function | Behaviour |
 |---|---|
 | `initialize(token, launcher)` | factory only; read `captainShareBps` and `finalBlueShareBps` from the launcher |
 | `receive()` | empty; never reverts |
 | `sync()` / `_sync()` | `delta = balance − baseline`; `captainShareBps` (20%) of `delta` to captains split by `finalBlueShareBps`; staker part = rest of `delta` + `undistributed`, split Blue / Red by `finalBlueShareBps` into `accRewardPerShare[team]`; a team with no stakers passes its part to the other; neither → `undistributed` (captains are never charged twice on carried revenue); `baseline = balance` |
-| `stake(amount, team)` | sync; team from `launcher.teamOf`, otherwise chosen on first stake and fixed; settle pending; pull tokens; credit actual received amount |
-| `unstake(amount)` | sync; settle; return tokens; rewards stop from this point |
-| `claimRewards()` | sync; pay pending BNB from the caller's team pool; `baseline −= paid` |
+| `stake(amount, team)` | Sync, resolve the locked team, and settle pending rewards into `owed`. Pull tokens and credit the actual amount received. |
+| `unstake(amount)` | Sync, settle rewards into `owed`, and return tokens. The tokens removed stop earning rewards. |
+| `claimRewards()` | Sync, settle into `owed`, zero the caller's owed balance, lower `baseline` by the payout, and send the BNB. Staker rewards are paid through this call. |
 | `claimCaptain()` | sync; pay caller's captain accrual; `baseline −= paid` |
 | `description()` | every fee and recipient |
 | `vaultUISchema()` | `stake`, `unstake`, `claimRewards`, `claimCaptain` |
-| Views from Step 1 | `getVault()` exposes the two reward previews below. `getStaker().pendingRewards` and `getCaptain().claimable` use the same revenue snapshot as the corresponding claim, including any carry the next sync would distribute. Apply the same snapshot to `pendingRewards(address)` and `pendingCaptain(address)` |
+| Views from Step 1 | `getVault()` exposes the two reward previews below. `getStaker().pendingRewards` and `pendingRewards(address)` include `owed` plus new rewards from the same revenue snapshot as a claim, including eligible carry. Use that snapshot for `getCaptain().claimable` and `pendingCaptain(address)` too. |
 
 **New-stake reward preview.** For each team's `rewardPer1000NewTokensPerBnb`, simulate adding 1,000 credited tokens to that team. From 1 BNB of new vault revenue, the staker portion is `1 ether × (10000 − captainShareBps) / 10000`. Split it by `finalBlueShareBps`. If the other team would still be empty, redirect its share to the joining team. Report `teamPortion × 1000e18 / (teamStaked + 1000e18)` in BNB wei, rounded down, with prior carry excluded. Calculate Blue and Red independently. With both teams empty, each preview shows the full staker portion. A team with zero final-rope share and stake in the other team can have a zero preview.
 
@@ -318,9 +318,9 @@ Inherits `DirectLaunchVaultFactoryBase`.
 - `Deploy.s.sol` — deploy both factories and beacons, link them.
 - `MineSalt.s.sol` — salt ending in `7777`.
 - `CreateGame.s.sol` — create a game through the Portal.
-- `DemoGame.s.sol` — scripted game: both captains deposit, at least two wallets per team contribute, launch, trade so tax flows, claim, stake.
+- `DemoGame.s.sol` runs both captain deposits, contributions from at least two wallets per team, launch, trading, `dispatch()` on the tax processor, claims, and staking.
 
-Factories cannot be changed after deployment, and a change means a new factory and a new Flap audit. Deploy once, after PRs 3 and 4 pass, with every config range final. Then ping Flap with both factory addresses and ask for a Trigger Service callback cap above PR 4's measured `trigger()` → launch gas, with headroom. Flap approves testnet factories on request.
+Factories cannot be changed after deployment, and a change means a new factory and a new Flap audit. Deploy once, after PRs 3 and 4 pass, with every config range final. Then ping Flap with both factory addresses and ask for a Trigger Service callback cap with headroom above PR 4's measured `trigger()` → launch gas. Ask whether a keeper calls `dispatch()` on testnet and confirm whether the Token Dock rule applies to user stakes held by the vault. Flap approves testnet factories on request.
 
 **Small amounts first.** Only `launch()` needs the floor; the raised BNB goes into the pool and is not returned.
 

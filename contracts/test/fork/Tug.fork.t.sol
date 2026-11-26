@@ -52,9 +52,32 @@ interface ITugTaxProcessor {
     function dispatch() external;
 }
 
+contract NonPayableStaker {
+    function stake(TugVault vault, uint256 amount) external {
+        IERC20(vault.taxToken()).approve(address(vault), amount);
+        vault.stake(amount, Team.BLUE);
+    }
+
+    function unstake(TugVault vault, uint256 amount) external {
+        vault.unstake(amount);
+    }
+
+    function claimRewards(TugVault vault) external {
+        vault.claimRewards();
+    }
+}
+
 contract TugForkTest is TugBase {
+    struct TaxTrades {
+        uint256 buys;
+        uint256 sells;
+        bool buyReverted;
+        bool sellReverted;
+    }
+
     IPancakeV2Router private constant ROUTER = IPancakeV2Router(0xc9D63ddCB9549578057EAB6A83a543DdFEE2b8c3);
     address private constant TRADER = address(0xA6);
+    address private constant DISPATCHER = address(0xBEEF);
 
     function test_FullJourneyTradesTaxAndPaysStakersAndCaptains() public {
         (TugLauncher game, TugVault vault) = _launchDefaultGame();
@@ -81,11 +104,37 @@ contract TugForkTest is TugBase {
         assertEq(address(vault).balance, 0);
     }
 
+    function test_MeasureTradingAndDispatchInsideAntiFarmerWindow() public {
+        (TugLauncher game, TugVault vault) = _launchDefaultGame();
+        ITugTaxProcessor processor = ITugTaxProcessor(ITugTaxToken(game.token()).taxProcessor());
+        emit log_named_uint("Seconds since launch", block.timestamp - game.deadline());
+        emit log_named_uint("Anti-farmer duration in seconds", game.getRules().antiFarmerDuration);
+
+        TaxTrades memory trades = _tradeToCollectTax(game, processor);
+        emit log_named_uint("Successful buys inside anti-farmer window", trades.buys);
+        emit log_named_uint("Successful sells inside anti-farmer window", trades.sells);
+        emit log_named_string("Buy attempt reverted", trades.buyReverted ? "yes" : "no");
+        emit log_named_string("Sell attempt reverted", trades.sellReverted ? "yes" : "no");
+        emit log_named_uint("Market quote before dispatch inside anti-farmer window", processor.marketQuoteBalance());
+
+        uint256 beforeDispatch = address(vault).balance;
+        vm.prank(DISPATCHER);
+        try processor.dispatch() {
+            emit log_named_string("Dispatch inside anti-farmer window", "succeeded");
+        } catch (bytes memory reason) {
+            emit log_named_string("Dispatch inside anti-farmer window", "reverted");
+            emit log_named_bytes("Dispatch revert data", reason);
+        }
+        emit log_named_uint(
+            "Native BNB delivered by dispatch inside anti-farmer window", address(vault).balance - beforeDispatch
+        );
+    }
+
     function test_PostLaunchBuyerChoosesATeamAndKeepsItAfterUnstaking() public {
         (TugLauncher game, TugVault vault) = _launchDefaultGame();
         _prepareTrading(game);
         vm.deal(TRADER, 5 ether);
-        _buy(game.token(), TRADER, 1 ether);
+        assertTrue(_tryBuy(game.token(), 1 ether));
         assertEq(vault.getStaker(TRADER).team, Team.NONE);
         assertEq(vault.getStaker(alice).team, Team.BLUE);
         vm.expectRevert(ITugVault.WrongTeam.selector);
@@ -150,7 +199,8 @@ contract TugForkTest is TugBase {
         uint256 beforeBalance = alice.balance;
         vm.prank(alice);
         vault.unstake(400 ether);
-        assertEq(alice.balance - beforeBalance, 0.8 ether);
+        assertEq(alice.balance, beforeBalance);
+        _claimStaker(vault, alice, 0.8 ether);
         assertEq(vault.teamStake(Team.BLUE), 600 ether);
 
         _claimAndStake(game, vault, bob, Team.RED, 4_000 ether);
@@ -161,6 +211,46 @@ contract TugForkTest is TugBase {
         _claimCaptain(vault, blue, 0.28 ether);
         _claimCaptain(vault, red, 0.12 ether);
         assertEq(address(vault).balance, 1);
+    }
+
+    function test_StakerThatCannotReceiveBnbCanWithdrawAllTokens() public {
+        (TugLauncher game, TugVault vault) = _launchDefaultGame();
+        NonPayableStaker staker = new NonPayableStaker();
+        IERC20 token = IERC20(game.token());
+        uint256 stakeAmount = 1_000 ether;
+        vm.startPrank(alice);
+        game.claim();
+        assertTrue(token.transfer(address(staker), stakeAmount * 2));
+        vm.stopPrank();
+
+        staker.stake(vault, stakeAmount);
+        _sendRevenue(vault, 1 ether);
+        assertEq(vault.pendingRewards(address(staker)), 0.8 ether);
+        staker.stake(vault, stakeAmount);
+        staker.unstake(vault, stakeAmount * 2);
+
+        assertEq(token.balanceOf(address(staker)), stakeAmount * 2);
+        assertEq(vault.stakeOf(address(staker)), 0);
+        assertEq(vault.pendingRewards(address(staker)), 0.8 ether);
+        assertEq(vault.getStaker(address(staker)).pendingRewards, 0.8 ether);
+
+        // A failed claim must also roll back the sync of revenue that arrived since unstaking.
+        _sendRevenue(vault, 1 ether);
+        VaultView memory beforeClaim = vault.getVault();
+        uint256 vaultBalance = address(vault).balance;
+        vm.expectRevert(ITugVault.TransferFailed.selector);
+        staker.claimRewards(vault);
+
+        assertEq(address(vault).balance, vaultBalance);
+        assertEq(address(staker).balance, 0);
+        assertEq(token.balanceOf(address(staker)), stakeAmount * 2);
+        assertEq(vault.stakeOf(address(staker)), 0);
+        assertEq(vault.getStaker(address(staker)).pendingRewards, 0.8 ether);
+        assertEq(abi.encode(vault.getVault()), abi.encode(beforeClaim));
+
+        vm.expectEmit(false, false, false, true, address(vault));
+        emit ITugVault.Synced(1 ether, 0.2 ether, 0, 0, 0.8 ether);
+        vault.sync();
     }
 
     function test_NewStakePreviewsEvaluateEachTeamIndependentlyAndExcludeCarry() public {
@@ -441,43 +531,75 @@ contract TugForkTest is TugBase {
 
     function _tradeUntilVaultReceivesTax(TugLauncher game) private returns (uint256) {
         _prepareTrading(game);
+        ITugTaxProcessor processor = ITugTaxProcessor(ITugTaxToken(game.token()).taxProcessor());
+        TaxTrades memory trades = _tradeToCollectTax(game, processor);
+        assertFalse(trades.buyReverted);
+        assertFalse(trades.sellReverted);
+        assertGt(processor.marketQuoteBalance(), 0);
+
+        address vault = game.vault();
+        uint256 beforeDispatch = vault.balance;
+        vm.prank(DISPATCHER);
+        processor.dispatch();
+        assertGt(vault.balance, beforeDispatch);
+        uint256 delivered = vault.balance - beforeDispatch;
+        emit log_named_uint("Tax liquidation trade rounds", trades.sells);
+        emit log_named_uint("Native BNB delivered by dispatch from 0xBEEF", delivered);
+        return delivered;
+    }
+
+    function _tradeToCollectTax(TugLauncher game, ITugTaxProcessor processor)
+        private
+        returns (TaxTrades memory trades)
+    {
         address token = game.token();
         address vault = game.vault();
         uint256 beforeBalance = vault.balance;
-        ITugTaxProcessor processor = ITugTaxProcessor(ITugTaxToken(token).taxProcessor());
         vm.deal(TRADER, 100 ether);
-        _buy(token, TRADER, 40 ether);
+        if (!_tryBuy(token, 40 ether)) {
+            trades.buyReverted = true;
+            return trades;
+        }
+        trades.buys = 1;
 
         address[] memory path = new address[](2);
         path[0] = token;
         path[1] = ROUTER.WETH();
         vm.prank(TRADER);
         IERC20(token).approve(address(ROUTER), type(uint256).max);
-        uint256 rounds;
-        while (rounds < 80 && vault.balance == beforeBalance && processor.marketQuoteBalance() == 0) {
+        while (trades.sells < 80 && vault.balance == beforeBalance && processor.marketQuoteBalance() == 0) {
             uint256 sellAmount = IERC20(token).balanceOf(TRADER) / 3;
             if (sellAmount == 0) break;
             uint256 traderBefore = TRADER.balance;
             vm.prank(TRADER);
-            ROUTER.swapExactTokensForETHSupportingFeeOnTransferTokens(sellAmount, 0, path, TRADER, block.timestamp);
+            try ROUTER.swapExactTokensForETHSupportingFeeOnTransferTokens(sellAmount, 0, path, TRADER, block.timestamp)
+            {
+                ++trades.sells;
+            } catch (bytes memory reason) {
+                trades.sellReverted = true;
+                emit log_named_bytes("Sell revert data", reason);
+                break;
+            }
             uint256 proceeds = TRADER.balance - traderBefore;
-            if (proceeds > 0) _buy(token, TRADER, proceeds * 9 / 10);
-            ++rounds;
+            if (proceeds == 0) continue;
+            if (!_tryBuy(token, proceeds * 9 / 10)) {
+                trades.buyReverted = true;
+                break;
+            }
+            ++trades.buys;
         }
-
-        uint256 balanceBeforeDispatch = vault.balance;
-        processor.dispatch();
-        emit log_named_uint("Tax liquidation trade rounds", rounds);
-        emit log_named_uint("Native BNB delivered by dispatch", vault.balance - balanceBeforeDispatch);
-        assertGt(vault.balance, beforeBalance);
-        return vault.balance - beforeBalance;
     }
 
-    function _buy(address token, address trader, uint256 amount) private {
+    function _tryBuy(address token, uint256 amount) private returns (bool) {
         address[] memory path = new address[](2);
         path[0] = ROUTER.WETH();
         path[1] = token;
-        vm.prank(trader);
-        ROUTER.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amount}(0, path, trader, block.timestamp);
+        vm.prank(TRADER);
+        try ROUTER.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amount}(0, path, TRADER, block.timestamp) {
+            return true;
+        } catch (bytes memory reason) {
+            emit log_named_bytes("Buy revert data", reason);
+            return false;
+        }
     }
 }
