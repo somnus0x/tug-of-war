@@ -93,7 +93,7 @@ docs/frontend-api.md              calls per screen, for the frontend
 
 ## Step 0 (PR 0): environment — Wed evening / night
 
-Not product code. Codex brief for PRs 0–2: `codex-brief-pr0-2.md`.
+Not product code.
 
 **Testnet numbers (read from the Portal on 25 Nov):**
 
