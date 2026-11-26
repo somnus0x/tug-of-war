@@ -1,28 +1,26 @@
 import { useState } from 'react'
 
 import { VAULT_COPY } from '@/copy/vault'
+import { FlashLabel } from '@/ui/flash-label'
+import { FlashSay } from '@/ui/flash-say'
 import { TileButton } from '@/ui/tile-button'
+import { useFlash } from '@/ui/use-flash'
 
 type CopyButtonProps = {
   text: string
 }
 
-type CopyResult = 'idle' | 'copied' | 'failed'
-
-const RESULT_TEXT: Record<CopyResult, string> = {
-  idle: '',
-  copied: VAULT_COPY.coin.copied,
-  failed: VAULT_COPY.coin.copyFailed,
-}
-
 export const CopyButton = ({ text }: CopyButtonProps) => {
-  const [result, setResult] = useState<CopyResult>('idle')
+  const [failed, setFailed] = useState(false)
+  const flash = useFlash()
   const copy = async (): Promise<void> => {
     try {
       await navigator.clipboard.writeText(text)
-      setResult('copied')
+      setFailed(false)
+      flash.show()
     } catch {
-      setResult('failed')
+      flash.hide()
+      setFailed(true)
     }
   }
   return (
@@ -33,10 +31,11 @@ export const CopyButton = ({ text }: CopyButtonProps) => {
           void copy()
         }}
       >
-        {VAULT_COPY.coin.copy}
+        <FlashLabel idle={VAULT_COPY.coin.copy} flash={VAULT_COPY.coin.copiedLabel} on={flash.on} />
       </TileButton>
+      <FlashSay text={VAULT_COPY.coin.copied} on={flash.on} />
       <span className="vault-copy__result" aria-live="polite">
-        {RESULT_TEXT[result]}
+        {failed ? VAULT_COPY.coin.copyFailed : ''}
       </span>
     </span>
   )

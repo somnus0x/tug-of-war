@@ -3,7 +3,10 @@ import type { CopyAttempt } from './copy-text'
 import { useEffect, useRef, useState } from 'react'
 
 import { WALLET_COPY } from '@/copy/wallet'
+import { FlashLabel } from '@/ui/flash-label'
+import { FlashSay } from '@/ui/flash-say'
 import { TileButton } from '@/ui/tile-button'
+import { useFlash } from '@/ui/use-flash'
 
 import { acceptsCompletion, copyText, shownOutcome } from './copy-text'
 
@@ -21,6 +24,8 @@ export const CopyValue = ({ text, label = WALLET_COPY.copy, ariaLabel }: CopyVal
   const latestRef = useRef(0)
   const textRef = useRef(text)
   const outcome = shownOutcome(result, text)
+  const flash = useFlash()
+  const justCopied = flash.on && outcome === 'copied'
   const manualAttempt = outcome === 'manual' && result !== undefined ? result.attempt : 0
 
   useEffect(() => {
@@ -40,6 +45,11 @@ export const CopyValue = ({ text, label = WALLET_COPY.copy, ariaLabel }: CopyVal
     const copied = await copyText(text)
     if (acceptsCompletion(latestRef.current, textRef.current, completion)) {
       setResult({ ...completion, outcome: copied })
+      if (copied === 'copied') {
+        flash.show()
+      } else {
+        flash.hide()
+      }
     }
   }
 
@@ -48,16 +58,14 @@ export const CopyValue = ({ text, label = WALLET_COPY.copy, ariaLabel }: CopyVal
       <span className="copy-value__row">
         <TileButton
           variant="ghost"
-          ariaLabel={ariaLabel}
+          ariaLabel={justCopied ? undefined : ariaLabel}
           onClick={() => {
             void copy()
           }}
         >
-          {label}
+          <FlashLabel idle={label} flash={WALLET_COPY.copied} on={justCopied} />
         </TileButton>
-        <span className="copy-value__result" aria-live="polite">
-          {outcome === 'copied' ? WALLET_COPY.copied : ''}
-        </span>
+        <FlashSay text={WALLET_COPY.copied} on={justCopied} />
       </span>
       {outcome === 'manual' ? (
         <span className="copy-value__manual">

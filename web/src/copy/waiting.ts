@@ -6,6 +6,7 @@ export const WAITING_COPY = {
   watch: 'Pulls open when both captains have deposited.',
   copyLink: 'Copy link',
   copied: 'Link copied.',
+  copiedLabel: 'Copied',
   copyFailed: 'Could not copy. Copy the link from the address bar.',
   counts: (weight: string, team: string) =>
     `Your deposit counts as a pull at ${weight} for ${team}.`,

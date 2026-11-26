@@ -9,9 +9,12 @@ import { explorerTxUrl } from '@/contracts/tx/explorer'
 import { CREATE_COPY } from '@/copy/create'
 import { copyText } from '@/features/wallet/copy-text'
 import { formatCount } from '@/lib/format'
+import { FlashLabel } from '@/ui/flash-label'
+import { FlashSay } from '@/ui/flash-say'
 import { PixelBox } from '@/ui/pixel-box'
 import { TileButton } from '@/ui/tile-button'
 import { tileButtonClassName } from '@/ui/tile-button-classes'
+import { useFlash } from '@/ui/use-flash'
 
 import { useAutoHeight } from '../hooks/use-auto-height'
 import { blockParam, createdShareLink } from '../model/created'
@@ -41,6 +44,7 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
   const scope = useSourceScope()
   const linkId = useId()
   const [copy, setCopy] = useState<CopyState>('idle')
+  const flash = useFlash()
   const linkField = useAutoHeight()
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -90,6 +94,11 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
   const onCopy = async (): Promise<void> => {
     const outcome = await copyText(link)
     setCopy(outcome === 'copied' ? 'copied' : 'failed')
+    if (outcome === 'copied') {
+      flash.show()
+    } else {
+      flash.hide()
+    }
     if (outcome === 'manual') {
       linkField.current?.focus()
       linkField.current?.select()
@@ -143,13 +152,11 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
                   void onCopy()
                 }}
               >
-                {RESULT.copy}
+                <FlashLabel idle={RESULT.copy} flash={RESULT.copiedLabel} on={flash.on} />
               </TileButton>
             </div>
-            <output className="create-note">
-              {copy === 'copied' ? RESULT.copied : null}
-              {copy === 'failed' ? RESULT.copyFailed : null}
-            </output>
+            <FlashSay text={RESULT.copied} on={flash.on} />
+            <output className="create-note">{copy === 'failed' ? RESULT.copyFailed : null}</output>
           </div>
         </div>
         <Link

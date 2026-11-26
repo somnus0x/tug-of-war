@@ -12,11 +12,6 @@
   gap: 8px;
 }
 
-.copy-value__result {
-  color: var(--lime);
-  font-size: var(--text-small);
-}
-
 .copy-value__manual {
   display: flex;
   flex-direction: column;

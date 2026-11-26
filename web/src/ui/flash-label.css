@@ -1,0 +1,21 @@
+.flash-label {
+  display: inline-grid;
+  justify-items: center;
+}
+
+.flash-label__text {
+  grid-area: 1 / 1;
+}
+
+.flash-label__text[data-shown='false'] {
+  visibility: hidden;
+}
+
+.flash-say {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

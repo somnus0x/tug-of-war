@@ -130,6 +130,7 @@ export const CREATE_COPY = {
     addressLabel: 'Coin address',
     copy: 'Copy link',
     copied: 'Link copied.',
+    copiedLabel: 'Copied',
     copyFailed: 'Could not copy. Select the link and copy it.',
     qrLabel: (link: string) => `QR code for the share link ${link}`,
     open: 'Open game',
