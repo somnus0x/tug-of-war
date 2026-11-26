@@ -1,16 +1,18 @@
 import type { SwitchResult, WalletStatus } from './wallet-state'
 import type { BnbWei } from '@/lib/units'
 import type { Address, Chain } from 'viem'
+import type { Config } from 'wagmi'
 
 import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { addChain, switchChain } from 'viem/actions'
 import { useAccount, useBalance, useConfig } from 'wagmi'
-import { getConnectorClient } from 'wagmi/actions'
+import { getAccount, getConnectorClient, watchAccount } from 'wagmi/actions'
 
 import { appChain } from '@/app/chain'
 import { env } from '@/app/env'
 import { bnbWei } from '@/lib/units'
 
+import { syncChain } from './chain-sync'
 import {
   connectionKey,
   noteConnection,
@@ -37,6 +39,18 @@ const addableChain: Chain = {
   ...appChain,
   rpcUrls: { default: { http: env.VITE_RPC_URLS } },
 }
+
+const SYNC_FAILED: SwitchResult = { ok: false, reason: 'failed' }
+
+const walletAgrees = (config: Config): Promise<boolean> =>
+  syncChain(appChain.id, {
+    storeChainId: () => getAccount(config).chainId,
+    walletChainId: async () => getAccount(config).connector?.getChainId(),
+    announce: (chainId) => {
+      getAccount(config).connector?.emitter.emit('change', { chainId })
+    },
+    watch: (onChange) => watchAccount(config, { onChange }),
+  })
 
 export const useWallet = (): Wallet => {
   const config = useConfig()
@@ -69,7 +83,7 @@ export const useWallet = (): Wallet => {
   const switchNetwork = async (): Promise<SwitchResult> => {
     noteConnection(connection)
     noteSwitchStart()
-    const result = await switchWithFallback({
+    const switched = await switchWithFallback({
       switchChain: async () => {
         const client = await getConnectorClient(config, { assertChainId: false })
         await switchChain(client, { id: appChain.id })
@@ -79,6 +93,7 @@ export const useWallet = (): Wallet => {
         await addChain(client, { chain: addableChain })
       },
     })
+    const result = switched.ok && !(await walletAgrees(config)) ? SYNC_FAILED : switched
     noteSwitchResult(result, connection)
     return result
   }

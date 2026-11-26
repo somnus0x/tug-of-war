@@ -266,6 +266,7 @@ export const runFixtureTx = async <Name extends TxActionName>(
     launcher: context.launcher,
   })
   try {
+    resolveCall(context.action, params, context)
     await pause(context, FIXTURE_DELAYS.simulating)
     const before = step.check().gate
     if (!before.ok) {

@@ -4,7 +4,7 @@ import type { Address } from 'viem'
 import { tugLauncherFactoryAbi } from './abis'
 import { TUG_FACTORY_ADDRESS } from './addresses'
 import { publicClient } from './client'
-import { readValues, recentIndices } from './home-window'
+import { newestFirst, readValues, recentIndices } from './home-window'
 import { toCount } from './mappers'
 import { gameSource } from './source'
 
@@ -42,7 +42,7 @@ export const createChainHomeSource = (): HomeSource => ({
       functionName: 'gamesOf',
       args: [account],
     })
-    return games.toReversed().map(entryOf)
+    return newestFirst(games).map(entryOf)
   },
   readRow: (entry, scope) => gameSource.readGame(entry.launcher, scope),
 })

@@ -25,6 +25,22 @@ export const HOME_COPY = {
   raised: (amount: string) => `${amount} BNB raised`,
   timeLeft: (clock: string) => `${clock} left`,
   ropeIdle: 'The rope has not moved.',
-  openGame: (name: string, symbol: string, phase: string) =>
-    `${name} (${symbol}), ${phase}. Open the game.`,
+  rowLabel: (row: {
+    readonly name: string
+    readonly symbol: string
+    readonly phase: string
+    readonly captainBlue: string
+    readonly captainRed: string
+    readonly rope: string
+    readonly raised: string
+    readonly countdown: string | null
+  }) =>
+    [
+      `${row.name} (${row.symbol}), ${row.phase}.`,
+      `Blue captain ${row.captainBlue}, Red captain ${row.captainRed}.`,
+      `${row.rope.replace(/\.$/, '')}.`,
+      `${row.raised}.`,
+      ...(row.countdown === null ? [] : [`${row.countdown}.`]),
+      'Open the game.',
+    ].join(' '),
 } as const

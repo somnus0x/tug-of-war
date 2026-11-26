@@ -7,7 +7,14 @@ import { fixtureInput } from '@/contracts/fixtures/catalog'
 import { HOME_COPY } from '@/copy/home'
 import { bps, pullWei } from '@/lib/units'
 
-import { homeLinkOf, homeRowOf, phaseKindOf, ropeLabelOf, ropeMarkerPercent } from './home-row'
+import {
+  homeLinkOf,
+  homeRowOf,
+  phaseKindOf,
+  ropeLabelOf,
+  ropeMarkerPercent,
+  rowLabelOf,
+} from './home-row'
 
 const LOAD = 1_800_000_000
 const LAUNCHER = '0x0000000000000000000000000000000000000001'
@@ -38,6 +45,14 @@ describe('homeRowOf', () => {
     const game = gameOf('live-mid')
     expect(phaseKindOf(game, game.deadline + 1)).toBe('ended')
     expect(phaseKindOf(game, game.deadline - 1)).toBe('live')
+  })
+
+  it('calls a game whose clock ran out below the minimum raise refunding, as the contract does', () => {
+    const game = gameOf('live-min-not-met')
+    expect(game.raised < game.config.minRaise).toBe(true)
+    expect(phaseKindOf(game, game.deadline)).toBe('refunding')
+    expect(phaseKindOf(game, game.deadline - 1)).toBe('live')
+    expect(homeRowOf(game, game.deadline + 5).phaseLabel).toBe(HOME_COPY.phase.refunding)
   })
 
   it('fills the row from the game', () => {
@@ -117,5 +132,26 @@ describe('ropeMarkerPercent', () => {
     expect(ropeMarkerPercent(10_000)).toBe(0)
     expect(ropeMarkerPercent(0)).toBe(100)
     expect(ropeMarkerPercent(7000)).toBe(30)
+  })
+})
+
+describe('rowLabelOf', () => {
+  it('reads out everything the row shows', () => {
+    const row = homeRowOf(gameOf('live-mid'), LOAD)
+    const label = rowLabelOf(row)
+    for (const part of [row.name, row.symbol, row.phaseLabel, row.captainBlue, row.captainRed]) {
+      expect(label).toContain(part)
+    }
+    expect(label).toContain(row.ropeLabel)
+    expect(label).toContain(row.raised)
+    expect(label).toContain(HOME_COPY.timeLeft('1:24'))
+    expect(label.endsWith('Open the game.')).toBe(true)
+  })
+
+  it('leaves out the clock when there is none and keeps one full stop per sentence', () => {
+    const label = rowLabelOf(homeRowOf(gameOf('waiting-none'), LOAD))
+    expect(label).toContain(HOME_COPY.ropeIdle)
+    expect(label).not.toContain('..')
+    expect(label).not.toContain('left.')
   })
 })

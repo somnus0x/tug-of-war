@@ -3,7 +3,9 @@ export const WALLET_COPY = {
   switchNetwork: 'Switch network',
   switching: 'Switching…',
   balance: (amount: string) => `${amount} BNB`,
-  accountLabel: (address: string, balance: string) => `Wallet ${address}, ${balance}. Open account`,
+  accountLabel: (address: string, balance: string, action: string) =>
+    `${balance === '' ? `Wallet ${address}` : `Wallet ${address}, ${balance}`}. ${action}`,
+  openAccount: 'Open account',
   wrongNetwork: (walletChain: string | undefined, appChain: string) =>
     `Your wallet is on ${walletChain ?? 'another network'}. This game runs on ${appChain}.`,
   openIn: {

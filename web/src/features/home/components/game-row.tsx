@@ -2,7 +2,6 @@ import type { HomeEntry } from '@/contracts/home-types'
 import type { Address } from 'viem'
 
 import { Link } from '@tanstack/react-router'
-import { useId } from 'react'
 
 import { useChainClock } from '@/contracts/queries/use-chain-clock'
 import { useSourceScope } from '@/contracts/queries/use-game-queries'
@@ -11,7 +10,7 @@ import { FIXTURES_ON } from '@/contracts/source'
 import { HOME_COPY } from '@/copy/home'
 import { TeamMark } from '@/ui/team-mark'
 
-import { homeLinkOf, homeRowOf } from '../model/home-row'
+import { homeLinkOf, homeRowOf, rowLabelOf } from '../model/home-row'
 import { MiniRope } from './mini-rope'
 
 type GameRowProps = {
@@ -21,7 +20,6 @@ type GameRowProps = {
 
 export const GameRow = ({ entry, me }: GameRowProps) => {
   const scope = useSourceScope()
-  const ropeId = useId()
   const query = useHomeRow(entry)
   const { chainNow } = useChainClock()
   const game = query.data?.game
@@ -43,8 +41,7 @@ export const GameRow = ({ entry, me }: GameRowProps) => {
         params={{ launcher: link.launcher }}
         search={link.search}
         className="home-row__link"
-        aria-label={HOME_COPY.openGame(row.name, row.symbol, row.phaseLabel)}
-        aria-describedby={ropeId}
+        aria-label={rowLabelOf(row)}
       >
         <span className="home-row__title">
           <span className="home-row__name">{row.name}</span>
@@ -57,9 +54,7 @@ export const GameRow = ({ entry, me }: GameRowProps) => {
         </span>
         <span className="home-row__rope">
           <MiniRope ropeBps={row.ropeBps} />
-          <span className="home-sr" id={ropeId}>
-            {row.ropeLabel}
-          </span>
+          <span className="home-sr">{row.ropeLabel}</span>
         </span>
         <span className="home-row__raised">{row.raised}</span>
         <span className="home-row__clock">{row.countdown}</span>

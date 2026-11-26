@@ -4,6 +4,7 @@ import { WALLET_COPY } from '@/copy/wallet'
 import { formatBnb, shortAddress } from '@/lib/format'
 import { TileButton } from '@/ui/tile-button'
 
+import { accountLabelOf } from './account-label'
 import { useHeaderAccount } from './use-header-account'
 import { useWallet } from './use-wallet'
 
@@ -43,8 +44,8 @@ export const WalletButton = () => {
           return (
             <TileButton
               variant="ghost"
-              onClick={openAccountModal}
-              ariaLabel={WALLET_COPY.accountLabel(address, balance)}
+              onClick={openAccountModal ?? openConnectModal}
+              ariaLabel={accountLabelOf(address, balance, openAccountModal !== undefined)}
             >
               <span className="wallet-account">
                 <span className="wallet-account__address">{address}</span>

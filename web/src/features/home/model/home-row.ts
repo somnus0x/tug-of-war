@@ -29,7 +29,10 @@ export const phaseKindOf = (game: Game, chainNow: number | null): PhaseKind => {
     case 'awaitingCaptains':
       return 'waiting'
     case 'buyIn':
-      return chainNow !== null && secondsLeft(game.deadline, chainNow) <= 0 ? 'ended' : 'live'
+      if (chainNow === null || secondsLeft(game.deadline, chainNow) > 0) {
+        return 'live'
+      }
+      return game.raised < game.config.minRaise ? 'refunding' : 'ended'
     case 'awaitingLaunch':
       return 'ended'
     default:
@@ -72,6 +75,18 @@ export const homeRowOf = (game: Game, chainNow: number | null, me?: Address): Ho
     countdown: countdownOf(game, phase, chainNow),
   }
 }
+
+export const rowLabelOf = (row: HomeRow): string =>
+  HOME_COPY.rowLabel({
+    name: row.name,
+    symbol: row.symbol,
+    phase: row.phaseLabel,
+    captainBlue: row.captainBlue,
+    captainRed: row.captainRed,
+    rope: row.ropeLabel,
+    raised: row.raised,
+    countdown: row.countdown,
+  })
 
 export type HomeLink = {
   readonly launcher: Address

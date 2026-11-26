@@ -121,6 +121,7 @@ describe('fixture stake after approval', () => {
     action: Name,
     params: Parameters<typeof runFixtureTx<Name>>[2],
     mode: 'normal' | 'revert' | 'reject',
+    target: Address | null = VAULT,
   ) => {
     const scope = { fixture: 'launched', viewer: 'holder-blue' }
     const account = viewerAddress('holder-blue')
@@ -129,7 +130,7 @@ describe('fixture stake after approval', () => {
     const context: RunnerContext<Name> = {
       action,
       launcher: LAUNCHER,
-      target: VAULT,
+      target: target ?? undefined,
       chainId: 97,
       queryClient: new QueryClient(),
       dispatch: () => undefined,
@@ -176,6 +177,19 @@ describe('fixture stake after approval', () => {
       { kind: 'rejected' },
     ])
     expect((await run('stake', { amount, team: 'blue' }, 'normal')).failures).toEqual([])
+  })
+
+  it('fails a vault call with no contract address, as the chain path does', async () => {
+    const amount = tokenWei(COIN)
+    const approved = await run('approve', { spender: VAULT, amount }, 'normal', null)
+    expect(approved.failures).toHaveLength(1)
+    expect(approved.successes).toEqual([])
+    const staker = vaultWorldOf(world).staker({
+      launcher: LAUNCHER,
+      account: viewerAddress('holder-blue') ?? ME,
+      scope: { fixture: 'launched', viewer: 'holder-blue' },
+    })
+    expect(staker.allowance).toBe(0n)
   })
 
   it('decodes a vault revert by its own error name', async () => {

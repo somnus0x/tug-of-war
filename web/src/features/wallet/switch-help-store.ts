@@ -46,7 +46,31 @@ export const withSwitchResult = (
 export const showSwitchHelp = (state: SwitchHelpState, onAppChain: boolean): boolean =>
   state.failed && !onAppChain
 
-type StoreState = SwitchHelpState & { readonly switching: number }
+export type SwitchHelpStore = SwitchHelpState & { readonly switching: number }
+
+type StoreState = SwitchHelpStore
+
+export const afterConnection = (state: SwitchHelpStore, connection: string): SwitchHelpStore => {
+  const next = withConnection(state, connection)
+  return next === state ? state : { ...next, switching: 0 }
+}
+
+export const afterSwitchStart = (state: SwitchHelpStore): SwitchHelpStore => ({
+  ...state,
+  switching: state.switching + 1,
+})
+
+export const afterSwitchResult = (
+  state: SwitchHelpStore,
+  result: SwitchResult,
+  startedOn: string,
+): SwitchHelpStore => {
+  if (startedOn !== state.connection) {
+    return state
+  }
+  const next = withSwitchResult(state, result, startedOn)
+  return { ...next, switching: Math.max(0, state.switching - 1) }
+}
 
 let current: StoreState = { ...INITIAL_SWITCH_HELP, switching: 0 }
 const listeners = new Set<() => void>()
@@ -73,17 +97,15 @@ const snapshot = (): StoreState => current
 export const currentConnection = (): string => current.connection
 
 export const noteConnection = (connection: string): void => {
-  const next = withConnection(current, connection)
-  update(next === current ? current : { ...next, switching: current.switching })
+  update(afterConnection(current, connection))
 }
 
 export const noteSwitchStart = (): void => {
-  update({ ...current, switching: current.switching + 1 })
+  update(afterSwitchStart(current))
 }
 
 export const noteSwitchResult = (result: SwitchResult, startedOn: string): void => {
-  const next = withSwitchResult(current, result, startedOn)
-  update({ ...next, switching: Math.max(0, current.switching - 1) })
+  update(afterSwitchResult(current, result, startedOn))
 }
 
 export const useSwitchHelp = (): StoreState => useSyncExternalStore(subscribe, snapshot, snapshot)

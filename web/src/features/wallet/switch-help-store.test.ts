@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
   INITIAL_SWITCH_HELP,
+  afterConnection,
+  afterSwitchResult,
+  afterSwitchStart,
   connectionKey,
   showSwitchHelp,
   switchNoticeFor,
@@ -66,5 +69,27 @@ describe('switch help state', () => {
 
   it('clears after a later switch works', () => {
     expect(withSwitchResult(failedOnA, { ok: true }, A).failed).toBe(false)
+  })
+})
+
+describe('switching count', () => {
+  const onA = { ...withConnection(INITIAL_SWITCH_HELP, A), switching: 0 }
+
+  it('counts a switch and finishes it on the same connection', () => {
+    const started = afterSwitchStart(onA)
+    expect(started.switching).toBe(1)
+    expect(afterSwitchResult(started, FAILED, A)).toMatchObject({ switching: 0, failed: true })
+  })
+
+  it('drops a switch that never answered once another connection takes over', () => {
+    const stuck = afterSwitchStart(onA)
+    const onB = afterConnection(stuck, B)
+    expect(onB.switching).toBe(0)
+    expect(afterSwitchResult(onB, FAILED, A)).toBe(onB)
+  })
+
+  it('keeps the count while the connection stays the same', () => {
+    const started = afterSwitchStart(onA)
+    expect(afterConnection(started, A)).toBe(started)
   })
 })

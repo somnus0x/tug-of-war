@@ -30,6 +30,9 @@ export const SwitchHelp = () => {
 
   const visible =
     (wallet.status === 'wrongNetwork' && showSwitchHelp(switchHelp, false)) || preview.switchFailed
+  if (!visible && open) {
+    setOpen(false)
+  }
   if (!visible) {
     return null
   }
@@ -45,11 +48,13 @@ export const SwitchHelp = () => {
 
   return (
     <>
-      <output className="banner banner--warn switch-help" aria-live="polite">
+      <div className="banner banner--warn switch-help">
         <span className="banner__icon" aria-hidden="true">
           <PixelGlyph art={NOTICE_GLYPHS.warn} scale={2} />
         </span>
-        <span className="banner__text">{WALLET_COPY.couldNotSwitch(appChain.name)}</span>
+        <output className="banner__text" aria-live="polite">
+          {WALLET_COPY.couldNotSwitch(appChain.name)}
+        </output>
         <span className="switch-help__actions">
           <TileButton
             variant="ghost"
@@ -63,7 +68,7 @@ export const SwitchHelp = () => {
             <span className="tile-button__label">{WALLET_COPY.openGameInMetaMask}</span>
           </a>
         </span>
-      </output>
+      </div>
       <Modal
         open={open}
         title={WALLET_COPY.addChain.title(appChain.name)}
