@@ -61,6 +61,7 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
         player={player}
         mode={mode}
         label={sceneLabelOf(game, headline)}
+        extensionSeconds={rules.overtimeExtension}
       />
     ),
     headline: <GameHeadline headline={headline} />,

@@ -6,6 +6,7 @@ import { SCENE_COPY } from '@/copy/scene'
 import { Stage } from '@/scene/stage'
 
 import { useMediaQuery, REDUCED_MOTION_QUERY } from '../hooks/use-media-query'
+import { useOvertimeStamp } from '../hooks/use-overtime-stamp'
 import { useSceneCrew } from '../hooks/use-scene-crew'
 import { leadOf } from '../model/derive-live'
 import { sceneStageOf } from '../model/page-model'
@@ -18,10 +19,25 @@ type GameSceneProps = {
   player: Player | null
   mode: SceneMode
   label: string
+  extensionSeconds: number
 }
 
-export const GameScene = ({ launcher, game, account, player, mode, label }: GameSceneProps) => {
+export const GameScene = ({
+  launcher,
+  game,
+  account,
+  player,
+  mode,
+  label,
+  extensionSeconds,
+}: GameSceneProps) => {
   const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY)
+  const overtimeStamp = useOvertimeStamp(
+    launcher,
+    game.extensionsUsed,
+    extensionSeconds,
+    reducedMotion,
+  )
   const { crew, unknownWallets } = useSceneCrew({ launcher, game, account, player })
   return (
     <div className={`game-scene game-scene--${mode}`}>
@@ -35,7 +51,7 @@ export const GameScene = ({ launcher, game, account, player, mode, label }: Game
         unknownWallets={unknownWallets}
         teamBnb={game.raisedByTeam}
         lead={leadOf(game.pullByTeam)}
-        overtimeStamp={null}
+        overtimeStamp={overtimeStamp}
         reducedMotion={reducedMotion}
         text={SCENE_COPY}
         label={label}

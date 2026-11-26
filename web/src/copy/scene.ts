@@ -25,4 +25,7 @@ export const SCENE_COPY = {
   standLegend: 'Stand',
   headEquals: (count: number) => `1 head = ${wallets(count)}`,
   headEqualsShort: (count: number) => `= ${wallets(count)}`,
+  chip: (bnb: string) => `+${bnb} BNB`,
+  stamp: (seconds: string) => `+${seconds}`,
+  stampLabel: 'Overtime',
 } as const

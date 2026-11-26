@@ -2,6 +2,8 @@ import type { SceneProps, SceneText } from './types'
 
 import { memo, useMemo } from 'react'
 
+import { ArrivalChips } from './arrival-chips'
+import { arrivalActs, playLength } from './arrival-motion'
 import { CapPostLabels } from './cap-post-labels'
 import { CapPosts } from './cap-posts'
 import { CrewFigures } from './crew-figures'
@@ -9,6 +11,7 @@ import { placeCrew, railTail } from './crew-placement'
 import { layoutCrowd } from './crowd-layout'
 import { GEOMETRY, capPostOffsets, markerX } from './geometry'
 import { Legend } from './legend'
+import { OvertimeStamp } from './overtime-stamp'
 import { Rope } from './rope'
 import { ropeLine } from './rope-line'
 import { SceneDeck } from './scene-deck'
@@ -17,8 +20,10 @@ import { SceneSky } from './scene-sky'
 import { sceneVars } from './scene-vars'
 import { Stand } from './stand'
 import { StandLabels } from './stand-labels'
+import { useArrivalPlays } from './use-arrival-plays'
 
 import './scene.css'
+import './scene-motion.css'
 
 export type StageProps = SceneProps & {
   text: SceneText
@@ -35,6 +40,8 @@ export const Stage = memo(
     crew,
     unknownWallets,
     teamBnb,
+    overtimeStamp,
+    reducedMotion,
     text,
     label,
   }: StageProps) => {
@@ -59,6 +66,12 @@ export const Stage = memo(
       [crowd, walletCap, maxBonusShareBps, mode, text],
     )
     const pose = pulling ? 'pull' : 'idle'
+    const plays = useArrivalPlays(crew, pulling || stage === 'waiting', playLength(reducedMotion))
+    const acts = useMemo(
+      () => arrivalActs({ plays, crew, crowd, placement, geometry, walletCap, reducedMotion }),
+      [plays, crew, crowd, placement, geometry, walletCap, reducedMotion],
+    )
+    const slides = !reducedMotion
     return (
       <div className={`scene scene--${mode}`}>
         <div
@@ -86,7 +99,7 @@ export const Stage = memo(
               geometry={geometry}
               tailX={railTail('red', placement.red, marker, stage)}
             />
-            <Rope geometry={geometry} line={line} marker={marker} />
+            <Rope geometry={geometry} line={line} marker={marker} slides={slides} />
             <CrewFigures
               side="blue"
               pose={pose}
@@ -95,6 +108,8 @@ export const Stage = memo(
               geometry={geometry}
               youLabel={text.you}
               captainLabel={text.captain}
+              entries={acts.figures.blue}
+              slides={slides}
             />
             <CrewFigures
               side="red"
@@ -104,8 +119,16 @@ export const Stage = memo(
               geometry={geometry}
               youLabel={text.you}
               captainLabel={text.captain}
+              entries={acts.figures.red}
+              slides={slides}
             />
             <CapPosts geometry={geometry} posts={posts} />
+            <ArrivalChips
+              chips={acts.chips}
+              geometry={geometry}
+              still={reducedMotion}
+              chipText={text.chip}
+            />
           </svg>
           <StandLabels mode={mode} geometry={geometry} blue={labels.blue} red={labels.red} />
           {mode === 'desktop' ? (
@@ -124,6 +147,14 @@ export const Stage = memo(
             standTitle={text.standLegend}
             headLabel={labels.headLabel}
           />
+          {overtimeStamp === null ? null : (
+            <OvertimeStamp
+              mode={mode}
+              text={overtimeStamp}
+              label={text.stampLabel}
+              still={reducedMotion}
+            />
+          )}
         </div>
       </div>
     )

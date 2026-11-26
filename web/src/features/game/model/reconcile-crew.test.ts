@@ -3,8 +3,9 @@ import type { Game } from '@/contracts/types'
 
 import { describe, expect, it } from 'vitest'
 
+import { arrivalsOf } from './arrivals'
 import { bnb, gameOf, playerOf } from './fixture-games'
-import { WALLET_A, WALLET_B } from './log-builders'
+import { WALLET_A, WALLET_B, contributed } from './log-builders'
 import { reconcileCrew } from './reconcile-crew'
 
 const record = (
@@ -112,5 +113,40 @@ describe('reconcileCrew', () => {
     })
     expect(crew).toEqual({ blue: [], red: [] })
     expect(unknownWallets).toEqual(game.playersByTeam)
+  })
+
+  it('marks new and topped-up wallets from the latest poll and leaves the rest at rest', () => {
+    const game = live()
+    const join = contributed({ tx: 1, block: 10 }, WALLET_A, 'red', '0.2', '0.3')
+    const early = contributed({ tx: 2, block: 10, index: 1 }, WALLET_B, 'blue', '0.1', '0.15')
+    const more = contributed({ tx: 3, block: 11 }, WALLET_B, 'blue', '0.05', '0.07')
+    const { crew } = reconcileCrew({
+      wallets: [record(WALLET_A, 'red', '0.2', 0), record(WALLET_B, 'blue', '0.15', 1)],
+      game,
+      account: undefined,
+      player: null,
+      arrivals: arrivalsOf([join, early, more], [join.id, more.id]),
+      backfilled: true,
+    })
+    expect(crew.red[0]).toMatchObject({ arrive: 'join', before: 0n })
+    expect(crew.blue[0]).toMatchObject({ arrive: 'topup', before: bnb('0.1') })
+  })
+
+  it('walks the viewer in as soon as its own pull is read, once the logs are backfilled', () => {
+    const game = live()
+    const player = playerOf('fan-blue', game)
+    const account = '0x71c4a2d9e8b3f6c5a4d7e2b1c0f9e8d7c6b59e02'
+    const loading = reconcileCrew({ wallets: [], game, account, player })
+    expect(loading.crew.blue[0]?.arrive).toBeNull()
+    const live1 = reconcileCrew({ wallets: [], game, account, player, backfilled: true })
+    expect(live1.crew.blue[0]).toMatchObject({ arrive: 'join', before: 0n })
+    const behind = reconcileCrew({
+      wallets: [record(account, 'blue', '0.1', 0)],
+      game,
+      account,
+      player,
+      backfilled: true,
+    })
+    expect(behind.crew.blue[0]).toMatchObject({ arrive: 'topup', before: bnb('0.1') })
   })
 })

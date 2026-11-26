@@ -6,11 +6,13 @@ import { memo, useMemo } from 'react'
 import { createPainter } from './paint'
 import { PaintedPaths } from './painted-paths'
 import { pathOf } from './rope-line'
+import { useSlide } from './use-slide'
 
 type RopeProps = {
   geometry: SceneGeometry
   line: RopeLine
   marker: number
+  slides: boolean
 }
 
 const paintFlag = ({ ground, flag }: SceneGeometry, line: RopeLine, marker: number) => {
@@ -27,11 +29,12 @@ const paintFlag = ({ ground, flag }: SceneGeometry, line: RopeLine, marker: numb
   return painter.paths()
 }
 
-export const Rope = memo(({ geometry, line, marker }: RopeProps) => {
+export const Rope = memo(({ geometry, line, marker, slides }: RopeProps) => {
+  const slideRef = useSlide(marker, 0, slides)
   const d = pathOf(line.points)
   const flag = useMemo(() => paintFlag(geometry, line, marker), [geometry, line, marker])
   return (
-    <g className="scene__rope">
+    <g ref={slideRef} className="scene__rope">
       <path
         className="scene__rope-edge"
         d={d}

@@ -1,7 +1,10 @@
+import type { ArrivalMap } from './arrivals'
 import type { WalletRecord } from './fold-logs'
 import type { Game, Player, TeamPair } from '@/contracts/types'
 import type { Crew, Fan, Side } from '@/scene/types'
 import type { Address } from 'viem'
+
+import { ownMark, walletKey } from './arrivals'
 
 export type SceneCrew = {
   readonly crew: Crew
@@ -14,6 +17,8 @@ export type ReconcileInput = {
   readonly account: Address | undefined
   readonly player: Player | null
   readonly onExcess?: 'drop' | 'keep'
+  readonly arrivals?: ArrivalMap
+  readonly backfilled?: boolean
 }
 
 export type Reconciled = SceneCrew & { readonly needsReset: boolean }
@@ -51,6 +56,22 @@ export const exceedsRaised = (wallets: readonly WalletRecord[], game: Game): boo
   return SIDES.some((side) => folded[side] > game.raisedByTeam[side])
 }
 
+const withArrival = (fan: Fan, arrivals: ArrivalMap | undefined): Fan => {
+  const arrival = arrivals?.get(walletKey(fan.address))
+  if (arrival === undefined) {
+    return fan
+  }
+  if (arrival.kind === 'join') {
+    return { ...fan, arrive: 'join', before: 0n, arrival: arrival.mark }
+  }
+  return {
+    ...fan,
+    arrive: 'topup',
+    before: fan.bnb > arrival.added ? fan.bnb - arrival.added : 0n,
+    arrival: arrival.mark,
+  }
+}
+
 const withOwnPull = (input: ReconcileInput, side: Side, fans: Fan[]): Fan[] => {
   const { account, player, game } = input
   if (account === undefined || player === null || player.team !== side) {
@@ -67,14 +88,24 @@ const withOwnPull = (input: ReconcileInput, side: Side, fans: Fan[]): Fan[] => {
     true,
     isCaptainAddress(game, account),
   )
+  const fresh = input.backfilled === true
   if (index < 0) {
-    return [...fans, own]
+    const mark = ownMark(account, player.contribution)
+    return [...fans, fresh ? { ...own, arrive: 'join', before: 0n, arrival: mark } : own]
   }
   const folded = fans[index]
   if (folded === undefined || folded.bnb >= player.contribution) {
     return fans
   }
-  return fans.map((fan, at) => (at === index ? { ...own, captain: folded.captain } : fan))
+  const topped: Fan = fresh
+    ? {
+        ...own,
+        arrive: 'topup',
+        before: folded.bnb,
+        arrival: ownMark(account, player.contribution),
+      }
+    : own
+  return fans.map((fan, at) => (at === index ? { ...topped, captain: folded.captain } : fan))
 }
 
 const sideCrew = (input: ReconcileInput, wallets: readonly WalletRecord[], side: Side): Fan[] => {
@@ -90,6 +121,7 @@ const sideCrew = (input: ReconcileInput, wallets: readonly WalletRecord[], side:
         wallet.isCaptain || isCaptainAddress(game, wallet.address),
       ),
     )
+    .map((fan) => withArrival(fan, input.arrivals))
   return withOwnPull(input, side, fans)
 }
 

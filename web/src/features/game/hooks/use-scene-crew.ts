@@ -4,8 +4,10 @@ import type { Address } from 'viem'
 
 import { useMemo } from 'react'
 
+import { NO_ARRIVALS, arrivalsOf } from '../model/arrivals'
 import { reconcileCrew } from '../model/reconcile-crew'
 import { useGameCrowd } from './use-game-crowd'
+import { useSettledCrew } from './use-settled-crew'
 
 export type SceneCrewInput = {
   readonly launcher: Address
@@ -15,8 +17,13 @@ export type SceneCrewInput = {
 }
 
 export const useSceneCrew = ({ launcher, game, account, player }: SceneCrewInput): SceneCrew => {
-  const { wallets } = useGameCrowd(launcher, game)
-  return useMemo(
+  const { wallets, logs } = useGameCrowd(launcher, game)
+  const arrivals = useMemo(
+    () => (logs === undefined ? NO_ARRIVALS : arrivalsOf(logs.logs, logs.arrivals)),
+    [logs],
+  )
+  const backfilled = logs?.backfilled === true
+  const reconciled = useMemo(
     () =>
       reconcileCrew({
         wallets,
@@ -24,7 +31,14 @@ export const useSceneCrew = ({ launcher, game, account, player }: SceneCrewInput
         account,
         player,
         onExcess: 'keep',
+        arrivals,
+        backfilled,
       }),
-    [wallets, game, account, player],
+    [wallets, game, account, player, arrivals, backfilled],
+  )
+  const crew = useSettledCrew(launcher, reconciled.crew, backfilled)
+  return useMemo(
+    () => ({ crew, unknownWallets: reconciled.unknownWallets }),
+    [crew, reconciled.unknownWallets],
   )
 }

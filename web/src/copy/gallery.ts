@@ -52,4 +52,10 @@ export const GALLERY_COPY = {
   sceneWaiting: 'Both crews empty, waiting',
   sceneThousand: '1,000 wallets per side',
   sceneOwnFigure: 'Your own figure on the rope',
+  replay: 'Scene motion replay',
+  replayJoin: 'Replay a join',
+  replayTopUp: 'Replay a top-up',
+  replayStamp: 'Replay the overtime stamp',
+  replayStill: 'Reduced motion',
+  replayReset: 'Reset crew',
 } as const

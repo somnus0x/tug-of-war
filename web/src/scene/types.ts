@@ -4,6 +4,12 @@ export type SceneMode = 'desktop' | 'phone'
 
 export type SceneStage = 'waiting' | 'live' | 'ended' | 'launched'
 
+export type ArrivalMark = {
+  key: string
+  block: bigint
+  index: number
+}
+
 export type Fan = {
   address: `0x${string}`
   bnb: bigint
@@ -12,6 +18,7 @@ export type Fan = {
   captain: boolean
   arrive: null | 'join' | 'topup'
   before: bigint
+  arrival?: ArrivalMark
 }
 
 export type Crew = { blue: Fan[]; red: Fan[] }
@@ -48,4 +55,6 @@ export type SceneText = {
   standLegend: string
   headEquals: (wallets: number) => string
   headEqualsShort: (wallets: number) => string
+  chip: (bnb: string) => string
+  stampLabel: string
 }

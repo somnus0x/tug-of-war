@@ -106,6 +106,8 @@ export const formatSpan = (seconds: number): string => {
 
 export const formatSeconds = (seconds: number): string => plural(wholeSeconds(seconds), 'second')
 
+export const formatSecondsShort = (seconds: number): string => `${wholeSeconds(seconds)}s`
+
 export const formatAgo = (seconds: number): string => {
   const total = wholeSeconds(seconds)
   if (total < 3) {
