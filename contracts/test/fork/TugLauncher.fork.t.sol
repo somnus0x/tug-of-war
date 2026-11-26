@@ -16,14 +16,32 @@ import {TugMath} from "src/libraries/TugMath.sol";
 
 import {TugBase} from "./TugBase.sol";
 
+interface IPortalVersion {
+    function version() external view returns (string memory);
+}
+
 contract TugLauncherForkTest is TugBase {
-    function test_UnopenedFactoryCannotCreateLauncher() public {
-        TugConfig memory config = _config();
-        (bool enabled,) = portal.launcherFactoryMultiplier(address(factory));
-        assertFalse(enabled);
+    function test_DisabledFactoriesStillCreateAndLaunchWhilePaused() public {
+        _setFactories(10_000, false, 10_000, false);
+        (bool launcherEnabled,) = portal.launcherFactoryMultiplier(address(factory));
+        (bool vaultEnabled,) = IPortalFloor(address(portal)).vaultFactoryMultiplier(address(vaultFactory));
+        assertFalse(launcherEnabled);
+        assertFalse(vaultEnabled);
         assertTrue(portal.featureFlags() & 1 != 0);
-        vm.expectRevert();
-        _create(config);
+        emit log_named_string("Portal version", IPortalVersion(address(portal)).version());
+
+        TugLauncher launcher = _create(_config());
+        assertEq(portal.getLauncher(address(launcher)).launcherFactory, address(factory));
+
+        _start(launcher);
+        _contribute(launcher, alice, Team.BLUE, launcher.minRaise());
+        vm.warp(launcher.deadline());
+        vm.prank(bob, bob);
+        launcher.launch();
+
+        assertGt(launcher.token().code.length, 0);
+        assertGt(launcher.pool().code.length, 0);
+        assertGt(launcher.vault().code.length, 0);
     }
 
     function test_MaxBonusShareBpsBoundaries() public {

@@ -341,7 +341,7 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 
 | PR | Test |
 |---|---|
-| 3 | Unopened factory cannot create a launcher |
+| 3 | With creation paused and both factory flags disabled, `newLauncher` registered the game and `launch()` created the token, pool and vault (BSC testnet, Portal v1.2.0, block 144932590). Flap's `IPortal` NatSpec says `newLauncher` reverts for a disabled factory. |
 | 3 | With an otherwise valid config, `validateConfig` accepts `maxBonusShareBps` values of 5,000 and 10,000. At 4,999 and 10,001 it returns `(false, MaxBonusShareOutOfRange.selector)`, and creation reverts with the same error |
 | 3 | Only the named captains can call `depositCaptain`, once each, at or above the minimum |
 | 3 | `contribute` reverts until both captains are in |
@@ -390,7 +390,7 @@ Frontend (Thu evening), demo videos and the submission (Fri early morning) are o
 
 ## Platform constraints (review checklist)
 
-- Create only through `Portal.newLauncher`; factory audited and opened by Flap. Factories are immutable: a change means a new factory and a new audit.
+- Create only through `Portal.newLauncher`. Flap audits and opens factories. On BSC testnet, Portal v1.2.0, block 144932590, neither creation nor launch required the factories to be enabled (decision 7). Factories are immutable, so a change means a new factory and a new audit.
 - Factories inherit `LauncherFactoryBase` / `DirectLaunchVaultFactoryBase` (required by Flap).
 - Launcher locks its own salt; factory never does.
 - Token address ends in `7777`; never call the token before launch.
@@ -448,7 +448,7 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 4 | Zero-pull team's bonus? | Other team gets the whole bonus, and its captain the whole captain share |
 | 5 | 70% maximum bonus share? | Kept (comment resolved) |
 | 6 | How does a game start? | Captain challenge and accept deposits; cancel and refund if B does not accept in time |
-| 7 | Does Flap have to open our factory? | Yes. An unopened factory is refused; Flap opens it with `setLauncherFactoryMultiplier(factory, 10000, true)` (platform constraints) |
+| 7 | Does Flap have to open our factory? | Not observed to be required. On BSC testnet, Portal v1.2.0, block 144932590, a fork probe created and launched a game with creation paused and both factory flags disabled. The floor parity tests cover how the flags select the multiplier. Still ask Flap to open both factories (decision 16) using `setLauncherFactoryMultiplier(launcherFactory, 10000, true)` and `setVaultFactoryMultiplier(vaultFactory, 10000, true)`. |
 | 8 | What is the liquidity floor? | $750 × multiplier × totalSupply / poolToken. Read from the testnet Portal: BNB at $700, so 2.15 tBNB at a 50% pool share and 1x multiplier. About 7 faucet-days from one address, so funding is spread over 5+ wallets and several faucets |
 | 9 | Can a captain deposit more than the minimum? | Yes. `depositCaptain` takes "at least captainMinDeposit", and the deposit counts toward the wallet cap |
 | 10 | Can we copy Flap's base contracts? | Yes, and we must: Flap requires factories to inherit `LauncherFactoryBase`. Example sources are marked MIT (the repo has no LICENSE file). The README says what is ours and what came from Flap |
