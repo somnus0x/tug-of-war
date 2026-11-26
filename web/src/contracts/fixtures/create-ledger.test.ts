@@ -11,7 +11,7 @@ import { tugLauncherFactoryAbi } from '../abis'
 import { configArg } from '../create-mappers'
 import { MOCK_DEFAULT_CONFIG, MOCK_FEE, createFixtureCreateSource } from './create-fixture'
 import { balanceAfter, createCreateLedger } from './create-ledger'
-import { applyMockCreate, createGateOf } from './create-tx-fixture'
+import { applyMockCreate, createFixtureStep, createGateOf } from './create-tx-fixture'
 
 const SALT: Hex = '0x000000000000000000000000000000000000000000000000000000000002b01a'
 const VIEWER = getAddress('0x0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c')
@@ -66,5 +66,41 @@ describe('mock create ledger', () => {
       balanceAfter(low, MOCK_FEE),
     )
     expect(balanceAfter(bnbWei(1n), bnbWei(5n))).toBe(0n)
+  })
+
+  it('raises the floor above the entered raise when a mock create reverts', async () => {
+    const ledger = createCreateLedger()
+    const source = createFixtureCreateSource({ latency: false, ledger })
+    const step = createFixtureStep(PARAMS, { account: VIEWER, scope: scope() }, ledger)
+    step.check()
+    step.check()
+    const limits = await source.readLimits(scope())
+    expect(limits.minRaiseFloor).toBeGreaterThan(CONFIG.minRaise)
+    await expect(source.validateConfig(CONFIG, scope())).resolves.toEqual({
+      ok: false,
+      reason: 'MinRaiseBelowCreationFloor',
+    })
+  })
+
+  it('leaves the floor alone when the mock create lands', async () => {
+    const ledger = createCreateLedger()
+    const source = createFixtureCreateSource({ latency: false, ledger })
+    const before = await source.readLimits(scope())
+    const step = createFixtureStep(PARAMS, { account: VIEWER, scope: scope() }, ledger)
+    step.check()
+    step.check().apply()
+    expect((await source.readLimits(scope())).minRaiseFloor).toBe(before.minRaiseFloor)
+  })
+
+  it('keeps a risen floor inside the mock state that reverted', async () => {
+    const ledger = createCreateLedger()
+    const source = createFixtureCreateSource({ latency: false, ledger })
+    const step = createFixtureStep(PARAMS, { account: VIEWER, scope: scope() }, ledger)
+    step.check()
+    step.check()
+    expect((await source.readLimits(scope())).minRaiseFloor).toBeGreaterThan(CONFIG.minRaise)
+    expect((await source.readLimits(scope('floor-zero'))).minRaiseFloor).toBe(0n)
+    const rising = await source.readLimits(scope('floor-rising'))
+    expect(rising.minRaiseFloor).toBe(parseEther('1.5'))
   })
 })

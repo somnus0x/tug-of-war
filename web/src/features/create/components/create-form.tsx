@@ -2,6 +2,7 @@ import type { TextField } from '../hooks/use-create-form'
 import type { ReportReason } from '../hooks/use-send-create'
 import type { CreatedResult } from '../model/created'
 import type { FieldName, FormValues } from '../model/form-values'
+import type { SaltFound } from '../model/salt-search'
 import type { CreateLimits, CreateSetup } from '@/contracts/create-types'
 import type { FormEvent } from 'react'
 
@@ -19,7 +20,9 @@ import { PixelBox } from '@/ui/pixel-box'
 import { useCreateFlow } from '../hooks/use-create-flow'
 import { fieldOfText, useCreateForm } from '../hooks/use-create-form'
 import { useSendCreate } from '../hooks/use-send-create'
+import { configKey } from '../model/config'
 import { announcementOf, createButtonOf, locksInputs } from '../model/create-button'
+import { sendFailedFor } from '../model/send-attempt'
 import { upperSymbol } from '../model/validate'
 import { CaptainField } from './captain-field'
 import { CreateAction } from './create-action'
@@ -58,11 +61,14 @@ export const CreateForm = ({
   const account = useViewerAccount(wallet.address)
   const calls = useCreateCalls()
   const reportRef = useRef<ReportReason>(() => undefined)
+  const saltRef = useRef<SaltFound | null>(null)
   const sender = useSendCreate({
     setup,
     calls,
     account,
-    onCreated,
+    onCreated: (result) => {
+      onCreated({ ...result, found: saltRef.current })
+    },
     onReason: (reason, fresh, attemptKey) => {
       reportRef.current(reason, fresh, attemptKey)
     },
@@ -87,11 +93,16 @@ export const CreateForm = ({
   })
   useEffect(() => {
     reportRef.current = flow.reportReason
+    saltRef.current = flow.salt
   })
   const isSending = sender.stage !== 'idle'
   const isDisabled = isUnavailable || isSending || locksInputs(flow.stage)
-  const hasErrors = Object.keys(check.errors).length > 0 || flow.fieldProblem !== null
+  const hasErrors = Object.keys(check.errors).length > 0
   const showsErrors = flow.submitted && hasErrors
+  const liveKey = flow.prepared === null ? null : configKey(flow.prepared.config)
+  const sendFailed = sendFailedFor(sender.failure, liveKey)
+  const failureLine = sendFailed ? (sender.failure?.message ?? null) : null
+  const isReady = flow.prepared !== null && flow.fieldProblem === null && !sendFailed
   const button = createButtonOf({
     isUnavailable,
     hasAccount: account !== undefined,
@@ -99,6 +110,7 @@ export const CreateForm = ({
     showsErrors,
     stage: flow.stage,
     sending: sender.stage,
+    sendFailed,
     fee: formatBnbExact(sender.fee),
   })
 
@@ -133,7 +145,7 @@ export const CreateForm = ({
       void wallet.switchNetwork()
     } else if (button.kind === 'send') {
       flow.sendPrepared()
-    } else if (button.kind === 'start' || button.kind === 'fix') {
+    } else if (button.kind === 'start' || button.kind === 'retry') {
       if (hasErrors) {
         focusFirstInvalid(target)
       }
@@ -159,9 +171,14 @@ export const CreateForm = ({
       </PixelBox>
       <PixelBox heading={CREATE_COPY.sections.coin}>
         <div className="create-fields">
-          <CreateField label={FIELDS.name} {...textProps('name')} />
+          <CreateField
+            label={FIELDS.name}
+            placeholder={FIELDS.namePlaceholder}
+            {...textProps('name')}
+          />
           <CreateField
             label={FIELDS.symbol}
+            placeholder={FIELDS.symbolPlaceholder}
             {...textProps('symbol')}
             onChange={(text) => {
               form.setText('symbol', upperSymbol(text))
@@ -222,10 +239,14 @@ export const CreateForm = ({
         </div>
       </PixelBox>
       <div className="create-bottom">
-        <FixedRules setup={setup} />
+        <div className="create-fixed-slot">
+          <FixedRules setup={setup} />
+        </div>
         <CreateAction
           flow={flow}
           button={button}
+          isReady={isReady}
+          failure={failureLine}
           announcement={
             sender.feeChanged
               ? CREATE_COPY.button.feeChanged(formatBnbExact(sender.fee))

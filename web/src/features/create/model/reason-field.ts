@@ -35,6 +35,8 @@ const valuesFor = (reason: string, limits: CreateLimits): ErrorValues => {
   return {}
 }
 
+export const isFieldReason = (reason: string): boolean => Object.hasOwn(FIELD_OF_REASON, reason)
+
 export const reasonProblem = (reason: string, limits: CreateLimits): ReasonProblem => {
   const message = contractErrorMessage('createGame', reason, valuesFor(reason, limits))
   const field = Object.hasOwn(FIELD_OF_REASON, reason) ? FIELD_OF_REASON[reason] : undefined

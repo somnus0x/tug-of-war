@@ -31,8 +31,31 @@ describe('createButtonOf', () => {
     })
   })
 
-  it('asks to connect without a wallet', () => {
-    expect(createButtonOf({ ...BASE, hasAccount: false }).label).toBe(CREATE_COPY.button.connect)
+  it('asks to connect without a wallet, under the create label', () => {
+    expect(createButtonOf({ ...BASE, hasAccount: false })).toEqual({
+      kind: 'connect',
+      label: 'Create game · 0.005 BNB fee',
+      state: 'idle',
+      reason: 'Connect a wallet to create a game.',
+    })
+  })
+
+  it('greys out the create label while fields need fixing', () => {
+    expect(createButtonOf({ ...BASE, showsErrors: true })).toEqual({
+      kind: 'fix',
+      label: 'Create game · 0.005 BNB fee',
+      state: 'disabled',
+      reason: 'Fix the fields above.',
+    })
+  })
+
+  it('offers to try again after a failed send', () => {
+    expect(createButtonOf({ ...BASE, sendFailed: true })).toEqual({
+      kind: 'retry',
+      label: 'Try again',
+      state: 'idle',
+    })
+    expect(kindOf({ sendFailed: true, showsErrors: true })).toBe('fix')
   })
 
   it('orders the states', () => {

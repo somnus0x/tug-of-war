@@ -1,5 +1,6 @@
 import type { CreateFlow } from '../hooks/use-create-flow'
 import type { CreateButton } from '../model/create-button'
+import type { TxMessage } from '@/copy/tx'
 
 import { useId } from 'react'
 
@@ -13,12 +14,22 @@ type CreateActionProps = {
   button: CreateButton
   announcement: string
   feeNotice?: string | undefined
+  isReady: boolean
+  failure: TxMessage | null
 }
 
 const SEARCH = CREATE_COPY.search
 
-export const CreateAction = ({ flow, button, announcement, feeNotice }: CreateActionProps) => {
+export const CreateAction = ({
+  flow,
+  button,
+  announcement,
+  feeNotice,
+  isReady,
+  failure,
+}: CreateActionProps) => {
   const noteId = useId()
+  const reasonId = useId()
   const { stage } = flow
   const isSearching = stage.kind === 'searching'
   return (
@@ -47,7 +58,7 @@ export const CreateAction = ({ flow, button, announcement, feeNotice }: CreateAc
             <mark>{flow.salt.address.slice(-4)}</mark>
           </p>
         )}
-        {flow.prepared === null ? null : <p className="create-search__ready">{SEARCH.ready}</p>}
+        {isReady ? <p className="create-search__ready">{SEARCH.ready}</p> : null}
         {isSearching ? (
           <TileButton variant="ghost" onClick={flow.cancelSearch}>
             {CREATE_COPY.stopSearch}
@@ -64,15 +75,25 @@ export const CreateAction = ({ flow, button, announcement, feeNotice }: CreateAc
           }
         />
       )}
+      {failure === null ? null : (
+        <p className="create-failure" role="alert">
+          <b>{failure.title}</b> {failure.body}
+        </p>
+      )}
       <TileButton
         variant="primary"
         type="submit"
         state={button.state}
         fullWidth
-        describedBy={noteId}
+        describedBy={button.reason === undefined ? noteId : `${reasonId} ${noteId}`}
       >
         {button.label}
       </TileButton>
+      {button.reason === undefined ? null : (
+        <p className="create-reason" id={reasonId}>
+          {button.reason}
+        </p>
+      )}
       <p className="create-note" id={noteId}>
         {feeNotice === undefined ? null : <b className="create-fee-notice">{feeNotice} </b>}
         {CREATE_COPY.button.feeNote}

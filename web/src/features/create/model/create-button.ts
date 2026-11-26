@@ -20,6 +20,7 @@ export type CreateButtonKind =
   | 'connect'
   | 'switchNetwork'
   | 'fix'
+  | 'retry'
   | 'start'
   | 'send'
 
@@ -27,6 +28,7 @@ export type CreateButton = {
   readonly kind: CreateButtonKind
   readonly label: string
   readonly state: TileState
+  readonly reason?: string
 }
 
 export type CreateButtonInput = {
@@ -36,6 +38,7 @@ export type CreateButtonInput = {
   readonly showsErrors: boolean
   readonly stage: CreateStage
   readonly sending?: 'idle' | 'checking' | 'wallet' | 'pending'
+  readonly sendFailed?: boolean
   readonly fee: string
 }
 
@@ -70,16 +73,19 @@ export const createButtonOf = (input: CreateButtonInput): CreateButton => {
   if (stage.kind === 'checking' || stage.kind === 'preparing') {
     return { kind: 'checking', label: BUTTON.checking, state: 'pending' }
   }
+  const label = BUTTON.create(input.fee)
   if (!input.hasAccount) {
-    return { kind: 'connect', label: BUTTON.connect, state: 'idle' }
+    return { kind: 'connect', label, state: 'idle', reason: BUTTON.connectReason }
   }
   if (input.isWrongNetwork) {
-    return { kind: 'switchNetwork', label: BUTTON.switchNetwork, state: 'idle' }
+    return { kind: 'switchNetwork', label, state: 'idle', reason: BUTTON.switchReason }
   }
   if (input.showsErrors) {
-    return { kind: 'fix', label: BUTTON.fix, state: 'idle' }
+    return { kind: 'fix', label, state: 'disabled', reason: BUTTON.fixReason }
   }
-  const label = BUTTON.create(input.fee)
+  if (input.sendFailed === true) {
+    return { kind: 'retry', label: BUTTON.retry, state: 'idle' }
+  }
   return stage.kind === 'ready'
     ? { kind: 'send', label, state: 'idle' }
     : { kind: 'start', label, state: 'idle' }

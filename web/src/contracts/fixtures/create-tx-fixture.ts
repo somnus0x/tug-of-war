@@ -5,6 +5,8 @@ import type { Address } from 'viem'
 
 import { decodeAbiParameters, getAbiItem, getAddress, keccak256, slice } from 'viem'
 
+import { bnbWei } from '@/lib/units'
+
 import { tugLauncherFactoryAbi } from '../abis'
 import { ZERO_ADDRESS } from './constants'
 import { mockFeeOf } from './create-fixture'
@@ -17,6 +19,7 @@ const encodeConfigInputs = getAbiItem({ abi: tugLauncherFactoryAbi, name: 'encod
 const OK: Gate = { ok: true }
 
 type DecodedConfig = {
+  readonly minRaise: bigint
   readonly captainBlue: Address
   readonly captainRed: Address
   readonly salt: CreatedGame['salt']
@@ -25,7 +28,12 @@ type DecodedConfig = {
 const decodeConfig = (params: CreateGameParams): DecodedConfig | null => {
   try {
     const [config] = decodeAbiParameters(encodeConfigInputs, params.data)
-    return { captainBlue: config.captainBlue, captainRed: config.captainRed, salt: config.salt }
+    return {
+      minRaise: config.minRaise,
+      captainBlue: config.captainBlue,
+      captainRed: config.captainRed,
+      salt: config.salt,
+    }
   } catch {
     return null
   }
@@ -73,8 +81,10 @@ export const applyMockCreate = (
   params: CreateGameParams,
   account: Address | undefined,
   ledger: CreateLedger = createLedger,
+  state?: string,
 ): CreatedGame => {
   const created = mockCreatedGame(params, account)
+  ledger.settleFloor(state)
   if (account !== undefined) {
     ledger.charge(account, params.fee)
   }
@@ -82,15 +92,38 @@ export const applyMockCreate = (
   return created
 }
 
+export const FLOOR_RISE = 10n ** 17n
+
+export const noteLanding = (
+  params: CreateGameParams,
+  ledger: CreateLedger,
+  state: string | undefined,
+): void => {
+  const config = decodeConfig(params)
+  if (config !== null) {
+    ledger.raiseFloor(state, bnbWei(config.minRaise + FLOOR_RISE))
+  }
+}
+
 export const createFixtureStep = (
   params: CreateGameParams,
   place: CreateStepPlace,
   ledger: CreateLedger = createLedger,
-) => ({
-  args: [params.factory, params.data] as readonly unknown[],
-  failsOnDemand: true,
-  check: () => ({
-    gate: createGateOf(params, place.scope.fixture, ledger),
-    apply: () => applyMockCreate(params, place.account, ledger),
-  }),
-})
+) => {
+  let checks = 0
+  return {
+    args: [params.factory, params.data] as readonly unknown[],
+    failsOnDemand: true,
+    check: () => {
+      checks += 1
+      const gate = createGateOf(params, place.scope.fixture, ledger)
+      if (checks > 1) {
+        noteLanding(params, ledger, place.scope.fixture)
+      }
+      return {
+        gate,
+        apply: () => applyMockCreate(params, place.account, ledger, place.scope.fixture),
+      }
+    },
+  }
+}

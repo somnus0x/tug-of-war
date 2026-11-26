@@ -121,7 +121,16 @@ export const createFixtureCreateSource = (options: CreateFixtureOptions = {}): C
     const key = scope.fixture ?? ''
     const reads = (risingReads.get(key) ?? 0) + (advance ? 1 : 0)
     risingReads.set(key, reads)
-    return { ...BASE_LIMITS, ...floorOf(fixture, Math.max(reads - 1, 0)) }
+    const base = floorOf(fixture, Math.max(reads - 1, 0))
+    const risen = ledger.risenFloor(scope.fixture)
+    return {
+      ...BASE_LIMITS,
+      ...base,
+      minRaiseFloor:
+        base.creationFloorAvailable && risen !== null && risen > base.minRaiseFloor
+          ? risen
+          : base.minRaiseFloor,
+    }
   }
 
   const predict = (salt: GameConfig['salt'], scope: SourceScope): Address => {

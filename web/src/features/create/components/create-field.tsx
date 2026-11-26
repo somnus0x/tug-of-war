@@ -4,6 +4,8 @@ import { useId } from 'react'
 
 import { classNames } from '@/ui/class-names'
 
+import { useAutoHeight } from '../hooks/use-auto-height'
+
 export type CreateFieldProps = {
   label: ReactNode
   ariaLabel?: string | undefined
@@ -15,6 +17,7 @@ export type CreateFieldProps = {
   inputMode?: 'text' | 'decimal'
   isDisabled: boolean
   isWide?: boolean
+  isAddress?: boolean
   maxLength?: number | undefined
   action?: ReactNode
   onChange: (text: string) => void
@@ -32,12 +35,14 @@ export const CreateField = ({
   inputMode = 'text',
   isDisabled,
   isWide = false,
+  isAddress = false,
   maxLength,
   action,
   onChange,
   onBlur,
 }: CreateFieldProps) => {
   const inputId = useId()
+  const addressRef = useAutoHeight()
   const hintId = useId()
   const errorId = useId()
   const describedBy =
@@ -51,26 +56,53 @@ export const CreateField = ({
       </label>
       <div className="create-field__row">
         <div className={classNames('create-field__box', error !== undefined && 'is-invalid')}>
-          <input
-            id={inputId}
-            className="create-field__input"
-            type="text"
-            inputMode={inputMode}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            placeholder={placeholder}
-            maxLength={maxLength}
-            aria-label={ariaLabel}
-            aria-invalid={error !== undefined}
-            aria-describedby={describedBy}
-            disabled={isDisabled}
-            value={value}
-            onChange={(event) => {
-              onChange(event.target.value)
-            }}
-            onBlur={onBlur}
-          />
+          {isAddress ? (
+            <textarea
+              ref={addressRef}
+              id={inputId}
+              className="create-field__input create-field__input--address"
+              rows={1}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder={placeholder}
+              aria-label={ariaLabel}
+              aria-invalid={error !== undefined}
+              aria-describedby={describedBy}
+              disabled={isDisabled}
+              value={value}
+              onChange={(event) => {
+                onChange(event.target.value)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault()
+                }
+              }}
+              onBlur={onBlur}
+            />
+          ) : (
+            <input
+              id={inputId}
+              className="create-field__input"
+              type="text"
+              inputMode={inputMode}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              placeholder={placeholder}
+              maxLength={maxLength}
+              aria-label={ariaLabel}
+              aria-invalid={error !== undefined}
+              aria-describedby={describedBy}
+              disabled={isDisabled}
+              value={value}
+              onChange={(event) => {
+                onChange(event.target.value)
+              }}
+              onBlur={onBlur}
+            />
+          )}
           {unit === undefined ? null : (
             <span className="create-field__unit" aria-hidden="true">
               {unit}

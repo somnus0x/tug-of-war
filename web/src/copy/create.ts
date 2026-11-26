@@ -21,7 +21,9 @@ export const CREATE_COPY = {
   fixedNote: 'Same for every game. Both crews launch one coin together.',
   fields: {
     name: 'Coin name',
+    namePlaceholder: 'Rope Coin',
     symbol: 'Symbol',
+    symbolPlaceholder: 'ROPE',
     cid: 'Metadata CID',
     cidPlaceholder: 'Qm… or bafy…',
     cidHint: 'Paste the IPFS CID of the coin’s metadata, or upload an image instead.',
@@ -85,6 +87,10 @@ export const CREATE_COPY = {
     checking: 'Checking the settings…',
     wallet: 'Confirm in your wallet…',
     creating: 'Creating game…',
+    retry: 'Try again',
+    fixReason: 'Fix the fields above.',
+    connectReason: 'Connect a wallet to create a game.',
+    switchReason: 'Switch your wallet to BSC Testnet to create a game.',
     feeChanged: (fee: string) =>
       `The fee changed to ${fee} BNB. Press the button again to create the game.`,
   },
@@ -100,6 +106,17 @@ export const CREATE_COPY = {
       title: 'Game created',
       body: 'Its address could not be read from the receipt.',
     },
+    failed: (reason: string | null) => ({
+      title: 'Could not create the game',
+      body: `The transaction was reverted.${reason === null ? '' : ` ${reason}`} The BNB fee for the game was not taken; only the network fee was spent.`,
+    }),
+    notSent: (reason: string | null) => ({
+      title: 'Could not create the game',
+      body:
+        reason === null
+          ? 'Nothing was sent. Check the field marked above.'
+          : `${reason} Nothing was sent.`,
+    }),
     balance: (needed: string) => ({
       title: `Not enough BNB. You need ${needed} BNB for the fee and network costs.`,
     }),
@@ -108,6 +125,9 @@ export const CREATE_COPY = {
     heading: 'Game created',
     intro: 'Send this link to both captains. They have to deposit before the game starts.',
     linkLabel: 'Share link',
+    found: (address: string) => `Found ${address}`,
+    tries: (count: string) => `${count} tries`,
+    addressLabel: 'Coin address',
     copy: 'Copy link',
     copied: 'Link copied.',
     copyFailed: 'Could not copy. Select the link and copy it.',

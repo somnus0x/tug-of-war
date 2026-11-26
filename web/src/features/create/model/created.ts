@@ -6,6 +6,7 @@ import { gameShareLink } from '@/lib/entry-link'
 export type CreatedResult = {
   readonly game: CreatedGame | null
   readonly hash: Hash
+  readonly found?: { readonly address: Address; readonly tries: number } | null
 }
 
 export type CreateRound = {

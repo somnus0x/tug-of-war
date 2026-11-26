@@ -1,12 +1,18 @@
 import type { PreSendResult } from './pre-send'
-import type { AttemptDeps } from './send-attempt'
+import type { AttemptDeps, FailureInput } from './send-attempt'
 
 import { parseEther } from 'viem'
 import { describe, expect, it } from 'vitest'
 
 import { bnbWei } from '@/lib/units'
 
-import { reasonAppliesTo, runSendAttempt } from './send-attempt'
+import {
+  failureMessageOf,
+  failureStageOf,
+  reasonAppliesTo,
+  runSendAttempt,
+  sendFailedFor,
+} from './send-attempt'
 
 const SHOWN = bnbWei(parseEther('0.005'))
 const RISEN = bnbWei(parseEther('0.006'))
@@ -93,5 +99,64 @@ describe('reasonAppliesTo', () => {
     expect(reasonAppliesTo('sent', 'sent')).toBe(true)
     expect(reasonAppliesTo('sent', 'edited since')).toBe(false)
     expect(reasonAppliesTo('sent', null)).toBe(false)
+  })
+})
+
+const MAPPED = { title: 'Create game did not go through', body: 'timeout. Your BNB was not taken.' }
+
+const input = (patch: Partial<FailureInput>): FailureInput => ({
+  kind: 'contract',
+  stage: 'reverted',
+  reasonText: null,
+  onField: false,
+  mapped: MAPPED,
+  ...patch,
+})
+
+const FEE_LINE = 'The BNB fee for the game was not taken; only the network fee was spent.'
+
+describe('failureMessageOf', () => {
+  it('says reverted and network fee only for a mined, reverted receipt', () => {
+    expect(failureMessageOf(input({ reasonText: 'Below the floor.', onField: true }))).toEqual({
+      title: 'Could not create the game',
+      body: `The transaction was reverted. ${FEE_LINE}`,
+    })
+    expect(failureMessageOf(input({ reasonText: 'The settings were rejected (X).' }))?.body).toBe(
+      `The transaction was reverted. The settings were rejected (X). ${FEE_LINE}`,
+    )
+  })
+
+  it('says nothing was sent for a failed simulation', () => {
+    const field = failureMessageOf(
+      input({ stage: 'simulation', reasonText: 'Below.', onField: true }),
+    )
+    expect(field?.body).toBe('Nothing was sent. Check the field marked above.')
+    const other = failureMessageOf(input({ stage: 'simulation', reasonText: 'Rejected (X).' }))
+    expect(other?.body).toBe('Rejected (X). Nothing was sent.')
+    expect(other?.body).not.toContain('reverted')
+  })
+
+  it('keeps the mapped message for an unknown RPC error', () => {
+    expect(failureMessageOf(input({ kind: 'unknown', stage: 'simulation' }))).toBe(MAPPED)
+    expect(failureMessageOf(input({ kind: 'unknown', stage: 'reverted' }))).toBe(MAPPED)
+  })
+
+  it('leaves wallet rejections and missing gas to their own messages', () => {
+    expect(failureMessageOf(input({ kind: 'rejected' }))).toBeNull()
+    expect(failureMessageOf(input({ kind: 'insufficientFunds' }))).toBeNull()
+  })
+
+  it('reads the stage from whether a transaction was sent', () => {
+    expect(failureStageOf(undefined)).toBe('simulation')
+    expect(failureStageOf('0x12')).toBe('reverted')
+  })
+})
+
+describe('sendFailedFor', () => {
+  it('offers a retry only for the configuration that failed', () => {
+    const failure = { key: 'sent', message: { title: 'Could not create the game' } }
+    expect(sendFailedFor(failure, 'sent')).toBe(true)
+    expect(sendFailedFor(failure, 'edited')).toBe(false)
+    expect(sendFailedFor(null, 'sent')).toBe(false)
   })
 })

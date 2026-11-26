@@ -1,6 +1,6 @@
 import type { PreparedCreate } from '../model/config'
 import type { CreatedResult } from '../model/created'
-import type { BlockedResult } from '../model/send-attempt'
+import type { BlockedResult, SendFailure } from '../model/send-attempt'
 import type { CreateLimits, CreateSetup } from '@/contracts/create-types'
 import type { CreateCalls } from '@/contracts/queries/use-create-queries'
 import type { TxErrorInfo } from '@/contracts/tx/classify-error'
@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react'
 import { explorerTxUrl } from '@/contracts/tx/explorer'
 import { useTx } from '@/contracts/tx/use-tx'
 import { CREATE_COPY } from '@/copy/create'
+import { NOT_TAKEN } from '@/copy/error-rows'
 import { contractErrorMessage, errorMessage } from '@/copy/errors'
 import { TX_COPY } from '@/copy/tx'
 import { txToasts } from '@/features/tx/tx-toasts'
@@ -23,7 +24,8 @@ import { formatBnbExact, formatSpan } from '@/lib/format'
 
 import { configKey } from '../model/config'
 import { preSendChecks } from '../model/pre-send'
-import { runSendAttempt } from '../model/send-attempt'
+import { isFieldReason } from '../model/reason-field'
+import { failureMessageOf, failureStageOf, runSendAttempt } from '../model/send-attempt'
 import { floorText } from '../model/validate'
 
 export type SendCreate = (prepared: PreparedCreate) => void
@@ -37,6 +39,7 @@ export type CreateSender = {
   readonly stage: SendStage
   readonly fee: BnbWei
   readonly feeChanged: boolean
+  readonly failure: SendFailure | null
 }
 
 export type SendInput = {
@@ -48,6 +51,11 @@ export type SendInput = {
 }
 
 const READ_FAILED: TxMessage = { title: CREATE_COPY.readFailed }
+
+const messageText = (message: TxMessage): string =>
+  (message.body === undefined ? message.title : `${message.title} ${message.body}`)
+    .replace(NOT_TAKEN, '')
+    .trim()
 
 const toast = (kind: ToastKind, message: TxMessage, hash?: Hash): number =>
   txToasts.push({
@@ -86,6 +94,7 @@ export const useSendCreate = (input: SendInput): CreateSender => {
   const attempted = useRef<{ id: number; key: string } | null>(null)
   const [fee, setFee] = useState<BnbWei>(setup.fee)
   const [feeChanged, setFeeChanged] = useState(false)
+  const [failure, setFailure] = useState<SendFailure | null>(null)
   const account = input.account
   const network = `${wallet.status}|${wallet.chainName ?? ''}`
 
@@ -118,23 +127,47 @@ export const useSendCreate = (input: SendInput): CreateSender => {
     latest.current = input
   })
 
-  const reportFailure = async (error: TxErrorInfo, hash: Hash | undefined): Promise<void> => {
-    clearSent()
-    if (error.kind !== 'contract' || error.name === undefined) {
+  const showFailure = (
+    error: TxErrorInfo,
+    hash: Hash | undefined,
+    key: string | null,
+    reasonText: string | null,
+    onField: boolean,
+  ): void => {
+    const message = failureMessageOf({
+      kind: error.kind,
+      stage: failureStageOf(hash),
+      reasonText,
+      onField,
+      mapped: errorMessage('createGame', error),
+    })
+    if (message === null) {
       toast('err', errorMessage('createGame', error), hash)
       return
     }
+    toast('err', message, hash)
+    if (key !== null) {
+      setFailure({ key, message })
+    }
+  }
+
+  const reportFailure = async (error: TxErrorInfo, hash: Hash | undefined): Promise<void> => {
+    clearSent()
     const ticket = attempted.current
-    if (ticket === null) {
+    if (error.kind !== 'contract' || error.name === undefined || ticket === null) {
+      const text = error.kind === 'contract' ? messageText(errorMessage('createGame', error)) : null
+      showFailure(error, hash, ticket?.key ?? null, text, false)
       return
     }
+    const name = error.name
     const limits = await freshLimits(calls)
     if (ticket.id !== attempt.current) {
       return
     }
-    latest.current.onReason(error.name, limits, ticket.key)
+    latest.current.onReason(name, limits, ticket.key)
     const values = limits === null ? {} : { floor: floorText(limits.minRaiseFloor) }
-    toast('err', errorMessage('createGame', error, values), hash)
+    const text = errorMessage('createGame', error, values)
+    showFailure(error, hash, ticket.key, messageText(text), isFieldReason(name))
   }
 
   const tx = useTx('createGame', {
@@ -184,6 +217,7 @@ export const useSendCreate = (input: SendInput): CreateSender => {
     const key = configKey(prepared.config)
     setChecking(true)
     setFeeChanged(false)
+    setFailure(null)
     await runSendAttempt({
       checks: () =>
         preSendChecks(prepared, {
@@ -224,5 +258,5 @@ export const useSendCreate = (input: SendInput): CreateSender => {
     void check(prepared, sender)
   }
 
-  return { send, stage, fee, feeChanged }
+  return { send, stage, fee, feeChanged, failure }
 }
