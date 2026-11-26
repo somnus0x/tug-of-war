@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {ClonesUpgradeable} from "@openzeppelin-contracts-upgradeable/proxy/ClonesUpgradeable.sol";
 import {Test} from "forge-std/Test.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 
 import {IPortal, IPortalTypes} from "src/flap/IPortal.sol";
 import {LaunchVaultAddresses} from "src/flap/LaunchVaultAddresses.sol";
+import {ITugLauncherFactory} from "src/interfaces/ITugLauncherFactory.sol";
 import {TugConfig} from "src/interfaces/TugTypes.sol";
 import {TugLauncher} from "src/launcher/TugLauncher.sol";
 import {TugLauncherFactory} from "src/launcher/TugLauncherFactory.sol";
 import {TugVaultFactory} from "src/vault/TugVaultFactory.sol";
+
+import {TugTestnet} from "../../script/TugTestnet.sol";
 
 interface IPortalProxyAdmin {
     function owner() external view returns (address);
@@ -18,9 +20,8 @@ interface IPortalProxyAdmin {
 
 abstract contract TugBase is Test {
     string private constant RPC_VARIABLE = "BSC_TESTNET_RPC_URL";
-    address internal constant PORTAL_PROXY_ADMIN = 0x0000Ed588dfc01749C20bA69b5f8c77d706E0000;
-    address internal constant TOKEN_IMPLEMENTATION = 0x7777c57ff7dc441c1715b2e36fa581c48B782222;
-    address internal constant TRIGGER_SERVICE = 0x560E9830926C9e0EB98a59c6b9902383Fc0D9Eb2;
+    address internal constant PORTAL_PROXY_ADMIN = TugTestnet.PORTAL_PROXY_ADMIN;
+    address internal constant TRIGGER_SERVICE = TugTestnet.TRIGGER_SERVICE;
     uint8 internal constant LAUNCH_KIND = uint8(IPortalTypes.LaunchKind.DIRECT_V2_POOL_TAX);
     uint256 internal constant CAPTAIN_DEPOSIT = 0.1 ether;
 
@@ -43,7 +44,7 @@ abstract contract TugBase is Test {
         }
 
         vm.createSelectFork("bsc_testnet");
-        assertEq(block.chainid, 97);
+        assertEq(block.chainid, TugTestnet.CHAIN_ID);
         emit log_named_uint("BSC testnet fork block", block.number);
 
         portal = IPortal(LaunchVaultAddresses.hub());
@@ -79,7 +80,7 @@ abstract contract TugBase is Test {
             LaunchVaultAddresses.guardian(),
             address(beacon),
             address(vaultFactory),
-            TOKEN_IMPLEMENTATION,
+            TugTestnet.TOKEN_IMPLEMENTATION,
             TRIGGER_SERVICE
         );
         assertEq(address(launcherFactory), predictedFactory);
@@ -111,16 +112,7 @@ abstract contract TugBase is Test {
 
     function _mineSalt(string memory saltDomain) private view returns (bytes32 salt) {
         bytes32 seed = keccak256(abi.encode(saltDomain, block.number, address(factory)));
-        address hub = address(portal);
-        for (uint256 i;; ++i) {
-            assembly ("memory-safe") {
-                mstore(0, seed)
-                mstore(32, i)
-                salt := keccak256(0, 64)
-            }
-            address prediction = ClonesUpgradeable.predictDeterministicAddress(TOKEN_IMPLEMENTATION, salt, hub);
-            if (uint16(uint160(prediction)) == 0x7777) return salt;
-        }
+        (salt,) = TugTestnet.mineSalt(ITugLauncherFactory(address(factory)), seed);
     }
 
     function _create(TugConfig memory config) internal returns (TugLauncher launcher) {
