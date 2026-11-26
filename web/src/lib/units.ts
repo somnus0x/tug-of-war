@@ -47,3 +47,33 @@ export const bps = (value: number): Bps => {
   }
   throw new RangeError(`Basis points must be an integer from 0 to ${UINT16_MAX}: ${value}`)
 }
+
+const BPS_BIG = BigInt(BPS_DENOMINATOR)
+
+export const HALF_BPS = bps(BPS_DENOMINATOR / 2)
+
+export type Ratio = { readonly numerator: bigint; readonly denominator: bigint }
+
+export const bpsToRatio = (value: Bps): Ratio => ({
+  numerator: BigInt(value),
+  denominator: BPS_BIG,
+})
+
+export const ratioToBps = ({ numerator, denominator }: Ratio): Bps => {
+  if (denominator <= 0n || numerator < 0n) {
+    throw new RangeError('Ratio must be non-negative over a positive denominator')
+  }
+  return bps(Number((numerator * BPS_BIG) / denominator))
+}
+
+export const mulBps = (amount: bigint, value: Bps): bigint => (amount * BigInt(value)) / BPS_BIG
+
+export const shareBps = (part: bigint, whole: bigint): Bps => {
+  if (part < 0n || whole < 0n || part > whole) {
+    throw new RangeError(`Share needs 0 <= part <= whole: ${part} / ${whole}`)
+  }
+  if (whole === 0n) {
+    return HALF_BPS
+  }
+  return ratioToBps({ numerator: part, denominator: whole })
+}
