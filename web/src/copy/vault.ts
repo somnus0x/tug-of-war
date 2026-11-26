@@ -27,6 +27,7 @@ export const VAULT_COPY = {
     addressLabel: 'Coin address',
     copy: 'Copy address',
     copied: 'Address copied',
+    copiedLabel: 'Copied',
     copyFailed: 'Could not copy. Select the address instead.',
     explorer: 'View on explorer',
     trade: 'Trade on Flap',

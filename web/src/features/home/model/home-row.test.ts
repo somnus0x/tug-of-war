@@ -5,9 +5,11 @@ import { describe, expect, it } from 'vitest'
 import { buildGame } from '@/contracts/fixtures/builder'
 import { fixtureInput } from '@/contracts/fixtures/catalog'
 import { HOME_COPY } from '@/copy/home'
+import { formatDateTime } from '@/lib/format'
 import { bps, pullWei } from '@/lib/units'
 
 import {
+  createdAtOf,
   homeLinkOf,
   homeRowOf,
   phaseKindOf,
@@ -41,6 +43,36 @@ describe('homeRowOf', () => {
     expect(homeRowOf(gameOf('waiting-none'), LOAD).countdown).toBeNull()
     expect(homeRowOf(gameOf('waiting-none'), LOAD).clock).toBeNull()
     expect(homeRowOf(gameOf('live-mid'), null).countdown).toBeNull()
+  })
+
+  it.each([
+    ['waiting-none', HOME_COPY.clockNone],
+    ['ended-can-launch', HOME_COPY.clockOver],
+    ['refunding-min-missed', HOME_COPY.clockOver],
+    ['launched', HOME_COPY.clockOver],
+    ['cancelled', HOME_COPY.clockNone],
+  ] as const)('fills the time column for %s with %s', (name, note) => {
+    const row = homeRowOf(gameOf(name), LOAD)
+    expect(row.clock).toBeNull()
+    expect(row.clockNote).toBe(note)
+  })
+
+  it('fills the time column with a dash while the chain time is unknown', () => {
+    expect(homeRowOf(gameOf('live-mid'), null).clockNote).toBe(HOME_COPY.clockNone)
+  })
+
+  it('reads the creation time back from the captain deadline', () => {
+    const game = gameOf('live-mid')
+    const at = game.acceptDeadline - game.config.acceptWindow
+    expect(createdAtOf(game)).toBe(at)
+    expect(homeRowOf(game, LOAD).created).toBe(HOME_COPY.created(formatDateTime(at)))
+    expect(rowLabelOf(homeRowOf(game, LOAD))).toContain(HOME_COPY.created(formatDateTime(at)))
+  })
+
+  it('leaves the creation time out when the captain deadline is missing', () => {
+    const game = { ...gameOf('live-mid'), acceptDeadline: 0 }
+    expect(createdAtOf(game)).toBeNull()
+    expect(homeRowOf(game, LOAD).created).toBeNull()
   })
 
   it('calls a live game whose clock has run out clock ended', () => {

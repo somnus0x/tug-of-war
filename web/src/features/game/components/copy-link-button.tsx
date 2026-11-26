@@ -4,9 +4,10 @@ import { useState } from 'react'
 
 import { WAITING_COPY } from '@/copy/waiting'
 import { gameShareLink } from '@/lib/entry-link'
+import { FlashLabel } from '@/ui/flash-label'
+import { FlashSay } from '@/ui/flash-say'
 import { TileButton } from '@/ui/tile-button'
-
-type CopyState = 'idle' | 'copied' | 'failed'
+import { useFlash } from '@/ui/use-flash'
 
 type CopyLinkButtonProps = {
   launcher: Address
@@ -22,10 +23,17 @@ const copyText = async (text: string): Promise<boolean> => {
 }
 
 export const CopyLinkButton = ({ launcher }: CopyLinkButtonProps) => {
-  const [state, setState] = useState<CopyState>('idle')
+  const [failed, setFailed] = useState(false)
+  const flash = useFlash()
   const copy = async (): Promise<void> => {
     const link = gameShareLink(window.location.origin, import.meta.env.BASE_URL, launcher)
-    setState((await copyText(link)) ? 'copied' : 'failed')
+    const copied = await copyText(link)
+    setFailed(!copied)
+    if (copied) {
+      flash.show()
+    } else {
+      flash.hide()
+    }
   }
   return (
     <div className="copy-link">
@@ -35,12 +43,10 @@ export const CopyLinkButton = ({ launcher }: CopyLinkButtonProps) => {
           void copy()
         }}
       >
-        {WAITING_COPY.copyLink}
+        <FlashLabel idle={WAITING_COPY.copyLink} flash={WAITING_COPY.copiedLabel} on={flash.on} />
       </TileButton>
-      <output className="copy-link__status">
-        {state === 'copied' ? WAITING_COPY.copied : null}
-        {state === 'failed' ? WAITING_COPY.copyFailed : null}
-      </output>
+      <FlashSay text={WAITING_COPY.copied} on={flash.on} />
+      <output className="copy-link__status">{failed ? WAITING_COPY.copyFailed : null}</output>
     </div>
   )
 }

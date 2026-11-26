@@ -6,7 +6,7 @@ import type { Address } from 'viem'
 import { GAME_COPY } from '@/copy/game'
 import { HOME_COPY } from '@/copy/home'
 import { secondsLeft } from '@/lib/clock'
-import { formatBnb, formatClock, formatShare, shortAddress } from '@/lib/format'
+import { formatBnb, formatClock, formatDateTime, formatShare, shortAddress } from '@/lib/format'
 import { BPS_DENOMINATOR, HALF_BPS, bps } from '@/lib/units'
 
 export type PhaseKind = 'waiting' | 'live' | 'ended' | 'refunding' | 'launched' | 'cancelled'
@@ -24,6 +24,8 @@ export type HomeRow = {
   readonly raisedAmount: string
   readonly countdown: string | null
   readonly clock: string | null
+  readonly clockNote: string
+  readonly created: string | null
 }
 
 export const phaseKindOf = (game: Game, chainNow: number | null): PhaseKind => {
@@ -47,6 +49,28 @@ const clockOf = (game: Game, phase: PhaseKind, chainNow: number | null): string 
     return null
   }
   return formatClock(secondsLeft(game.deadline, chainNow))
+}
+
+const CLOCK_IS_OVER: Record<PhaseKind, boolean> = {
+  waiting: false,
+  live: false,
+  ended: true,
+  refunding: true,
+  launched: true,
+  cancelled: false,
+}
+
+const clockNoteOf = (phase: PhaseKind): string =>
+  CLOCK_IS_OVER[phase] ? HOME_COPY.clockOver : HOME_COPY.clockNone
+
+export const createdAtOf = (game: Game): number | null => {
+  const at = game.acceptDeadline - game.config.acceptWindow
+  return game.acceptDeadline > 0 && at > 0 ? at : null
+}
+
+const createdOf = (game: Game): string | null => {
+  const at = createdAtOf(game)
+  return at === null ? null : HOME_COPY.created(formatDateTime(at))
 }
 
 export const ropeLabelOf = (game: Game): string => {
@@ -78,6 +102,8 @@ export const homeRowOf = (game: Game, chainNow: number | null, me?: Address): Ho
     raisedAmount: HOME_COPY.amount(formatBnb(game.raised)),
     countdown: clock === null ? null : HOME_COPY.timeLeft(clock),
     clock,
+    clockNote: clockNoteOf(phase),
+    created: createdOf(game),
   }
 }
 
@@ -91,6 +117,7 @@ export const rowLabelOf = (row: HomeRow): string =>
     rope: row.ropeLabel,
     raised: row.raised,
     countdown: row.countdown,
+    created: row.created,
   })
 
 export type HomeLink = {

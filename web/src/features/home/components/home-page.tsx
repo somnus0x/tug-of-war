@@ -4,6 +4,7 @@ import { useSourceScope, useViewerAccount } from '@/contracts/queries/use-game-q
 import { useCaptainGames, useRecentGames } from '@/contracts/queries/use-home-queries'
 import { HOME_COPY } from '@/copy/home'
 import { useWallet } from '@/features/wallet/use-wallet'
+import { TugLoader } from '@/scene/tug-loader'
 import { Banner } from '@/ui/banner'
 import { PixelBox } from '@/ui/pixel-box'
 import { tileButtonClassName } from '@/ui/tile-button-classes'
@@ -46,23 +47,24 @@ export const HomePage = () => {
           <GameList entries={mine} me={account} />
         </PixelBox>
       ) : null}
-      <PixelBox heading={HOME_COPY.recent}>
-        {list.showsError ? (
-          <Banner
-            kind="warn"
-            text={HOME_COPY.unreadable}
-            actionLabel={HOME_COPY.retry}
-            onAction={() => {
-              void recent.refetch()
-            }}
-          />
-        ) : null}
-        {list.body === 'loading' ? (
-          <output className="home-note">{HOME_COPY.loading}</output>
-        ) : null}
-        {list.body === 'empty' ? <p className="home-note">{HOME_COPY.empty}</p> : null}
-        {list.body === 'rows' ? <GameList entries={list.entries} me={account} /> : null}
-      </PixelBox>
+      {list.body === 'loading' ? (
+        <TugLoader label={HOME_COPY.loading} />
+      ) : (
+        <PixelBox heading={HOME_COPY.recent}>
+          {list.showsError ? (
+            <Banner
+              kind="warn"
+              text={HOME_COPY.unreadable}
+              actionLabel={HOME_COPY.retry}
+              onAction={() => {
+                void recent.refetch()
+              }}
+            />
+          ) : null}
+          {list.body === 'empty' ? <p className="home-note">{HOME_COPY.empty}</p> : null}
+          {list.body === 'rows' ? <GameList entries={list.entries} me={account} /> : null}
+        </PixelBox>
+      )}
     </div>
   )
 }

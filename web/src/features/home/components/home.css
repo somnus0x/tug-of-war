@@ -241,8 +241,15 @@
   white-space: nowrap;
 }
 
+.home-row__clock-note {
+  color: var(--mute);
+  font-family: var(--font-body);
+  font-size: var(--text-small);
+}
+
 @media (max-width: 759px) {
-  .home-head {
+  .home-head,
+  .home-row__clock-note {
     display: none;
   }
 
