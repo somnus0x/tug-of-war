@@ -19,6 +19,7 @@ export const GamePhone = ({ slots, hasBar, rulesLast }: GamePhoneProps) => {
       <div className="game__sections">
         {hasBar ? slots.picker : slots.pull}
         {slots.you}
+        {slots.feed}
         {rulesLast ? null : slots.rules}
         <div className="game__totals">
           {slots.blueTotals}

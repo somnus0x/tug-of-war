@@ -1,12 +1,11 @@
-import type { SceneCrew } from '../model/known-crew'
+import type { SceneCrew } from '../model/reconcile-crew'
 import type { Game, Player } from '@/contracts/types'
 import type { Address } from 'viem'
 
 import { useMemo } from 'react'
 
-import { usePlayer } from '@/contracts/queries/use-game-queries'
-
-import { knownCrew } from '../model/known-crew'
+import { reconcileCrew } from '../model/reconcile-crew'
+import { useGameCrowd } from './use-game-crowd'
 
 export type SceneCrewInput = {
   readonly launcher: Address
@@ -16,10 +15,16 @@ export type SceneCrewInput = {
 }
 
 export const useSceneCrew = ({ launcher, game, account, player }: SceneCrewInput): SceneCrew => {
-  const blue = usePlayer(launcher, game.config.captainBlue).data?.player ?? null
-  const red = usePlayer(launcher, game.config.captainRed).data?.player ?? null
+  const { wallets } = useGameCrowd(launcher, game)
   return useMemo(
-    () => knownCrew({ game, account, player, captains: { blue, red } }),
-    [game, account, player, blue, red],
+    () =>
+      reconcileCrew({
+        wallets,
+        game,
+        account,
+        player,
+        onExcess: 'keep',
+      }),
+    [wallets, game, account, player],
   )
 }

@@ -18,7 +18,10 @@ export const GameDesktop = ({ slots }: GameDesktopProps) => (
     </div>
     <div className="game__columns">
       <div className="game__column game__column--pull">{slots.pull}</div>
-      <div className="game__column game__column--you">{slots.you}</div>
+      <div className="game__column game__column--you">
+        {slots.you}
+        {slots.feed}
+      </div>
       <div className="game__column game__column--rules">{slots.rules}</div>
     </div>
     {slots.announcer}

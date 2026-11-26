@@ -1,3 +1,4 @@
+import type { LogBatch, LogRequest } from './logs'
 import type { Phase } from '@/lib/phase'
 import type { Team } from '@/lib/team'
 import type { BnbWei, Bps, PullWei, TokenWei } from '@/lib/units'
@@ -107,7 +108,11 @@ export type Gates = {
 
 export type ContributeDraft = { readonly team: Team; readonly amount: BnbWei }
 
-export type GameTick = { readonly game: Game; readonly blockTimestamp: number }
+export type GameTick = {
+  readonly game: Game
+  readonly blockTimestamp: number
+  readonly blockNumber: bigint
+}
 
 export type PlayerRead = { readonly player: Player; readonly balance: BnbWei }
 
@@ -134,4 +139,13 @@ export type GameSource = {
   ) => Promise<PlayerRead>
   readonly readGates: (request: GateRequest, scope: SourceScope) => Promise<Gates>
   readonly viewerAccount: (wallet: Address | undefined, scope: SourceScope) => Address | undefined
+  readonly readLogs: (
+    launcher: Address,
+    request: LogRequest,
+    scope: SourceScope,
+  ) => Promise<LogBatch>
+  readonly readBlockTimes: (
+    blocks: readonly bigint[],
+    scope: SourceScope,
+  ) => Promise<Readonly<Record<string, number>>>
 }

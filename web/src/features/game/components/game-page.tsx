@@ -14,6 +14,7 @@ import { DESKTOP_QUERY, useMediaQuery } from '../hooks/use-media-query'
 import { GameLoadError } from './game-load-error'
 import { LiveGame } from './live-game'
 
+import './game-feed.css'
 import './game-hud.css'
 import './game-page.css'
 import './game-panels.css'

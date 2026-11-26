@@ -13,6 +13,8 @@ export const queryKeys = {
     ['game', chainId, launcher, ...scopeKey(scope)] as const,
   rules: (chainId: number, launcher: Address, scope: SourceScope) =>
     ['rules', chainId, launcher, ...scopeKey(scope)] as const,
+  logs: (chainId: number, launcher: Address, scope: SourceScope) =>
+    ['logs', chainId, launcher, ...scopeKey(scope)] as const,
   player: (chainId: number, launcher: Address, account: Address | undefined, scope: SourceScope) =>
     ['player', chainId, launcher, account ?? NO_ACCOUNT, ...scopeKey(scope)] as const,
   gates: (

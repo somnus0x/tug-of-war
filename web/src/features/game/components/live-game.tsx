@@ -9,11 +9,13 @@ import { useClockFace } from '../hooks/use-clock-face'
 import { usePullDraft } from '../hooks/use-pull-draft'
 import { usePullTx } from '../hooks/use-pull-tx'
 import { deriveLive } from '../model/derive-live'
+import { FEED_ROWS } from '../model/feed-rows'
 import { announceStateOf, capNoteOf, pageHeadline, sceneLabelOf } from '../model/page-text'
 import { pullBoxStateOf } from '../model/pull-form'
 import { CapNote } from './cap-note'
 import { GameAnnouncer } from './game-announcer'
 import { GameDesktop } from './game-desktop'
+import { GameFeed } from './game-feed'
 import { GameHeadline } from './game-headline'
 import { GameHud } from './game-hud'
 import { GamePhone } from './game-phone'
@@ -85,6 +87,15 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
         <PullPicker game={game} account={account} draft={draft} isBusy={pullTx.state !== 'idle'} />
       ) : null,
     you: <ViewerReadout launcher={launcher} account={account} />,
+    feed: (
+      <GameFeed
+        launcher={launcher}
+        game={game}
+        rules={rules}
+        account={account}
+        limit={FEED_ROWS[mode]}
+      />
+    ),
     rules: <RulesPanel game={game} rules={rules} collapsed={hasTeam} />,
     announcer: (
       <GameAnnouncer

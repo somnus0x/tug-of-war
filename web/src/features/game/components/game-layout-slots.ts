@@ -10,6 +10,7 @@ export type GameLayoutSlots = {
   pull: ReactNode
   picker: ReactNode
   you: ReactNode
+  feed: ReactNode
   rules: ReactNode
   announcer: ReactNode
 }
