@@ -3,8 +3,8 @@ import type { Address } from 'viem'
 import { Navigate } from '@tanstack/react-router'
 
 import { VAULT_COPY } from '@/copy/vault'
+import { TugLoader } from '@/scene/tug-loader'
 import { PixelBox } from '@/ui/pixel-box'
-import { Spinner } from '@/ui/spinner'
 
 import { useVaultPage } from '../hooks/use-vault-page'
 import { VaultBoard } from './vault-board'
@@ -26,12 +26,7 @@ export const VaultPage = ({ launcher }: VaultPageProps) => {
     )
   }
   if (data.game === undefined || data.rules === undefined) {
-    return (
-      <p className="vault-loading" aria-busy="true">
-        <Spinner />
-        {VAULT_COPY.loading}
-      </p>
-    )
+    return <TugLoader label={VAULT_COPY.loading} />
   }
   if (data.game.phase !== 'launched') {
     return <Navigate to="/g/$launcher" params={{ launcher }} search={true} replace />

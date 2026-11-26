@@ -6,6 +6,7 @@ import {
   useCreateSetup,
 } from '@/contracts/queries/use-create-queries'
 import { CREATE_COPY } from '@/copy/create'
+import { TugLoader } from '@/scene/tug-loader'
 import { Banner } from '@/ui/banner'
 
 import { FIRST_ROUND, createRoundReducer } from '../model/created'
@@ -53,7 +54,7 @@ export const CreatePage = () => {
             }}
           />
         ) : (
-          <output className="create-note">{CREATE_COPY.loading}</output>
+          <TugLoader label={CREATE_COPY.loading} />
         )}
       </div>
     )

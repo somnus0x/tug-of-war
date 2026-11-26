@@ -6,12 +6,11 @@ import {
   useRules,
   useViewerAccount,
 } from '@/contracts/queries/use-game-queries'
-import { GAME_COPY } from '@/copy/game'
 import { useWallet } from '@/features/wallet/use-wallet'
-import { Spinner } from '@/ui/spinner'
 
 import { DESKTOP_QUERY, useMediaQuery } from '../hooks/use-media-query'
 import { GameLoadError } from './game-load-error'
+import { GameLoading } from './game-loading'
 import { LiveGame } from './live-game'
 
 import './game-feed.css'
@@ -36,12 +35,7 @@ export const GamePage = ({ launcher }: GamePageProps) => {
     return <GameLoadError />
   }
   if (game.data === undefined || rules.data === undefined) {
-    return (
-      <p className="game-loading" aria-busy="true">
-        <Spinner />
-        {GAME_COPY.loading}
-      </p>
-    )
+    return <GameLoading />
   }
   return (
     <LiveGame
