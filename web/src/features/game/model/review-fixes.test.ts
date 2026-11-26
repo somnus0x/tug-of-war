@@ -54,6 +54,10 @@ describe('gameBannerOf', () => {
     const input = bannerInput('live-mid', 'captain-blue')
     expect(gameBannerOf({ ...input, isClosing: false })?.text).toMatch(/^You captain Blue/)
     expect(gameBannerOf({ ...input, walletStatus: 'wrongNetwork', isClosing: false })).toBeNull()
+    expect(
+      gameBannerOf({ ...input, walletStatus: 'wrongNetwork', stale: true, isClosing: false })
+        ?.retry,
+    ).toBe(true)
   })
 
   it('drops live banners while the clock closes but keeps the connection warning', () => {

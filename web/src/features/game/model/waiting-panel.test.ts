@@ -201,3 +201,17 @@ describe('deposit in flight at the deadline', () => {
     expect(waitingPanelOf(blue).kind).toBe('expired')
   })
 })
+
+describe('cancel when the deposit cannot be read', () => {
+  it('offers a plain cancel once the player read has failed and no log names the deposit', () => {
+    const base = {
+      game: gameOf('waiting-expired'),
+      account: BLUE,
+      captain: 'blue',
+      accept: 'expired',
+      cancelGate: okGate,
+    } as const
+    expect(cancelButtonOf(input(base))).toEqual({ kind: 'checking' })
+    expect(cancelButtonOf(input({ ...base, isPlayerReadFailed: true }))).toEqual({ kind: 'cancel' })
+  })
+})

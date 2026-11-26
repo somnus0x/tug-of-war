@@ -8,12 +8,14 @@ import { Link } from '@tanstack/react-router'
 import { FIXTURES_ON } from '@/contracts/source'
 import { tradeUrlOf } from '@/contracts/tx/explorer'
 import { ENDED_COPY } from '@/copy/ended'
-import { TX_COPY } from '@/copy/tx'
 import { WALLET_COPY } from '@/copy/wallet'
 import { useWallet } from '@/features/wallet/use-wallet'
 import { formatBnb } from '@/lib/format'
 import { TileButton } from '@/ui/tile-button'
 import { tileButtonClassName } from '@/ui/tile-button-classes'
+
+import { endedButtonOf } from '../model/ended-button'
+import { EndedTxButton } from './ended-tx-button'
 
 type EndedActionProps = {
   action: Action
@@ -44,7 +46,6 @@ export const EndedAction = ({
   refundReady,
 }: EndedActionProps) => {
   const wallet = useWallet()
-  const isWrongNetwork = !FIXTURES_ON && wallet.status === 'wrongNetwork'
   if (action.kind === 'vault') {
     const trade = tradeUrlOf(game.token)
     return (
@@ -79,24 +80,21 @@ export const EndedAction = ({
     action.kind === 'launch'
       ? ENDED_COPY.launchCoin
       : ENDED_COPY.refundAmount(formatBnb(action.amount))
-  const press = (): void => {
-    if (isBusy || !ready) {
-      return
-    }
-    if (isWrongNetwork) {
-      void wallet.switchNetwork()
-      return
-    }
-    tx.run()
-  }
+  const button = endedButtonOf({
+    isBusy,
+    walletStatus: wallet.status,
+    fixturesOn: FIXTURES_ON,
+    ready,
+  })
   return (
-    <TileButton
-      variant="primary"
-      fullWidth
-      state={isBusy ? tx.state : ready ? 'idle' : 'disabled'}
-      onClick={press}
-    >
-      {isBusy ? (tx.label ?? idleLabel) : isWrongNetwork ? TX_COPY.switchNetwork : idleLabel}
-    </TileButton>
+    <EndedTxButton
+      button={button}
+      tx={tx}
+      idleLabel={idleLabel}
+      onConnect={wallet.connect}
+      onSwitch={() => {
+        void wallet.switchNetwork()
+      }}
+    />
   )
 }

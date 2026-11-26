@@ -166,6 +166,7 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
     rules: <RulesPanel game={game} rules={rules} collapsed={hasTeam} />,
     announcer: (
       <GameAnnouncer
+        key={launcher}
         state={announceStateOf(game, face, isClockKnown)}
         extensionSeconds={rules.overtimeExtension}
       />

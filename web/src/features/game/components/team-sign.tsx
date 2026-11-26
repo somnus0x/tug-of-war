@@ -34,23 +34,23 @@ export const TeamSign = ({ game, side, account, top }: TeamSignProps) => {
           <span className="team-sign__top-title" aria-hidden="true">
             {GAME_COPY.totals.topPullers}
           </span>
-          {top.length === 0 ? (
-            <span className="team-sign__nobody">{GAME_COPY.totals.nobodyYet}</span>
-          ) : (
-            <ol
-              className="team-sign__list"
-              aria-label={GAME_COPY.totals.topPullersOf(GAME_COPY.team[side])}
-            >
-              {top.map((puller) => (
+          <ol
+            className="team-sign__list"
+            aria-label={GAME_COPY.totals.topPullersOf(GAME_COPY.team[side])}
+          >
+            {top.length === 0 ? (
+              <li className="team-sign__nobody">{GAME_COPY.totals.nobodyYet}</li>
+            ) : (
+              top.map((puller) => (
                 <li key={puller.address} className="team-sign__row">
                   <span>{pullerNameOf(puller)}</span>
                   <span className="team-sign__pull">
                     {GAME_COPY.totals.pull(formatPull(pullWei(puller.pull)))}
                   </span>
                 </li>
-              ))}
-            </ol>
-          )}
+              ))
+            )}
+          </ol>
         </div>
       )}
     </div>

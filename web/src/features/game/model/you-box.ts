@@ -2,6 +2,9 @@ import type { Player } from '@/contracts/types'
 import type { Phase } from '@/lib/phase'
 import type { BnbWei, PullWei } from '@/lib/units'
 
+import { GAME_COPY } from '@/copy/game'
+import { formatBnb } from '@/lib/format'
+
 export type YouBnb =
   | { readonly kind: 'in'; readonly amount: BnbWei }
   | { readonly kind: 'returned'; readonly amount: BnbWei }
@@ -43,5 +46,16 @@ export const youBoxOf = (
     pull: player.pull,
     capLeft: LIVE_PHASES.has(phase) ? player.remainingCap : null,
     showsLock: phase !== 'buyIn',
+  }
+}
+
+export const youBnbTextOf = (bnb: YouBnb): { readonly label: string; readonly value: string } => {
+  switch (bnb.kind) {
+    case 'returned':
+      return { label: GAME_COPY.viewer.bnbReturned, value: formatBnb(bnb.amount) }
+    case 'refunded':
+      return { label: GAME_COPY.viewer.bnbWord, value: GAME_COPY.viewer.refunded }
+    default:
+      return { label: GAME_COPY.viewer.bnbIn, value: formatBnb(bnb.amount) }
   }
 }

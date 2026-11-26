@@ -4,7 +4,7 @@ import type { Game, Player, Rules } from '@/contracts/types'
 import type { Address } from 'viem'
 
 import { useGameLogs } from '@/contracts/queries/use-game-logs'
-import { useGates } from '@/contracts/queries/use-game-queries'
+import { useGates, usePlayer } from '@/contracts/queries/use-game-queries'
 import { FIXTURES_ON } from '@/contracts/source'
 import { GAME_COPY } from '@/copy/game'
 import { WAITING_COPY } from '@/copy/waiting'
@@ -45,6 +45,7 @@ export const WaitingSlot = ({
   const wallet = useWallet()
   const roles = deriveRoles(game, account)
   const cancelGate = useGates(launcher, account, null).gates?.cancel ?? null
+  const playerRead = usePlayer(launcher, account)
   const logs = useGameLogs(launcher, game).state?.logs ?? NO_LOGS
   const panel = waitingPanelOf({
     game,
@@ -56,6 +57,7 @@ export const WaitingSlot = ({
     logs,
     isWrongNetwork: !FIXTURES_ON && wallet.status === 'wrongNetwork',
     isDepositBusy: actions.deposit.state !== 'idle',
+    isPlayerReadFailed: playerRead.isError,
   })
   switch (panel.kind) {
     case 'cancelled':

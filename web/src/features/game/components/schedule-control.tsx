@@ -2,6 +2,8 @@ import type { ScheduleButton } from '../model/auto-launch-card'
 import type { Action } from '@/features/tx/use-action'
 import type { BnbWei } from '@/lib/units'
 
+import { useId } from 'react'
+
 import { AUTO_LAUNCH_COPY } from '@/copy/auto-launch'
 import { contractErrorMessage } from '@/copy/errors'
 import { TX_COPY } from '@/copy/tx'
@@ -48,6 +50,7 @@ export const ScheduleControl = ({ button, quote, schedule }: ScheduleControlProp
   const enabled = isScheduleEnabled(button)
   const note = isBusy ? null : noteOf(button)
   const label = labelOf(button, quote)
+  const noteId = useId()
   const press = (): void => {
     if (isBusy || !enabled) {
       return
@@ -60,17 +63,22 @@ export const ScheduleControl = ({ button, quote, schedule }: ScheduleControlProp
   }
   return (
     <>
-      {label === null ? null : (
+      {label === null && !isBusy ? null : (
         <TileButton
           variant="tile"
           fullWidth
           state={isBusy ? schedule.state : enabled ? 'idle' : 'disabled'}
+          describedBy={note === null ? undefined : noteId}
           onClick={press}
         >
-          {isBusy ? (schedule.label ?? label) : label}
+          {isBusy ? (schedule.label ?? label ?? AUTO_LAUNCH_COPY.heading) : label}
         </TileButton>
       )}
-      {note === null ? null : <p className="auto-launch__status">{note}</p>}
+      {note === null ? null : (
+        <p className="auto-launch__status" id={noteId}>
+          {note}
+        </p>
+      )}
     </>
   )
 }

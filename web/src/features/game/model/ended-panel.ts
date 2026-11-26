@@ -90,6 +90,10 @@ const awaitingLaunchPanel = ({
   return { kind, lead, leaderShareBps }
 }
 
+export const isGraceOver = ({ game, rules, gates, chainNow }: EndedPanelInput): boolean =>
+  chainNow >= graceEndOf(game, rules) ||
+  (gates.launch !== null && !gates.launch.ok && gates.launch.reason === 'LaunchGraceExpired')
+
 const refundingPanel = ({ game, rules, player, refundedAmount }: EndedPanelInput): EndedPanel => {
   const raised = game.raised
   const minRaise = game.config.minRaise
@@ -119,7 +123,8 @@ const refundingPanel = ({ game, rules, player, refundedAmount }: EndedPanelInput
 const PANELS: Record<Phase, (input: EndedPanelInput) => EndedPanel | null> = {
   awaitingCaptains: () => null,
   buyIn: () => null,
-  awaitingLaunch: awaitingLaunchPanel,
+  awaitingLaunch: (input) =>
+    isGraceOver(input) ? refundingPanel(input) : awaitingLaunchPanel(input),
   refunding: refundingPanel,
   launched: ({ game }) => ({ kind: 'launched', raised: game.raised }),
   cancelled: () => ({ kind: 'cancelled' }),

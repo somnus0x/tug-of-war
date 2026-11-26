@@ -15,16 +15,16 @@ export const useLaunchWatch = (
   launchSent: () => boolean,
 ): void => {
   const refresh = useRefreshGame(launcher)
-  const seen = useRef<{ launcher: Address; phase: Phase } | null>(null)
+  const seen = useRef<{ launcher: string; phase: Phase } | null>(null)
   const shown = useRef<string | null>(null)
   useEffect(() => {
-    const previous = seen.current?.launcher === launcher ? seen.current.phase : null
-    seen.current = { launcher, phase }
+    const key = launcher.toLowerCase()
+    const previous = seen.current?.launcher === key ? seen.current.phase : null
+    seen.current = { launcher: key, phase }
     if (previous === null || previous === phase) {
       return
     }
     refresh()
-    const key = launcher.toLowerCase()
     const external = isExternalLaunch({
       before: previous,
       after: phase,

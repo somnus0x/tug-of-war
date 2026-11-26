@@ -102,6 +102,7 @@ export const GAME_COPY = {
     capLeft: 'Cap left',
     yourPull: 'Your pull',
     bnbReturned: 'BNB returned',
+    bnbWord: 'BNB',
     refunded: 'Refunded',
     pull: 'Pull',
     on: 'on',

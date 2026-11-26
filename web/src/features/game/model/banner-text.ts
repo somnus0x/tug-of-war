@@ -41,5 +41,9 @@ export const bannerViewOf = (banner: Banner | null): BannerView | null => {
 
 export type GameBannerInput = BannerInput & { readonly isClosing: boolean }
 
-export const gameBannerOf = ({ isClosing, ...input }: GameBannerInput): BannerView | null =>
-  bannerViewOf(pickBanner(isClosing ? { ...input, live: null } : input))
+export const gameBannerOf = ({ isClosing, ...input }: GameBannerInput): BannerView | null => {
+  if (input.walletStatus === 'wrongNetwork') {
+    return input.stale ? bannerViewOf({ kind: 'stale' }) : null
+  }
+  return bannerViewOf(pickBanner(isClosing ? { ...input, live: null } : input))
+}

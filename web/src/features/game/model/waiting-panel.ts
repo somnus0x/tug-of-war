@@ -31,6 +31,7 @@ export type WaitingPanelInput = {
   readonly logs: readonly GameLog[]
   readonly isWrongNetwork: boolean
   readonly isDepositBusy: boolean
+  readonly isPlayerReadFailed?: boolean
 }
 
 const sameAddress = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase()
@@ -77,7 +78,7 @@ export const cancelButtonOf = (input: WaitingPanelInput): CancelButton => {
   }
   const amount = ownDeposit(input, account)
   if (amount === null) {
-    return { kind: 'checking' }
+    return input.isPlayerReadFailed === true ? { kind: 'cancel' } : { kind: 'checking' }
   }
   return amount > 0n ? { kind: 'refund', amount } : { kind: 'cancel' }
 }

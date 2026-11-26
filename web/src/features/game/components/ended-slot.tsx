@@ -4,13 +4,14 @@ import type { Address } from 'viem'
 
 import { EMPTY_GATES } from '@/contracts/gate-plan'
 import { useGameLogs } from '@/contracts/queries/use-game-logs'
-import { useGates } from '@/contracts/queries/use-game-queries'
+import { useGates, useRefetchAtDeadline } from '@/contracts/queries/use-game-queries'
 import { ENDED_COPY } from '@/copy/ended'
 import { Coin } from '@/scene/coin'
 import { PixelBox } from '@/ui/pixel-box'
 
 import { useChainNow } from '../hooks/use-chain-now'
 import { isZeroAddress } from '../model/derive-live'
+import { graceEndOf } from '../model/derive-screen'
 import { deriveEndedPanel } from '../model/ended-panel'
 import { endedToneOf, endedViewOf } from '../model/ended-view'
 import { autoLaunchStatusOf, refundedAmountOf } from '../model/game-events'
@@ -45,6 +46,8 @@ export const EndedSlot = ({
   const logs = useGameLogs(launcher, game).state?.logs ?? NO_LOGS
   const chainNow = useChainNow(game.deadline)
   const { launch, refund } = actions
+  const graceEnd = graceEndOf(game, rules)
+  useRefetchAtDeadline(launcher, graceEnd, game.phase === 'awaitingLaunch' && chainNow >= graceEnd)
   const state = deriveEndedPanel({
     game,
     rules,
