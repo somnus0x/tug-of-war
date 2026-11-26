@@ -1,0 +1,49 @@
+{
+  "name": "tug-of-war-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "lint": "oxlint --type-aware",
+    "comments": "node tools/check-comments.ts",
+    "tokens": "node tools/check-tokens.ts",
+    "doctor": "react-doctor --no-telemetry --blocking error",
+    "test": "vitest run",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run comments && pnpm run tokens && tsc --noEmit && pnpm run doctor && pnpm run test",
+    "abi": "cp ../contracts/abi/ITugLauncher.json ../contracts/abi/ITugLauncherFactory.json ../contracts/abi/ITugVault.json ../contracts/abi/IPortal.json src/contracts/abi/ && wagmi generate"
+  },
+  "dependencies": {
+    "@fontsource-variable/pixelify-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/vt323": "^5.3.0",
+    "@rainbow-me/rainbowkit": "^2.2.11",
+    "@tanstack/react-query": "^5.108.4",
+    "@tanstack/react-router": "^1.170.46",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "viem": "^2.58.6",
+    "wagmi": "^2.19.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tanstack/router-plugin": "^1.169.0",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.1",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "@wagmi/cli": "^2.10.1",
+    "oxc-parser": "^0.160.0",
+    "oxfmt": "^0.80.0",
+    "oxlint": "^1.95.0",
+    "oxlint-tsgolint": "^7.0.2008",
+    "react-doctor": "0.9.23",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

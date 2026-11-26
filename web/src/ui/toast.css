@@ -1,0 +1,110 @@
+.toast-stack {
+  position: fixed;
+  top: calc(var(--gutter) + env(safe-area-inset-top));
+  right: calc(var(--gutter) + env(safe-area-inset-right));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: min(360px, calc(100vw - 2 * var(--gutter)));
+  pointer-events: none;
+}
+
+.toast {
+  --toast-edge: var(--cream);
+
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 8px 10px 12px;
+  background: var(--ink-0);
+  color: var(--cream);
+  pointer-events: auto;
+  box-shadow:
+    0 0 0 var(--outline) var(--toast-edge),
+    0 0 0 var(--ring) var(--ink-0),
+    var(--toast-shadow-offset) var(--toast-shadow-offset) 0 var(--toast-shadow-spread)
+      var(--shadow-black);
+}
+
+.toast--ok {
+  --toast-edge: var(--lime);
+}
+
+.toast--err {
+  --toast-edge: var(--gold);
+}
+
+.toast__icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--lime);
+  color: var(--ink-0);
+}
+
+.toast--err .toast__icon {
+  background: var(--gold);
+}
+
+.toast--info .toast__icon {
+  background: var(--cream);
+}
+
+.toast__content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.toast__title {
+  font-family: var(--font-heading);
+  font-size: var(--text-tile);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.toast__body {
+  margin-top: 3px;
+  font-size: var(--text-small);
+}
+
+.toast__link {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--lime);
+  font-size: var(--text-small);
+}
+
+.toast__close {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin: -8px -4px -8px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mute);
+  cursor: pointer;
+}
+
+.toast__close:hover {
+  color: var(--cream);
+}
+
+@media (max-width: 759px) {
+  .toast-stack {
+    top: auto;
+    right: var(--gutter);
+    bottom: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom) + var(--gutter));
+    left: var(--gutter);
+    flex-direction: column-reverse;
+    width: auto;
+  }
+}

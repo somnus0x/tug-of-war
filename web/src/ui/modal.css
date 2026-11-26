@@ -1,0 +1,69 @@
+.modal {
+  width: min(440px, calc(100vw - 2 * var(--gutter) - 2 * var(--ring-outer)));
+  max-width: none;
+  max-height: calc(100dvh - 2 * var(--gutter) - 2 * var(--ring-outer));
+  padding: 18px;
+  border: 0;
+  background: var(--ink-1);
+  color: var(--cream);
+  overflow: auto;
+  box-shadow:
+    0 0 0 var(--outline) var(--cream),
+    0 0 0 var(--ring) var(--ink-0),
+    0 0 0 var(--ring-outer) var(--gold),
+    var(--modal-shadow-offset) var(--modal-shadow-offset) 0 var(--modal-shadow-spread)
+      var(--shadow-black);
+}
+
+.modal[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal::backdrop {
+  background-color: var(--scrim);
+  background-image:
+    linear-gradient(
+      45deg,
+      var(--scrim-check) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--scrim-check) 75%
+    ),
+    linear-gradient(
+      45deg,
+      var(--scrim-check) 25%,
+      transparent 25%,
+      transparent 75%,
+      var(--scrim-check) 75%
+    );
+  background-position:
+    0 0,
+    calc(var(--checker) / 2) calc(var(--checker) / 2);
+  background-size: var(--checker) var(--checker);
+}
+
+.modal__title {
+  color: var(--gold);
+  font-family: var(--font-digits);
+  font-size: var(--text-title);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.modal__body {
+  font-size: var(--text-body);
+  line-height: 1.45;
+}
+
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.modal__actions .tile-button {
+  flex: 1 1 140px;
+}

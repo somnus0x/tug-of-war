@@ -1,0 +1,1561 @@
+[
+  {
+    "type": "function",
+    "name": "autoLaunchQuote",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "autoLaunchRequestId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canCancel",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canClaim",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canClaimCaptain",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canContribute",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "team",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canDepositCaptain",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canLaunch",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canRefund",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "canScheduleAutoLaunch",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "cancel",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "captainBlue",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "captainIn",
+    "inputs": [
+      {
+        "name": "team",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "captainRed",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "claim",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "claimCaptain",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "contribute",
+    "inputs": [
+      {
+        "name": "team",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "contribution",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "creator",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "deadline",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "depositCaptain",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "factory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "finalBlueShareBps",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gameStart",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCaptain",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "captainView",
+        "type": "tuple",
+        "internalType": "struct CaptainAllocView",
+        "components": [
+          {
+            "name": "team",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "deposited",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "allocation",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "vested",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "claimed",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "claimable",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "vestEnd",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getGame",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "game",
+        "type": "tuple",
+        "internalType": "struct GameView",
+        "components": [
+          {
+            "name": "launcher",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "creator",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "factory",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "config",
+            "type": "tuple",
+            "internalType": "struct TugConfig",
+            "components": [
+              {
+                "name": "name",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "symbol",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "meta",
+                "type": "string",
+                "internalType": "string"
+              },
+              {
+                "name": "salt",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              },
+              {
+                "name": "duration",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "minRaise",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "walletCap",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "captainBlue",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "captainRed",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "vaultFactory",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "maxBonusShareBps",
+                "type": "uint16",
+                "internalType": "uint16"
+              },
+              {
+                "name": "captainMinDeposit",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "acceptWindow",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "captainAllocBps",
+                "type": "uint16",
+                "internalType": "uint16"
+              },
+              {
+                "name": "captainVestDuration",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "captainShareBps",
+                "type": "uint16",
+                "internalType": "uint16"
+              }
+            ]
+          },
+          {
+            "name": "phase",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "captainDeposited",
+            "type": "tuple",
+            "internalType": "struct TeamFlags",
+            "components": [
+              {
+                "name": "blue",
+                "type": "bool",
+                "internalType": "bool"
+              },
+              {
+                "name": "red",
+                "type": "bool",
+                "internalType": "bool"
+              }
+            ]
+          },
+          {
+            "name": "acceptDeadline",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "gameStart",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "originalDeadline",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "deadline",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "extensionsUsed",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "currentWeightBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "raised",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "raisedByTeam",
+            "type": "tuple",
+            "internalType": "struct TeamPair",
+            "components": [
+              {
+                "name": "blue",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "red",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "pullByTeam",
+            "type": "tuple",
+            "internalType": "struct TeamPair",
+            "components": [
+              {
+                "name": "blue",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "red",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "playersByTeam",
+            "type": "tuple",
+            "internalType": "struct TeamPair",
+            "components": [
+              {
+                "name": "blue",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "red",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "ropeBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "autoLaunchRequestId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerBudget",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "triggerFunder",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "pool",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "vault",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "finalBlueShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPlayer",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "playerView",
+        "type": "tuple",
+        "internalType": "struct PlayerView",
+        "components": [
+          {
+            "name": "team",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "contribution",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "pull",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "baseEntitlement",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "bonusEntitlement",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "claimed",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "claimable",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "refundable",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "remainingCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRules",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "rules",
+        "type": "tuple",
+        "internalType": "struct RulesView",
+        "components": [
+          {
+            "name": "buyTaxBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "sellTaxBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "vaultFeeBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "deflationFeeBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "poolAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "baseAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "bonusAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "maxBonusShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainVestDuration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "taxDuration",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "antiFarmerDuration",
+            "type": "uint32",
+            "internalType": "uint32"
+          },
+          {
+            "name": "startWeightBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "overtimeWindow",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "overtimeExtension",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxExtensions",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "launchGrace",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "launch",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "launched",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "launching",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "minRaise",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "phase",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pool",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "previewContribute",
+    "inputs": [
+      {
+        "name": "team",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "pull",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "newRopeBps",
+        "type": "uint16",
+        "internalType": "uint16"
+      },
+      {
+        "name": "wouldTriggerOvertime",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pullOf",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "raised",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "refund",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ropeBps",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "scheduleAutoLaunch",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "teamOf",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "token",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "trigger",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "triggerBudget",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "triggerService",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "vault",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "withdrawTriggerBudget",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AutoLaunchScheduled",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "executeAfter",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AutoLaunchStopped",
+    "inputs": [
+      {
+        "name": "requestId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Cancelled",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "refunded",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CaptainDeposited",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "team",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "uint8"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CaptainVested",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Claimed",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "base",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "bonus",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Contributed",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "team",
+        "type": "uint8",
+        "indexed": true,
+        "internalType": "uint8"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "pull",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "weightBps",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      },
+      {
+        "name": "ropeBps",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GameStarted",
+    "inputs": [
+      {
+        "name": "gameStart",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "deadline",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Launched",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "pool",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "vault",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "raised",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "finalBlueShareBps",
+        "type": "uint16",
+        "indexed": false,
+        "internalType": "uint16"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Overtime",
+    "inputs": [
+      {
+        "name": "newDeadline",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      },
+      {
+        "name": "extensionsUsed",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "uint8"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Refunded",
+    "inputs": [
+      {
+        "name": "player",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TriggerBudgetWithdrawn",
+    "inputs": [
+      {
+        "name": "funder",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AcceptWindowClosed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AcceptWindowOpen",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AlreadyLaunched",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AutoLaunchAlreadyScheduled",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BelowCaptainMinimum",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BelowCreationFloor",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BelowMinRaise",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BuyInClosed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BuyInOpen",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CaptainAlreadyIn",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CaptainsNotIn",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CreationFloorUnavailable",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "GameCancelled",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "GameNotStarted",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientTriggerFee",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidTeam",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "LaunchGraceExpired",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinRaiseMet",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotCancellable",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotCaptain",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotLaunched",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotTriggerFunder",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NothingToClaim",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NothingToRefund",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlyTriggerService",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TeamLocked",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TransferFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "TriggerBudgetLocked",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "WalletCapExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroContribution",
+    "inputs": []
+  }
+]

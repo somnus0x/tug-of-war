@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 100,
+  "sortImports": {
+    "groups": [
+      "type",
+      ["builtin", "external"],
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      ["side_effect_style", "style"],
+      "unknown"
+    ],
+    "internalPattern": ["@/"],
+    "newlinesBetween": true,
+    "ignoreCase": true,
+    "order": "asc"
+  },
+  "ignorePatterns": [
+    "src/routeTree.gen.ts",
+    "src/contracts/generated.ts",
+    "src/contracts/abi",
+    "pnpm-lock.yaml"
+  ]
+}

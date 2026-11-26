@@ -1,0 +1,28 @@
+.team-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.team-mark--blue {
+  color: var(--blue);
+}
+
+.team-mark--red {
+  color: var(--red);
+}
+
+.team-mark--inline {
+  font-size: var(--text-label);
+}
+
+.team-mark--tile {
+  font-size: 20px;
+}

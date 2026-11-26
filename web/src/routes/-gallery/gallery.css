@@ -1,0 +1,73 @@
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.gallery__title {
+  color: var(--lime);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.gallery__intro,
+.gallery__note {
+  color: var(--mute);
+}
+
+.gallery__note {
+  margin-top: 10px;
+}
+
+.gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.gallery__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.gallery__spinner {
+  min-height: var(--touch-target);
+  color: var(--gold);
+}
+
+.gallery__variant {
+  margin-bottom: 12px;
+}
+
+.gallery__label {
+  margin: 8px 0 4px;
+  color: var(--mute);
+  font-size: var(--text-small);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gallery__teams {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.gallery__team-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gallery__toasts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+  padding: 10px;
+}
