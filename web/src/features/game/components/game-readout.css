@@ -1,0 +1,32 @@
+.game-readout {
+  display: grid;
+  gap: 12px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.game-readout__list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.game-readout__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+
+.game-readout__label {
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.game-readout__value {
+  margin: 0;
+  font-family: var(--font-digits);
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}

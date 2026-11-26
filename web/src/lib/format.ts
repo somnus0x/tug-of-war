@@ -62,6 +62,9 @@ export const formatWeight = (value: Bps): string => `${bpsHalfUp(value, 4, 2)}x`
 export const formatCoins = (amount: TokenWei, decimals: number): string =>
   (amount / 10n ** BigInt(decimals)).toString().replace(THOUSANDS, ',')
 
+export const formatCount = (count: number): string =>
+  String(Number.isSafeInteger(count) && count > 0 ? count : 0).replace(THOUSANDS, ',')
+
 export const formatClock = (seconds: number): string => {
   const total = wholeSeconds(seconds)
   const secs = pad2(total % MINUTE)

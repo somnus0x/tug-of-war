@@ -5,6 +5,7 @@ import {
   formatBnb,
   formatClock,
   formatCoins,
+  formatCount,
   formatPull,
   formatShare,
   formatSpan,
@@ -224,5 +225,18 @@ describe('parseBnb', () => {
   it('round-trips through formatBnb', () => {
     const parsed = parseBnb('0.25')
     expect(parsed === null ? null : formatBnb(parsed)).toBe('0.25')
+  })
+})
+
+describe('formatCount', () => {
+  it('groups thousands', () => {
+    expect(formatCount(7)).toBe('7')
+    expect(formatCount(148)).toBe('148')
+    expect(formatCount(12_480)).toBe('12,480')
+  })
+
+  it('shows zero for negative or fractional input', () => {
+    expect(formatCount(-1)).toBe('0')
+    expect(formatCount(1.5)).toBe('0')
   })
 })
