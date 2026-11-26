@@ -33,6 +33,10 @@ export const HOME_COPY = {
   amount: (amount: string) => `${amount} BNB`,
   raisedUnit: 'raised',
   leftUnit: 'left',
+  clockOver: 'Ended',
+  created: (when: string) => `Created ${when}`,
+  afterSymbol: (text: string) => ` · ${text}`,
+  clockNone: '—',
   raised: (amount: string) => `${amount} BNB raised`,
   timeLeft: (clock: string) => `${clock} left`,
   ropeIdle: 'The rope has not moved.',
@@ -45,9 +49,11 @@ export const HOME_COPY = {
     readonly rope: string
     readonly raised: string
     readonly countdown: string | null
+    readonly created: string | null
   }) =>
     [
       `${row.name} (${row.symbol}), ${row.phase}.`,
+      ...(row.created === null ? [] : [`${row.created}.`]),
       `Blue captain ${row.captainBlue}, Red captain ${row.captainRed}.`,
       `${row.rope.replace(/\.$/, '')}.`,
       `${row.raised}.`,

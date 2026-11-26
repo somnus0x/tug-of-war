@@ -45,7 +45,10 @@ export const GameRow = ({ entry, me }: GameRowProps) => {
       >
         <span className="home-row__title">
           <span className="home-row__name">{row.name}</span>
-          <span className="home-row__symbol">{row.symbol}</span>
+          <span className="home-row__symbol">
+            {row.symbol}
+            {row.created === null ? null : HOME_COPY.afterSymbol(row.created)}
+          </span>
         </span>
         <span className={`home-row__phase home-row__phase--${row.phase}`}>{row.phaseLabel}</span>
         <span className="home-row__captains">
@@ -61,7 +64,9 @@ export const GameRow = ({ entry, me }: GameRowProps) => {
           <span className="home-row__unit"> {HOME_COPY.raisedUnit}</span>
         </span>
         <span className="home-row__clock">
-          {row.clock === null ? null : (
+          {row.clock === null ? (
+            <span className="home-row__clock-note">{row.clockNote}</span>
+          ) : (
             <>
               {row.clock}
               <span className="home-row__unit"> {HOME_COPY.leftUnit}</span>
