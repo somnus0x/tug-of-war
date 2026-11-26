@@ -55,7 +55,7 @@ docs/frontend-api.md              calls per screen, for the frontend
 1. Creator calls `Portal.newLauncher(TugLauncherFactory, abi.encode(TugConfig))` with `msg.value = Portal.SALT_LOCK_FEE()`.
 2. Portal calls `TugLauncherFactory.newLauncher` → deploys `TugLauncher` beacon proxy → `initialize` (launcher locks its own salt).
 3. Either named captain calls `TugLauncher.depositCaptain()` first (the challenge). The other calls it second (the accept), which starts the clock. Both deposits must land within the accept window, counted from game creation. If they do not, anyone calls `cancel()` and a captain who deposited gets it back.
-4. Anyone calls `scheduleAutoLaunch()` with the Trigger Service fee, so Flap's Trigger Service calls the launcher back at the deadline.
+4. Optional, and not used on testnet (decision 18): anyone calls `scheduleAutoLaunch()` with the Trigger Service fee, so Flap's Trigger Service calls the launcher back at the deadline.
 5. Players call `TugLauncher.contribute(team)` until the deadline.
 6. The Trigger Service calls `trigger()`, or anyone calls `launch()` → `Portal.launchTaxTokenV2{value: raised}`. Inside that one transaction:
    - Portal calls `TugVaultFactory.newVault` → deploys `TugVault`.
