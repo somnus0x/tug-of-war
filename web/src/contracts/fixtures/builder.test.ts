@@ -48,6 +48,7 @@ const REQUIRED = [
   'refunding-min-missed',
   'refunding-grace-expired',
   'launched',
+  'launched-quiet',
   'cancelled',
 ]
 

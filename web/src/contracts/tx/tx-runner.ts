@@ -6,21 +6,19 @@ import type { FixtureMode } from './fixture-tx'
 import type { TxEvent } from './lifecycle'
 import type { ActionOutcomes } from './outcome'
 import type { PendingStore } from './pending-store'
-import type { LauncherActionName } from '@/lib/actions'
+import type { TxActionName } from '@/lib/actions'
 import type { QueryClient } from '@tanstack/react-query'
-import type { Abi, Address, Hash, TransactionReceipt } from 'viem'
+import type { Address, Hash, TransactionReceipt } from 'viem'
 import type { Config } from 'wagmi'
 
 import { getAccount, simulateContract, writeContract } from 'wagmi/actions'
 
 import { tugLauncherAbi } from '../abis'
 import { publicClient } from '../client'
-import { applyEffect } from '../fixtures/effects'
-import { ACTIONS, buildCall, buildValue, withGasMargin } from './actions'
 import { classifyError } from './classify-error'
+import { fixtureStep } from './fixture-step'
 import {
   FIXTURE_DELAYS,
-  fixtureGate,
   fixtureHash,
   pendingDelay,
   plausibleRevert,
@@ -29,20 +27,20 @@ import {
 } from './fixture-tx'
 import { decodeOutcome } from './outcome'
 import { invalidationKeys } from './refresh'
+import { resolveCall } from './tx-calls'
 
 export const RECHECK_MS = 4000
 
-const launcherAbi: Abi = tugLauncherAbi
-
-export type TxReport<Name extends LauncherActionName> = {
+export type TxReport<Name extends TxActionName> = {
   readonly onSuccess: (outcome: ActionOutcomes[Name] | null, hash: Hash) => void
   readonly onFailure: (error: TxErrorInfo, hash: Hash | undefined) => void
   readonly onSubmitted: (hash: Hash) => void
 }
 
-export type RunnerContext<Name extends LauncherActionName> = {
+export type RunnerContext<Name extends TxActionName> = {
   readonly action: Name
   readonly launcher: Address
+  readonly target: Address | undefined
   readonly chainId: number
   readonly queryClient: QueryClient
   readonly dispatch: (event: TxEvent<ActionOutcomes[Name]>) => void
@@ -57,7 +55,7 @@ const sleep = (ms: number): Promise<void> =>
     setTimeout(resolve, ms)
   })
 
-const pause = async <Name extends LauncherActionName>(
+const pause = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
   ms: number,
 ): Promise<void> => {
@@ -67,7 +65,7 @@ const pause = async <Name extends LauncherActionName>(
   }
 }
 
-const invalidate = async <Name extends LauncherActionName>(
+const invalidate = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
 ): Promise<void> => {
   await Promise.all(
@@ -77,7 +75,7 @@ const invalidate = async <Name extends LauncherActionName>(
   )
 }
 
-export const failWith = <Name extends LauncherActionName>(
+export const failWith = <Name extends TxActionName>(
   context: RunnerContext<Name>,
   error: unknown,
   hash?: Hash,
@@ -90,7 +88,7 @@ export const failWith = <Name extends LauncherActionName>(
   context.report().onFailure(info, hash)
 }
 
-const succeed = async <Name extends LauncherActionName>(
+const succeed = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
   outcome: ActionOutcomes[Name] | null,
   hash: Hash,
@@ -121,7 +119,7 @@ const revertReason = async (receipt: TransactionReceipt): Promise<unknown> => {
 
 type Watch = { current: Hash; cancelled: boolean }
 
-const settle = async <Name extends LauncherActionName>(
+const settle = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
   account: Address,
   receipt: TransactionReceipt,
@@ -132,13 +130,14 @@ const settle = async <Name extends LauncherActionName>(
   }
   const outcome = decodeOutcome(context.action, {
     launcher: context.launcher,
+    target: context.target,
     account,
     logs: receipt.logs,
   })
   await succeed(context, outcome, receipt.transactionHash)
 }
 
-const watchOnce = async <Name extends LauncherActionName>(
+const watchOnce = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
   pending: PendingStore,
   account: Address,
@@ -173,7 +172,7 @@ const watchOnce = async <Name extends LauncherActionName>(
   }
 }
 
-export const followReceipt = <Name extends LauncherActionName>(
+export const followReceipt = <Name extends TxActionName>(
   context: RunnerContext<Name>,
   pending: PendingStore,
   account: Address,
@@ -186,7 +185,7 @@ export type ChainRun = {
   readonly ensureNetwork: () => Promise<boolean>
 }
 
-export const runChainTx = async <Name extends LauncherActionName>(
+export const runChainTx = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
   run: ChainRun,
   params: ActionParams[Name],
@@ -202,27 +201,26 @@ export const runChainTx = async <Name extends LauncherActionName>(
       context.dispatch({ type: 'reset' })
       return
     }
-    const call = buildCall(context.action, params)
-    const quote =
-      ACTIONS[context.action].value === 'quote'
-        ? await publicClient.readContract({
-            address: context.launcher,
-            abi: tugLauncherAbi,
-            functionName: 'autoLaunchQuote',
-          })
-        : 0n
+    const call = resolveCall(context.action, params, context)
+    const quote = call.needsQuote
+      ? await publicClient.readContract({
+          address: context.launcher,
+          abi: tugLauncherAbi,
+          functionName: 'autoLaunchQuote',
+        })
+      : 0n
     const base = {
-      address: context.launcher,
-      abi: launcherAbi,
+      address: call.address,
+      abi: call.abi,
       functionName: call.functionName,
       args: call.args,
-      value: buildValue(context.action, params, quote),
+      value: call.value(quote),
       account,
     }
     const gas =
-      ACTIONS[context.action].gasMultiplierPercent === 100
+      call.gasPercent === 100
         ? undefined
-        : withGasMargin(context.action, await publicClient.estimateContractGas(base))
+        : ((await publicClient.estimateContractGas(base)) * BigInt(call.gasPercent)) / 100n
     const { request } = await simulateContract(run.config, {
       ...base,
       chainId: context.chainId,
@@ -254,45 +252,44 @@ export type FixtureRun = {
   readonly mode: FixtureMode
 }
 
-export const runFixtureTx = async <Name extends LauncherActionName>(
+export const runFixtureTx = async <Name extends TxActionName>(
   context: RunnerContext<Name>,
   run: FixtureRun,
   params: ActionParams[Name],
 ): Promise<void> => {
   let hash: Hash | undefined
   const { world, scope, account } = run
-  const stateNow = () => world.simulatorState(context.launcher, account, scope)
-  const args = buildCall(context.action, params).args
+  const step = fixtureStep(context.action, params, {
+    world,
+    scope,
+    account,
+    launcher: context.launcher,
+  })
   try {
     await pause(context, FIXTURE_DELAYS.simulating)
-    const before = fixtureGate(context.action, stateNow(), params)
+    const before = step.check().gate
     if (!before.ok) {
-      throw revertError(context.action, context.launcher, before.reason, args)
+      throw revertError(context.action, context.launcher, before.reason, step.args)
     }
     context.dispatch({ type: 'simulated' })
     await pause(context, FIXTURE_DELAYS.wallet)
-    if (run.mode === 'reject') {
+    if (run.mode === 'reject' && step.failsOnDemand) {
       throw rejectionError()
     }
     hash = fixtureHash(context.action, Date.now())
     context.dispatch({ type: 'submitted', hash })
     context.report().onSubmitted(hash)
     await pause(context, pendingDelay(run.mode))
-    const state = stateNow()
-    const gate = fixtureGate(context.action, state, params)
-    if (run.mode === 'revert' || !gate.ok) {
+    const landing = step.check()
+    if ((run.mode === 'revert' && step.failsOnDemand) || !landing.gate.ok) {
       throw revertError(
         context.action,
         context.launcher,
-        plausibleRevert(context.action, gate),
-        args,
+        plausibleRevert(context.action, landing.gate),
+        step.args,
       )
     }
-    const player = world.player(context.launcher, account, scope, state.now).player
-    const overlay = world.overlay(context.launcher, scope)
-    const result = applyEffect({ action: context.action, params, state, player, overlay })
-    world.commit(context.launcher, scope, result.overlay)
-    await succeed(context, result.outcome, hash)
+    await succeed(context, landing.apply(), hash)
   } catch (error) {
     failWith(context, error, hash)
   }

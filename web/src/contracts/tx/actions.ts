@@ -1,6 +1,7 @@
 import type { LauncherActionName } from '@/lib/actions'
 import type { Team } from '@/lib/team'
-import type { BnbWei } from '@/lib/units'
+import type { BnbWei, TokenWei } from '@/lib/units'
+import type { Address } from 'viem'
 
 import { teamToId } from '@/lib/team'
 
@@ -28,6 +29,11 @@ export type ActionParams = {
   readonly claim: NoParams
   readonly claimCaptain: NoParams
   readonly withdrawTriggerBudget: NoParams
+  readonly stake: { readonly team: PickedTeam; readonly amount: TokenWei }
+  readonly unstake: { readonly amount: TokenWei }
+  readonly claimRewards: NoParams
+  readonly claimVaultCaptain: NoParams
+  readonly approve: { readonly spender: Address; readonly amount: TokenWei }
 }
 
 export type LauncherEventName =

@@ -17,6 +17,7 @@ const PROGRESS: Record<ActionName, string> = {
   claimRewards: 'Claiming…',
   claimVaultCaptain: 'Claiming…',
   createGame: 'Creating…',
+  approve: 'Approving…',
 }
 
 const ACTION_LABELS: Record<ActionName, string> = {
@@ -34,6 +35,7 @@ const ACTION_LABELS: Record<ActionName, string> = {
   claimRewards: 'Rewards claim',
   claimVaultCaptain: 'Captain tax claim',
   createGame: 'Create game',
+  approve: 'Approval',
 }
 
 export const ALREADY_LAUNCHED: TxMessage = {
@@ -101,6 +103,26 @@ export const TX_COPY = {
       title: 'Fee withdrawn',
       body: `${input.amount} BNB of unused auto-launch fee is back in your wallet.`,
     }),
+    staked: (input: { amount: string; symbol: string; team: string }): TxMessage => ({
+      title: 'Staked',
+      body: `${input.amount} ${input.symbol} staked on ${input.team}.`,
+    }),
+    unstaked: (input: { amount: string; symbol: string }): TxMessage => ({
+      title: 'Unstaked',
+      body: `${input.amount} ${input.symbol} are back in your wallet.`,
+    }),
+    rewardsClaimed: (input: { amount: string }): TxMessage => ({
+      title: 'Rewards claimed',
+      body: `${input.amount} BNB is in your wallet.`,
+    }),
+    captainShareClaimed: (input: { amount: string }): TxMessage => ({
+      title: 'Captain share claimed',
+      body: `${input.amount} BNB is in your wallet.`,
+    }),
+    approved: {
+      title: 'Approved',
+      body: 'Now confirm the stake in your wallet.',
+    } satisfies TxMessage,
     done: (action: ActionName): TxMessage => ({ title: `${ACTION_LABELS[action]} confirmed` }),
   },
 } as const

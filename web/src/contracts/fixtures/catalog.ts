@@ -102,6 +102,7 @@ export const FIXTURES = {
   },
   'refunding-grace-expired': { ...ENDED, secondsLeft: -GRACE_AND_A_QUARTER_HOUR },
   launched: { ...ENDED, secondsLeft: -3600, launched: true },
+  'launched-quiet': { ...ENDED, secondsLeft: -7200, launched: true },
   cancelled: {
     stage: 'waiting',
     acceptLeft: -900,

@@ -22,6 +22,12 @@ const envSchema = z.object({
   VITE_WC_PROJECT_ID: z.string().trim().min(1, 'must not be empty'),
   VITE_FIXTURES: z.enum(['0', '1']).transform((value) => value === '1'),
   VITE_BASE: basePathSchema,
+  VITE_TRADE_URL: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value === undefined || value === '' ? null : value))
+    .refine((value) => value === null || value.includes('{token}'), 'must contain {token}'),
 })
 
 export type Env = z.infer<typeof envSchema>

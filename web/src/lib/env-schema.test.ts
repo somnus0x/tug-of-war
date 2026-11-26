@@ -59,6 +59,27 @@ describe('readEnv', () => {
   })
 })
 
+const tradeUrl = (value: string | undefined) => {
+  const result = readEnv({ ...readExample(), VITE_TRADE_URL: value })
+  return result.ok ? result.env.VITE_TRADE_URL : result.issues.map((issue) => issue.name)
+}
+
+describe('VITE_TRADE_URL', () => {
+  it('is optional and empty means no link', () => {
+    expect(tradeUrl(undefined)).toBeNull()
+    expect(tradeUrl('')).toBeNull()
+    expect(tradeUrl('  ')).toBeNull()
+  })
+
+  it('keeps a template with the token placeholder', () => {
+    expect(tradeUrl('https://example.test/coin/{token}')).toBe('https://example.test/coin/{token}')
+  })
+
+  it('rejects a template without the token placeholder', () => {
+    expect(tradeUrl('https://example.test/coin/')).toEqual(['VITE_TRADE_URL'])
+  })
+})
+
 describe('formatEnvIssues', () => {
   it('starts with the fixed line and lists one line per issue', () => {
     const issues: EnvIssue[] = [

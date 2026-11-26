@@ -2,7 +2,7 @@ import type { ActionParams } from './actions'
 import type { TxEvent, TxState } from './lifecycle'
 import type { ActionOutcomes } from './outcome'
 import type { RunnerContext, TxReport } from './tx-runner'
-import type { LauncherActionName } from '@/lib/actions'
+import type { TxActionName } from '@/lib/actions'
 import type { Address } from 'viem'
 
 import { useQueryClient } from '@tanstack/react-query'
@@ -20,12 +20,13 @@ import { browserSessionStorage, createPendingStore } from './pending-store'
 import { walletScopedKeys } from './refresh'
 import { followReceipt, runChainTx, runFixtureTx } from './tx-runner'
 
-export type TxOptions<Name extends LauncherActionName> = TxReport<Name> & {
+export type TxOptions<Name extends TxActionName> = TxReport<Name> & {
   readonly launcher: Address
+  readonly target?: Address | undefined
   readonly ensureNetwork: () => Promise<boolean>
 }
 
-export type Tx<Name extends LauncherActionName> = {
+export type Tx<Name extends TxActionName> = {
   readonly state: TxState<ActionOutcomes[Name]>
   readonly run: (params: ActionParams[Name]) => void
   readonly reset: () => void
@@ -35,7 +36,7 @@ const CHAIN_ID = env.VITE_CHAIN_ID
 
 const pendingStore = createPendingStore(browserSessionStorage)
 
-export const useTx = <Name extends LauncherActionName>(
+export const useTx = <Name extends TxActionName>(
   action: Name,
   options: TxOptions<Name>,
 ): Tx<Name> => {
@@ -55,6 +56,7 @@ export const useTx = <Name extends LauncherActionName>(
   const inFlight = useRef(false)
   const latest = useRef(options)
   const launcher = options.launcher
+  const target = options.target
   const address = wallet.address
   const walletChainId = wallet.chainId
 
@@ -72,13 +74,14 @@ export const useTx = <Name extends LauncherActionName>(
     (ticket: number): RunnerContext<Name> => ({
       action,
       launcher,
+      target,
       chainId: CHAIN_ID,
       queryClient,
       dispatch,
       alive: () => generation.current === ticket,
       report: () => latest.current,
     }),
-    [action, launcher, queryClient],
+    [action, launcher, target, queryClient],
   )
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import type { BnbWei, Bps, PullWei, TokenWei } from './units'
 
-import { bnbWei } from './units'
+import { bnbWei, tokenWei } from './units'
 
 const BNB_DECIMALS = 18
 const ONE_BNB = 10n ** 18n
@@ -154,3 +154,20 @@ export const formatDateTime = (seconds: number, timeZone?: string): string =>
     hourCycle: 'h23',
     ...(timeZone === undefined ? {} : { timeZone }),
   }).format(new Date(wholeSeconds(seconds) * 1000))
+
+export const parseCoins = (text: string): TokenWei | null => {
+  const wei = parseBnb(text)
+  return wei === null ? null : tokenWei(wei)
+}
+
+export const formatCoinsExact = (amount: TokenWei): string =>
+  withDecimals(amount, BNB_DECIMALS).replace(/\.?0+$/, '')
+
+export const formatCoinsDraft = (amount: TokenWei): string =>
+  fixedDown(amount, 4).replace(/\.?0+$/, '')
+
+export const formatCoinsFull = (amount: TokenWei): string => {
+  const [whole = '0', fraction] = formatCoinsExact(amount).split('.')
+  const grouped = whole.replace(THOUSANDS, ',')
+  return fraction === undefined ? grouped : `${grouped}.${fraction}`
+}

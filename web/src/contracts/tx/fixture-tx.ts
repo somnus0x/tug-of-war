@@ -1,7 +1,7 @@
 import type { SimulatorState } from '../fixtures/simulator'
 import type { Gate } from '../types'
 import type { ActionParams } from './actions'
-import type { LauncherActionName } from '@/lib/actions'
+import type { LauncherActionName, TxActionName } from '@/lib/actions'
 import type { Address, Hash } from 'viem'
 
 import {
@@ -72,7 +72,7 @@ export const fixtureGate = <Name extends LauncherActionName>(
   return gate(state, params)
 }
 
-const PLAUSIBLE_REVERTS: Record<LauncherActionName, string> = {
+const PLAUSIBLE_REVERTS: Record<TxActionName, string> = {
   depositCaptain: 'AcceptWindowClosed',
   cancel: 'NotCancellable',
   scheduleAutoLaunch: 'InsufficientTriggerFee',
@@ -82,13 +82,18 @@ const PLAUSIBLE_REVERTS: Record<LauncherActionName, string> = {
   claim: 'NothingToClaim',
   claimCaptain: 'NothingToClaim',
   withdrawTriggerBudget: 'TriggerBudgetLocked',
+  stake: 'TransferFailed',
+  unstake: 'InsufficientStake',
+  claimRewards: 'NothingToClaim',
+  claimVaultCaptain: 'NothingToClaim',
+  approve: 'TransferFailed',
 }
 
-export const plausibleRevert = (name: LauncherActionName, gate: Gate): string =>
+export const plausibleRevert = (name: TxActionName, gate: Gate): string =>
   gate.ok ? PLAUSIBLE_REVERTS[name] : gate.reason
 
 export const revertError = (
-  name: LauncherActionName,
+  name: TxActionName,
   launcher: Address,
   errorName: string,
   args: readonly unknown[],
@@ -109,5 +114,5 @@ export const revertError = (
 export const rejectionError = (): UserRejectedRequestError =>
   new UserRejectedRequestError(new Error('User rejected the request.'))
 
-export const fixtureHash = (name: LauncherActionName, seed: number): Hash =>
+export const fixtureHash = (name: TxActionName, seed: number): Hash =>
   keccak256(toHex(`${name}:${seed}`))

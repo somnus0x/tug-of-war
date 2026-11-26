@@ -8,10 +8,11 @@ import type { BnbWei } from '@/lib/units'
 import type { Address } from 'viem'
 
 import { weightBpsAt } from '@/lib/clock'
+import { TOTAL_SUPPLY } from '@/lib/launch'
 import { bnbWei, bps, mulBps, pullWei, tokenWei } from '@/lib/units'
 
 import { finalBlueShareOf, ropeBpsOf } from './builder'
-import { FIXTURE_ADDRESSES, TOTAL_SUPPLY } from './constants'
+import { FIXTURE_ADDRESSES } from './constants'
 import { playerKey, playerOverlayOf } from './overlay'
 import { previewContribute } from './simulator'
 

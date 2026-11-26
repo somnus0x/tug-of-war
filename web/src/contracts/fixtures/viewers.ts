@@ -5,9 +5,10 @@ import type { Address } from 'viem'
 
 import { parseEther } from 'viem'
 
+import { TOTAL_SUPPLY } from '@/lib/launch'
 import { BPS_DENOMINATOR, bnbWei, mulBps, pullWei, tokenWei } from '@/lib/units'
 
-import { FIXTURE_ADDRESSES, TOTAL_SUPPLY, VIEWER_BALANCE } from './constants'
+import { FIXTURE_ADDRESSES, VIEWER_BALANCE } from './constants'
 
 export const VIEWERS = [
   'visitor',
@@ -18,6 +19,10 @@ export const VIEWERS = [
   'captain-blue',
   'funder',
   'captain-red',
+  'holder-blue',
+  'holder-free',
+  'staker-rewards',
+  'staker-quiet',
 ] as const
 
 export type ViewerName = (typeof VIEWERS)[number]
@@ -40,16 +45,28 @@ const VIEWER_ADDRESSES: Record<ViewerName, Address | undefined> = {
   'captain-blue': FIXTURE_ADDRESSES.captainBlue,
   funder: FIXTURE_ADDRESSES.funder,
   'captain-red': FIXTURE_ADDRESSES.captainRed,
+  'holder-blue': FIXTURE_ADDRESSES.holderBlue,
+  'holder-free': FIXTURE_ADDRESSES.holderFree,
+  'staker-rewards': FIXTURE_ADDRESSES.stakerRewards,
+  'staker-quiet': FIXTURE_ADDRESSES.stakerQuiet,
 }
 
 export const viewerAddress = (name: ViewerName): Address | undefined => VIEWER_ADDRESSES[name]
 
-type Stake = { readonly team: Team; readonly bnb: string; readonly pull: string }
+type Stake = {
+  readonly team: Team
+  readonly bnb: string
+  readonly pull: string
+  readonly claimed?: boolean
+}
 
 const FAN_STAKES: Partial<Record<ViewerName, Stake>> = {
   'fan-blue': { team: 'blue', bnb: '0.25', pull: '0.37' },
   'fan-red': { team: 'red', bnb: '0.20', pull: '0.31' },
   'fan-capped': { team: 'blue', bnb: '0.50', pull: '0.81' },
+  'holder-blue': { team: 'blue', bnb: '0.30', pull: '0.45', claimed: true },
+  'staker-rewards': { team: 'red', bnb: '0.15', pull: '0.24', claimed: true },
+  'staker-quiet': { team: 'blue', bnb: '0.10', pull: '0.18', claimed: true },
 }
 
 export const freshPlayer = (game: Game): Player => ({
@@ -90,6 +107,7 @@ const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
     team: stake.team,
     bnb: bnbWei(parseEther(stake.bnb)),
     pull: pullWei(parseEther(stake.pull)),
+    claimed: stake.claimed === true,
   }
 }
 
@@ -113,7 +131,7 @@ export const entitlements = (
 }
 
 const playerOfStake = (
-  stake: { team: Team; bnb: BnbWei; pull: PullWei } | null,
+  stake: { team: Team; bnb: BnbWei; pull: PullWei; claimed?: boolean } | null,
   game: Game,
   rules: Rules,
 ): Player => {
@@ -128,8 +146,8 @@ const playerOfStake = (
     pull: stake.pull,
     baseEntitlement: base,
     bonusEntitlement: bonus,
-    claimed: tokenWei(0n),
-    claimable: tokenWei(base + bonus),
+    claimed: tokenWei(stake.claimed === true ? base + bonus : 0n),
+    claimable: tokenWei(stake.claimed === true ? 0n : base + bonus),
     refundable: bnbWei(game.phase === 'refunding' ? stake.bnb : 0n),
     remainingCap: bnbWei(stake.bnb >= cap ? 0n : cap - stake.bnb),
   }
