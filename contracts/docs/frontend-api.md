@@ -40,6 +40,17 @@ Action gates return `(bool ok, bytes4 reason)`. A successful gate returns `(true
 | `CreationFloorUnavailable` | The native quote is disabled, its price is zero, or a required Portal read reverted. |
 | `NonCanonicalConfig` | The factory received decodable creation bytes that differ from their canonical encoding. Use `encodeConfig` for the creation call. |
 
+## Errors outside the exported ABIs
+
+Match the first four bytes of the revert data against these selectors.
+
+| Error | Selector | When it happens |
+|---|---|---|
+| `InvalidSaltLockPayment()` | `0x4f1de29d` | Creation sent a value other than `SALT_LOCK_FEE()`. |
+| `DescriptionTooLong()` | `0xd7cfc590` | The name and symbol make the launcher description 4 KB or more at creation. |
+| `InvalidDistribution()` | `0x68b5c198` | The Portal's reserve handoff is missing or invalid during launch. |
+| `GameIndexOutOfRange()` | `0x556fe26a` | `gameAt(i)` was called with `i >= gamesCount()`. |
+
 ## Waiting for captains
 
 | Call | Arguments and return fields | What the UI handles |
@@ -47,7 +58,7 @@ Action gates return `(bool ok, bytes4 reason)`. A successful gate returns `(true
 | Launcher `getGame()` | Read `phase`, `config.captainBlue`, `config.captainRed`, `captainDeposited.blue`, `captainDeposited.red`, and `acceptDeadline`. | The accept clock starts at game creation. Either captain can deposit first. Refresh `getGame()` on `CaptainDeposited`. The second deposit emits `GameStarted` and starts the buy-in clock. |
 | Launcher `canDepositCaptain(address captain, uint256 amount)` and payable `depositCaptain()` | Pass the wallet and proposed BNB wei to the gate, then send the same amount as value. | `NotCaptain`, `CaptainAlreadyIn`, `BelowCaptainMinimum`, `WalletCapExceeded`, `AcceptWindowClosed`, `GameCancelled`. Both deposits earn the full starting weight. |
 | Launcher `canCancel()` and `cancel()` | No arguments. At `block.timestamp >= acceptDeadline` with fewer than two deposits, the gate returns `(true, 0x00000000)` and the phase stays `AWAITING_CAPTAINS` until `cancel()` succeeds. | Show the cancel action when the gate succeeds. A sole captain's deposit is returned. `CANCELLED` and `GameCancelled` apply after successful cancellation. Also handle `AcceptWindowOpen`, `NotCancellable`, and `TransferFailed`. |
-| Launcher `canScheduleAutoLaunch()`, `autoLaunchQuote()`, and payable `scheduleAutoLaunch()` | The gate checks game state. The quote is the live fee in BNB wei for one request plus up to five overtime requests. Send the quote as value. | Schedule once after `GameStarted` while the deadline is current or in the future. Handle `GameNotStarted`, `GameCancelled`, `BuyInClosed`, `AlreadyLaunched`, `AutoLaunchAlreadyScheduled`, `InsufficientTriggerFee`, and Trigger Service errors. Use `getGame().triggerFunder` to identify the funder. Refresh `getGame()` on `AutoLaunchScheduled` for the current request ID and budget. Request ID zero can be valid. |
+| Launcher `canScheduleAutoLaunch()`, `autoLaunchQuote()`, and payable `scheduleAutoLaunch()` | The gate checks game state. The quote is the live fee in BNB wei for one request plus up to five overtime requests. The scheduling call takes that quote as value and is available once after `GameStarted` while the deadline is current or in the future. Scheduling errors include `GameNotStarted`, `GameCancelled`, `BuyInClosed`, `AlreadyLaunched`, `AutoLaunchAlreadyScheduled`, `InsufficientTriggerFee`, and Trigger Service errors. | Do not show auto-launch scheduling. On testnet the Trigger Service callback cannot launch within its gas cap (plan decision 18), so the launch button is the path. Use `getGame().triggerFunder` to identify the funder. Refresh `getGame()` on `AutoLaunchScheduled` for the current request ID and budget. Request ID zero can be valid. |
 
 ## Game page
 

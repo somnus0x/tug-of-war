@@ -55,7 +55,7 @@ docs/frontend-api.md              calls per screen, for the frontend
 1. Creator calls `Portal.newLauncher(TugLauncherFactory, abi.encode(TugConfig))` with `msg.value = Portal.SALT_LOCK_FEE()`.
 2. Portal calls `TugLauncherFactory.newLauncher` → deploys `TugLauncher` beacon proxy → `initialize` (launcher locks its own salt).
 3. Either named captain calls `TugLauncher.depositCaptain()` first (the challenge). The other calls it second (the accept), which starts the clock. Both deposits must land within the accept window, counted from game creation. If they do not, anyone calls `cancel()` and a captain who deposited gets it back.
-4. Anyone calls `scheduleAutoLaunch()` with the Trigger Service fee, so Flap's Trigger Service calls the launcher back at the deadline.
+4. Optional, and not used on testnet (decision 18): anyone calls `scheduleAutoLaunch()` with the Trigger Service fee, so Flap's Trigger Service calls the launcher back at the deadline.
 5. Players call `TugLauncher.contribute(team)` until the deadline.
 6. The Trigger Service calls `trigger()`, or anyone calls `launch()` → `Portal.launchTaxTokenV2{value: raised}`. Inside that one transaction:
    - Portal calls `TugVaultFactory.newVault` → deploys `TugVault`.
@@ -93,7 +93,7 @@ docs/frontend-api.md              calls per screen, for the frontend
 
 ## Step 0 (PR 0): environment — Wed evening / night
 
-Not product code. Codex brief for PRs 0–2: `codex-brief-pr0-2.md`.
+Not product code.
 
 **Testnet numbers (read from the Portal on 25 Nov):**
 
@@ -179,7 +179,7 @@ Gates return `(true, bytes4(0))` or the applicable state or validation error sel
 | Screen | Calls |
 |---|---|
 | Create game | `limits`, `defaultConfig` → mine salt with `tokenImplementation` / `predictToken` → `validateConfig` → `Portal.newLauncher{value: SALT_LOCK_FEE}`; launcher address from `TugLauncherCreated` |
-| Waiting for captains | Poll `getGame` and use `canDepositCaptain` → `depositCaptain`. At the accept cutoff with fewer than two deposits the phase stays `AWAITING_CAPTAINS` and `canCancel` → `cancel` becomes available. After `GameStarted`, use `autoLaunchQuote` → `scheduleAutoLaunch{value: quote}` |
+| Waiting for captains | Poll `getGame` and use `canDepositCaptain` → `depositCaptain`. At the accept cutoff with fewer than two deposits the phase stays `AWAITING_CAPTAINS` and `canCancel` → `cancel` becomes available. Do not show auto-launch scheduling. On testnet the Trigger Service callback cannot launch within its gas cap (plan decision 18), so the launch button is the path. |
 | Game page | poll `getGame`, `getPlayer(me)`, `getRules`; `previewContribute` while typing; `canContribute` → `contribute`; feed from `Contributed`, `Overtime` |
 | After the clock | Use `canLaunch` → `launch` whenever the gate succeeds during grace, regardless of automatic launch scheduling. The first eligible call launches. A later manual call reverts with `AlreadyLaunched`, and a later trigger does nothing. `AutoLaunchStopped` is an activity-feed hint. Use `canRefund` → `refund` once refunding opens. The auto-launch funder can call `withdrawTriggerBudget` after launch or when refunding opens |
 | Claim and stake | `getPlayer` → `claim`; `getStaker` → approve + `stake`, `unstake`, `claimRewards`; captains: `getCaptain` on the launcher → `claimCaptain`, `getCaptain` on the vault → `claimCaptain` |
@@ -239,7 +239,7 @@ Captain deposits go through `depositCaptain()`, not the initializer, so creation
 
 **Live creation floor.** Use [`IPortalFloor`](src/interfaces/IPortalFloor.sol) to read the native quote at call time with `launchQuoteConfig(uint8(IPortalTypes.LaunchKind.DIRECT_V2_POOL_TAX), address(0))`. Preview with `graduationFloorV2ForLauncher` using the live quote price, the actual launch parameters including `poolQuote = raised`, and this launcher's address. Use `meetsCreateFloor` for the launch decision. `canLaunch()` and `launch()` use `BelowCreationFloor()` if an available preview misses the floor. A disabled quote, a zero quote price, or a reverted Portal read maps to `CreationFloorUnavailable()`. Share these checks with the callback, which does nothing on either floor failure. Evaluate the grace cutoff before Portal reads.
 
-**Auto-launch.** The Trigger Service has no cancel and no timing guarantee, so `trigger()` re-checks the deadline every time and `launch()` stays public. The launch sends exactly `raised`; `triggerBudget` is kept apart and never counted in it. A callback gets at most `getMaxCallbackGas()` (2,000,000 on testnet), and a callback that runs out becomes FAILED (anyone can `retryTrigger`). PR 4's fork tests measure the gas of `trigger()` → launch. If it is over the cap, auto-launch cannot work and the launch button is the path.
+**Auto-launch.** The Trigger Service has no cancel and no timing guarantee, so `trigger()` re-checks the deadline every time and `launch()` stays public. The launch sends exactly `raised`; `triggerBudget` is kept apart and never counted in it. A callback gets at most `getMaxCallbackGas()` (2,000,000 on testnet), and a callback that runs out becomes FAILED (anyone can `retryTrigger`). On BSC testnet at block 144938757, a callback capped at the live 2,000,000 gas reverted with `0xbbdf0a77` (origin unconfirmed). Uncapped, the same call launched with the stand-in vault and used 4,643,735 gas. Manual launch is the default and the UI hides scheduling.
 
 ---
 
@@ -320,7 +320,7 @@ Inherits `DirectLaunchVaultFactoryBase`.
 - `CreateGame.s.sol` — create a game through the Portal.
 - `DemoGame.s.sol` — scripted game: both captains deposit, at least two wallets per team contribute, launch, trade so tax flows, claim, stake.
 
-Factories cannot be changed after deployment, and a change means a new factory and a new Flap audit. Deploy once, after PRs 3 and 4 pass, with every config range final. Then ping Flap with both factory addresses: they approve testnet factories on request.
+Factories cannot be changed after deployment, and a change means a new factory and a new Flap audit. Deploy once, after PRs 3 and 4 pass, with every config range final. Then ping Flap with both factory addresses and ask for a Trigger Service callback cap above PR 4's measured `trigger()` → launch gas, with headroom. Flap approves testnet factories on request.
 
 **Small amounts first.** Only `launch()` needs the floor; the raised BNB goes into the pool and is not returned.
 
@@ -341,7 +341,7 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 
 | PR | Test |
 |---|---|
-| 3 | Unopened factory cannot create a launcher |
+| 3 | With creation paused and both factory flags disabled, `newLauncher` registered the game and `launch()` created the token, pool and vault (BSC testnet, Portal v1.2.0, block 144932590). Flap's `IPortal` NatSpec says `newLauncher` reverts for a disabled factory. |
 | 3 | With an otherwise valid config, `validateConfig` accepts `maxBonusShareBps` values of 5,000 and 10,000. At 4,999 and 10,001 it returns `(false, MaxBonusShareOutOfRange.selector)`, and creation reverts with the same error |
 | 3 | Only the named captains can call `depositCaptain`, once each, at or above the minimum |
 | 3 | `contribute` reverts until both captains are in |
@@ -364,9 +364,9 @@ If this checkpoint slips, the doc says to drop the OpenFour port and spend the t
 | 4 | The two new-stake reward previews match their independent hypothetical joins, including an empty opposite team, both teams empty, and a zero effective team share. Claimable views agree with the next sync and eligible carry |
 | 4 | Vault accounting correct across a zero-value ping |
 | 4 | Stranger launcher refused by vault factory |
-| 4 | Auto-launch at the deadline when both raise checks pass. A trigger during overtime requests again at the new deadline. An unmet or unavailable floor, a missed raise, an expired grace period or a stale ID is a no-op. Only the Trigger Service can call `trigger` |
-| 4 | Raise the Trigger Service fee after scheduling so the overtime reschedule is underfunded. Assert `AutoLaunchStopped` and launch manually when eligible |
-| 4 | Gas of `trigger()` → launch stays under the Trigger Service callback cap |
+| 4 | Auto-launch at the deadline when both raise checks pass. A trigger during overtime requests again at the new deadline. An unmet or unavailable floor, a missed raise, an expired grace period or a stale ID is a no-op. Only the Trigger Service can call `trigger`. These call `trigger()` without the gas cap. |
+| 4 | Raise the Trigger Service fee after scheduling so the overtime reschedule is underfunded. Assert `AutoLaunchStopped` and launch manually when eligible. These call `trigger()` without the gas cap. |
+| 4 | Measure `trigger()` → launch with the real `TugVault` against the live `getMaxCallbackGas()`, and record both numbers. PR 3's stand-in measured 4,643,735 against 2,000,000. Do not assert that it fits. |
 
 **PR 3 factory parity tests.** Move the precedence probe into `test/fork/TugLauncher.fork.t.sol` with the real Tug factory and a freshly registered launcher. Set the Portal's factory flags and multipliers on the fork, then exercise every row of the verified table below. For the both-disabled case, register the launcher before disabling both flags and compare the preview. Use the same live quote price for both sides of the comparison. Compare the factory's BNB wei floor with `ceil(createFloorUsdWad × 1e18 / quotePriceUsd)` from `graduationFloorV2ForLauncher` and assert availability. For positive floors in launchable cases, assert that the Portal preview accepts that wei amount and rejects one wei less. For an enabled zero multiplier assert `(creationFloorAvailable, minRaiseFloor) = (true, 0)`, and test `ZeroMinRaise()` separately. For a disabled or zero-priced quote or a reverted Portal read assert `(false, 0)` and `CreationFloorUnavailable()` from validation and creation.
 
@@ -390,7 +390,7 @@ Frontend (Thu evening), demo videos and the submission (Fri early morning) are o
 
 ## Platform constraints (review checklist)
 
-- Create only through `Portal.newLauncher`; factory audited and opened by Flap. Factories are immutable: a change means a new factory and a new audit.
+- Create only through `Portal.newLauncher`. Flap audits and opens factories. On BSC testnet, Portal v1.2.0, block 144932590, neither creation nor launch required the factories to be enabled (decision 7). Factories are immutable, so a change means a new factory and a new audit.
 - Factories inherit `LauncherFactoryBase` / `DirectLaunchVaultFactoryBase` (required by Flap).
 - Launcher locks its own salt; factory never does.
 - Token address ends in `7777`; never call the token before launch.
@@ -448,7 +448,7 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 4 | Zero-pull team's bonus? | Other team gets the whole bonus, and its captain the whole captain share |
 | 5 | 70% maximum bonus share? | Kept (comment resolved) |
 | 6 | How does a game start? | Captain challenge and accept deposits; cancel and refund if B does not accept in time |
-| 7 | Does Flap have to open our factory? | Yes. An unopened factory is refused; Flap opens it with `setLauncherFactoryMultiplier(factory, 10000, true)` (platform constraints) |
+| 7 | Does Flap have to open our factory? | Not observed to be required. On BSC testnet, Portal v1.2.0, block 144932590, a fork probe created and launched a game with creation paused and both factory flags disabled. The floor parity tests cover how the flags select the multiplier. Still ask Flap to open both factories (decision 16) using `setLauncherFactoryMultiplier(launcherFactory, 10000, true)` and `setVaultFactoryMultiplier(vaultFactory, 10000, true)`. |
 | 8 | What is the liquidity floor? | $750 × multiplier × totalSupply / poolToken. Read from the testnet Portal: BNB at $700, so 2.15 tBNB at a 50% pool share and 1x multiplier. About 7 faucet-days from one address, so funding is spread over 5+ wallets and several faucets |
 | 9 | Can a captain deposit more than the minimum? | Yes. `depositCaptain` takes "at least captainMinDeposit", and the deposit counts toward the wallet cap |
 | 10 | Can we copy Flap's base contracts? | Yes, and we must: Flap requires factories to inherit `LauncherFactoryBase`. Example sources are marked MIT (the repo has no LICENSE file). The README says what is ours and what came from Flap |
@@ -459,7 +459,7 @@ PR 1 and PR 2 can merge into one if review time is short.
 | 15 | Who builds the frontend and the OpenFour port? | A friend of the team, independently, calling the PR 1 interfaces |
 | 16 | How do our testnet factories get opened? | Ping Flap with the addresses after deploy and they approve. No audit needed for testnet |
 | 17 | Captain share of vault revenue? | 20%, as the doc says. `captainShareBps` in `TugConfig`, default 2000, configurable per game like every other default |
-| 18 | Trigger Service auto-launch? | Yes, built into the launcher in PR 3, with the launch button kept as the fallback |
+| 18 | Trigger Service auto-launch? | Built into the launcher. On BSC testnet at block 144938757, a callback capped at the live 2,000,000 gas reverted with `0xbbdf0a77` (origin unconfirmed). Uncapped, the same call launched with the stand-in vault and used 4,643,735 gas. Manual launch is the default and the UI hides scheduling. Ask Flap for a callback cap with headroom over PR 4's real-vault measurement. |
 | 19 | Must one captain deposit first? | No. Either named captain can go first; the first deposit is the challenge, the second the accept |
 | 20 | When does the accept window start? | At game creation. Both captains must deposit within it, or the game can be cancelled |
 | 21 | Does a tie count as a lead change for overtime? | Yes. Moving into or out of a tie extends the deadline, within the same limit of 5 extensions. |
