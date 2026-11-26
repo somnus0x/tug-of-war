@@ -1,5 +1,7 @@
 export const RULES_COPY = {
   heading: 'How to play',
+  open: 'How to play',
+  close: 'Got it',
   oneCoin: {
     label: 'One coin',
     text: (supply: string) => `Both crews launch one coin together. Supply ${supply}.`,

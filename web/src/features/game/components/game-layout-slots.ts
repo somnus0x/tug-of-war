@@ -13,6 +13,5 @@ export type GameLayoutSlots = {
   picker: ReactNode
   you: ReactNode
   feed: ReactNode
-  rules: ReactNode
   announcer: ReactNode
 }

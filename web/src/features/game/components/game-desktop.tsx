@@ -26,7 +26,6 @@ export const GameDesktop = ({ slots }: GameDesktopProps) => (
         {slots.you}
         {slots.feed}
       </div>
-      <div className="game__column game__column--rules">{slots.rules}</div>
     </div>
     {slots.announcer}
   </div>

@@ -5,10 +5,9 @@ import { useBottomBar } from '../hooks/use-bottom-bar'
 type GamePhoneProps = {
   slots: GameLayoutSlots
   hasBar: boolean
-  rulesLast: boolean
 }
 
-export const GamePhone = ({ slots, hasBar, rulesLast }: GamePhoneProps) => {
+export const GamePhone = ({ slots, hasBar }: GamePhoneProps) => {
   const barRef = useBottomBar()
   return (
     <div className={hasBar ? 'game game--phone game--with-bar' : 'game game--phone'}>
@@ -22,12 +21,10 @@ export const GamePhone = ({ slots, hasBar, rulesLast }: GamePhoneProps) => {
         {slots.autoLaunch}
         {slots.you}
         {slots.feed}
-        {rulesLast ? null : slots.rules}
         <div className="game__totals">
           {slots.blueTotals}
           {slots.redTotals}
         </div>
-        {rulesLast ? slots.rules : null}
       </div>
       {hasBar ? (
         <div className="game__bar" ref={barRef}>

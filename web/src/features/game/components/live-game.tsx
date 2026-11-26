@@ -30,7 +30,6 @@ import { GamePhone } from './game-phone'
 import { GameScene } from './game-scene'
 import { PullPicker } from './pull-picker'
 import { PullSlot } from './pull-slot'
-import { RulesPanel } from './rules-panel'
 import { SplitLine } from './split-line'
 import { TeamTotals } from './team-totals'
 import { ViewerReadout } from './viewer-readout'
@@ -70,7 +69,6 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
   const face = useClockFace(launcher, game, rules)
   const isClockKnown = useChainSelect(isKnown)
   const headline = pageHeadline(game)
-  const hasTeam = player !== null && player.team !== 'none'
   const draft = usePullDraft(player, account)
   const pullTx = usePullTx(launcher, draft)
   const pullState = pullBoxStateOf(game.phase, face, player)
@@ -163,7 +161,6 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
         limit={FEED_ROWS[mode]}
       />
     ),
-    rules: <RulesPanel game={game} rules={rules} collapsed={hasTeam} />,
     announcer: (
       <GameAnnouncer
         key={launcher}
@@ -175,5 +172,5 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
   if (mode === 'desktop') {
     return <GameDesktop slots={slots} />
   }
-  return <GamePhone slots={slots} hasBar={hasBar} rulesLast={hasTeam} />
+  return <GamePhone slots={slots} hasBar={hasBar} />
 }

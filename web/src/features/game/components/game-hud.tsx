@@ -8,6 +8,7 @@ import { clockTargetOf, isMinMissed, lampsShownOf } from '../model/page-model'
 import { GameClock } from './game-clock'
 import { OvertimeLamps } from './overtime-lamps'
 import { RaiseMeter } from './raise-meter'
+import { RulesButton } from './rules-button'
 
 type GameHudProps = {
   game: Game
@@ -33,6 +34,7 @@ export const GameHud = ({ game, rules, face, mode }: GameHudProps) => {
       <GameClock face={face} target={clockTargetOf(game)} />
       <div className="game-hud__end">
         {showLamps ? <OvertimeLamps used={game.extensionsUsed} max={rules.maxExtensions} /> : null}
+        <RulesButton game={game} rules={rules} />
       </div>
     </header>
   )

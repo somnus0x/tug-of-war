@@ -16,7 +16,8 @@ type ModalProps = {
   primaryState?: TileState
   primaryVariant?: TileVariant
   onPrimary: () => void
-  secondaryLabel: string
+  secondaryLabel?: string
+  focusTitle?: boolean
   onClose: () => void
 }
 
@@ -44,10 +45,12 @@ export const Modal = ({
   primaryVariant = 'primary',
   onPrimary,
   secondaryLabel,
+  focusTitle = false,
   onClose,
 }: ModalProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const openerRef = useRef<Element | null>(null)
+  const titleRef = useRef<HTMLHeadingElement>(null)
   const titleId = useId()
   const bodyId = useId()
 
@@ -58,6 +61,9 @@ export const Modal = ({
     }
     openerRef.current = document.activeElement
     dialog.showModal()
+    if (focusTitle) {
+      titleRef.current?.focus()
+    }
     return () => {
       dialog.close()
       const opener = openerRef.current
@@ -65,7 +71,7 @@ export const Modal = ({
         opener.focus()
       }
     }
-  }, [open])
+  }, [open, focusTitle])
 
   const cancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
     event.preventDefault()
@@ -82,16 +88,23 @@ export const Modal = ({
       onCancel={cancel}
       onKeyDown={keepFocusInside}
     >
-      <h2 className="modal__title" id={titleId}>
+      <h2
+        ref={titleRef}
+        className="modal__title"
+        id={titleId}
+        tabIndex={focusTitle ? -1 : undefined}
+      >
         {title}
       </h2>
       <div className="modal__body" id={bodyId}>
         {children}
       </div>
       <div className="modal__actions">
-        <TileButton variant="ghost" onClick={onClose}>
-          {secondaryLabel}
-        </TileButton>
+        {secondaryLabel === undefined ? null : (
+          <TileButton variant="ghost" onClick={onClose}>
+            {secondaryLabel}
+          </TileButton>
+        )}
         <TileButton variant={primaryVariant} state={primaryState} onClick={onPrimary}>
           {primaryLabel}
         </TileButton>

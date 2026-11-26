@@ -87,12 +87,14 @@
 }
 
 .game-hud--phone .game-hud__end {
+  flex-wrap: wrap;
   grid-area: end;
+  gap: 8px 18px;
   justify-content: flex-start;
 }
 
-.game-hud--phone .game-hud__end:empty {
-  display: none;
+.game-hud__end .tile-button {
+  flex: none;
 }
 
 .game-hud--phone .game-hud__coin {
