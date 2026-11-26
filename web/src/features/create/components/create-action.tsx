@@ -12,11 +12,12 @@ type CreateActionProps = {
   flow: CreateFlow
   button: CreateButton
   announcement: string
+  feeNotice?: string | undefined
 }
 
 const SEARCH = CREATE_COPY.search
 
-export const CreateAction = ({ flow, button, announcement }: CreateActionProps) => {
+export const CreateAction = ({ flow, button, announcement, feeNotice }: CreateActionProps) => {
   const noteId = useId()
   const { stage } = flow
   const isSearching = stage.kind === 'searching'
@@ -73,6 +74,7 @@ export const CreateAction = ({ flow, button, announcement }: CreateActionProps) 
         {button.label}
       </TileButton>
       <p className="create-note" id={noteId}>
+        {feeNotice === undefined ? null : <b className="create-fee-notice">{feeNotice} </b>}
         {CREATE_COPY.button.feeNote}
       </p>
       <p className="create-announcer" aria-live="polite" aria-atomic="true">

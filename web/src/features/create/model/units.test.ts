@@ -60,6 +60,7 @@ describe('BNB defaults', () => {
 
   it('fills the form from the default config and the floor', () => {
     const setup: CreateSetup = {
+      factory: '0x51f0c3a6e2b9d47815c0e3f2a4b6d8c9e1f20a3b',
       defaults: {
         ...MOCK_DEFAULT_CONFIG,
         walletCap: bnbWei(parseEther('2')),

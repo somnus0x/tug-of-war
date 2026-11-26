@@ -83,6 +83,41 @@ export const CREATE_COPY = {
     uploading: 'Uploading…',
     searching: 'Finding an address ending in 7777…',
     checking: 'Checking the settings…',
+    wallet: 'Confirm in your wallet…',
+    creating: 'Creating game…',
+    feeChanged: (fee: string) =>
+      `The fee changed to ${fee} BNB. Press the button again to create the game.`,
+  },
+  sent: {
+    created: (acceptWindow: string | null) =>
+      acceptWindow === null
+        ? { title: 'Game created' }
+        : {
+            title: 'Game created',
+            body: `Both captains now have ${acceptWindow} to deposit.`,
+          },
+    missing: {
+      title: 'Game created',
+      body: 'Its address could not be read from the receipt.',
+    },
+    balance: (needed: string) => ({
+      title: `Not enough BNB. You need ${needed} BNB for the fee and network costs.`,
+    }),
+  },
+  result: {
+    heading: 'Game created',
+    intro: 'Send this link to both captains. They have to deposit before the game starts.',
+    linkLabel: 'Share link',
+    copy: 'Copy link',
+    copied: 'Link copied.',
+    copyFailed: 'Could not copy. Select the link and copy it.',
+    qrLabel: (link: string) => `QR code for the share link ${link}`,
+    open: 'Open game',
+    another: 'Create another',
+    missingTitle: 'The game was created, but its address could not be read.',
+    missingBody: 'Find it on the home page, or check the transaction on the explorer.',
+    home: 'Go to the home page',
+    explorer: 'View the transaction',
   },
   search: {
     label: 'Address search',
@@ -96,5 +131,6 @@ export const CREATE_COPY = {
     searching: 'Finding an address ending in 7777.',
     ready: 'Address found. Settings checked. Ready to create.',
     errors: 'Some fields need fixing.',
+    created: 'Game created.',
   },
 } as const

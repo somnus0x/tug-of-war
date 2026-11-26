@@ -7,6 +7,7 @@ import { isLauncherAction } from '@/lib/actions'
 
 import { erc20Abi, tugLauncherAbi, tugVaultAbi } from '../abis'
 import { ACTIONS, buildCall, buildValue, refreshGroups } from './actions'
+import { CREATE_CALL } from './create-tx'
 import { VAULT_ENTRIES } from './vault-actions'
 
 export type CallPlace = {
@@ -80,6 +81,20 @@ const RESOLVERS: Resolvers = {
   claimRewards: vaultCall('claimRewards'),
   claimVaultCaptain: vaultCall('claimVaultCaptain'),
   approve: vaultCall('approve'),
+  createGame: (params, place) => {
+    if (place.target === undefined) {
+      throw new Error('No Portal address for createGame')
+    }
+    return {
+      address: place.target,
+      abi: CREATE_CALL.abi,
+      functionName: CREATE_CALL.functionName,
+      args: CREATE_CALL.args(params),
+      needsQuote: false,
+      value: () => params.fee,
+      gasPercent: PLAIN_GAS,
+    }
+  },
 }
 
 export const resolveCall = <Name extends TxActionName>(
@@ -93,7 +108,13 @@ export const resolveCall = <Name extends TxActionName>(
 
 const ALWAYS_REFRESH: readonly QueryGroup[] = ['gates', 'balance']
 
-export const txRefreshGroups = (name: TxActionName): readonly QueryGroup[] =>
-  isLauncherAction(name)
+const CREATE_REFRESH: readonly QueryGroup[] = ['balance']
+
+export const txRefreshGroups = (name: TxActionName): readonly QueryGroup[] => {
+  if (name === 'createGame') {
+    return CREATE_REFRESH
+  }
+  return isLauncherAction(name)
     ? refreshGroups(name)
     : [...new Set([...VAULT_ENTRIES[name].refresh, ...ALWAYS_REFRESH])]
+}

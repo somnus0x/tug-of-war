@@ -17,6 +17,7 @@ import { reasonProblem } from './reason-field'
 const SALT = '0x00000000000000000000000000000000000000000000000000000000000a7777'
 
 const SETUP: CreateSetup = {
+  factory: '0x51f0c3a6e2b9d47815c0e3f2a4b6d8c9e1f20a3b',
   defaults: MOCK_DEFAULT_CONFIG,
   vaultFactory: MOCK_DEFAULT_CONFIG.vaultFactory,
   portal: '0x000042108465206185A077Edc3F3fd2b49060000',

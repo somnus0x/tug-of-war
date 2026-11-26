@@ -1,3 +1,4 @@
+import type { CreateGameParams } from './create-tx'
 import type { LauncherActionName } from '@/lib/actions'
 import type { Team } from '@/lib/team'
 import type { BnbWei, TokenWei } from '@/lib/units'
@@ -34,6 +35,7 @@ export type ActionParams = {
   readonly claimRewards: NoParams
   readonly claimVaultCaptain: NoParams
   readonly approve: { readonly spender: Address; readonly amount: TokenWei }
+  readonly createGame: CreateGameParams
 }
 
 export type LauncherEventName =

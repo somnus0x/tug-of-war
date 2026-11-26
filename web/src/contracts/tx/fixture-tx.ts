@@ -87,6 +87,7 @@ const PLAUSIBLE_REVERTS: Record<TxActionName, string> = {
   claimRewards: 'NothingToClaim',
   claimVaultCaptain: 'NothingToClaim',
   approve: 'TransferFailed',
+  createGame: 'MinRaiseBelowCreationFloor',
 }
 
 export const plausibleRevert = (name: TxActionName, gate: Gate): string =>

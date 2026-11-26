@@ -15,6 +15,8 @@ export type CreateButtonKind =
   | 'uploading'
   | 'searching'
   | 'checking'
+  | 'wallet'
+  | 'creating'
   | 'connect'
   | 'switchNetwork'
   | 'fix'
@@ -33,6 +35,7 @@ export type CreateButtonInput = {
   readonly isWrongNetwork: boolean
   readonly showsErrors: boolean
   readonly stage: CreateStage
+  readonly sending?: 'idle' | 'checking' | 'wallet' | 'pending'
   readonly fee: string
 }
 
@@ -48,6 +51,15 @@ export const createButtonOf = (input: CreateButtonInput): CreateButton => {
   const { stage } = input
   if (input.isUnavailable) {
     return { kind: 'unavailable', label: BUTTON.unavailable, state: 'disabled' }
+  }
+  if (input.sending === 'wallet') {
+    return { kind: 'wallet', label: BUTTON.wallet, state: 'wallet' }
+  }
+  if (input.sending === 'pending') {
+    return { kind: 'creating', label: BUTTON.creating, state: 'pending' }
+  }
+  if (input.sending === 'checking') {
+    return { kind: 'checking', label: BUTTON.checking, state: 'pending' }
   }
   if (stage.kind === 'uploading') {
     return { kind: 'uploading', label: BUTTON.uploading, state: 'pending' }

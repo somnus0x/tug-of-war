@@ -16,6 +16,7 @@ export type CreateLimits = {
 }
 
 export type CreateSetup = {
+  readonly factory: Address
   readonly defaults: GameConfig
   readonly vaultFactory: Address
   readonly portal: Address
@@ -31,6 +32,8 @@ export type CreateSource = {
   readonly predictToken: (salt: Hex, scope: SourceScope) => Promise<Address>
   readonly validateConfig: (config: GameConfig, scope: SourceScope) => Promise<ConfigCheck>
   readonly encodeConfig: (config: GameConfig, scope: SourceScope) => Promise<Hex>
+  readonly readFee: (portal: Address, scope: SourceScope) => Promise<BnbWei>
+  readonly readBalance: (account: Address, scope: SourceScope) => Promise<BnbWei>
 }
 
 export const TUG_CONFIG_FIELDS = [

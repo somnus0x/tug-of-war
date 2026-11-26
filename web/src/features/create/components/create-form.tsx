@@ -1,7 +1,11 @@
 import type { TextField } from '../hooks/use-create-form'
+import type { ReportReason } from '../hooks/use-send-create'
+import type { CreatedResult } from '../model/created'
 import type { FieldName, FormValues } from '../model/form-values'
 import type { CreateLimits, CreateSetup } from '@/contracts/create-types'
 import type { FormEvent } from 'react'
+
+import { useEffect, useRef } from 'react'
 
 import { useCreateCalls } from '@/contracts/queries/use-create-queries'
 import { useViewerAccount } from '@/contracts/queries/use-game-queries'
@@ -28,6 +32,7 @@ type CreateFormProps = {
   limits: CreateLimits
   initial: FormValues
   refetchLimits: () => Promise<CreateLimits | undefined>
+  onCreated: (result: CreatedResult) => void
 }
 
 const FIELDS = CREATE_COPY.fields
@@ -42,11 +47,26 @@ const focusFirstInvalid = (form: HTMLFormElement): void => {
   })
 }
 
-export const CreateForm = ({ setup, limits, initial, refetchLimits }: CreateFormProps) => {
+export const CreateForm = ({
+  setup,
+  limits,
+  initial,
+  refetchLimits,
+  onCreated,
+}: CreateFormProps) => {
   const wallet = useWallet()
   const account = useViewerAccount(wallet.address)
   const calls = useCreateCalls()
-  const send = useSendCreate()
+  const reportRef = useRef<ReportReason>(() => undefined)
+  const sender = useSendCreate({
+    setup,
+    calls,
+    account,
+    onCreated,
+    onReason: (reason, fresh, attemptKey) => {
+      reportRef.current(reason, fresh, attemptKey)
+    },
+  })
   const form = useCreateForm(initial, limits)
   const { values, check, touched } = form
   const isUnavailable = !limits.creationFloorAvailable
@@ -63,9 +83,13 @@ export const CreateForm = ({ setup, limits, initial, refetchLimits }: CreateForm
     canSend: account !== undefined && !isWrongNetwork && !isUnavailable,
     setCid: form.fillUploadedCid,
     calls,
-    send,
+    send: sender.send,
   })
-  const isDisabled = isUnavailable || locksInputs(flow.stage)
+  useEffect(() => {
+    reportRef.current = flow.reportReason
+  })
+  const isSending = sender.stage !== 'idle'
+  const isDisabled = isUnavailable || isSending || locksInputs(flow.stage)
   const hasErrors = Object.keys(check.errors).length > 0 || flow.fieldProblem !== null
   const showsErrors = flow.submitted && hasErrors
   const button = createButtonOf({
@@ -74,7 +98,8 @@ export const CreateForm = ({ setup, limits, initial, refetchLimits }: CreateForm
     isWrongNetwork,
     showsErrors,
     stage: flow.stage,
-    fee: formatBnbExact(setup.fee),
+    sending: sender.stage,
+    fee: formatBnbExact(sender.fee),
   })
 
   const errorOf = (field: FieldName): string | undefined => {
@@ -201,7 +226,16 @@ export const CreateForm = ({ setup, limits, initial, refetchLimits }: CreateForm
         <CreateAction
           flow={flow}
           button={button}
-          announcement={announcementOf(flow.stage, showsErrors, flow.uploadFailed)}
+          announcement={
+            sender.feeChanged
+              ? CREATE_COPY.button.feeChanged(formatBnbExact(sender.fee))
+              : announcementOf(flow.stage, showsErrors, flow.uploadFailed)
+          }
+          feeNotice={
+            sender.feeChanged
+              ? CREATE_COPY.button.feeChanged(formatBnbExact(sender.fee))
+              : undefined
+          }
         />
       </div>
     </form>

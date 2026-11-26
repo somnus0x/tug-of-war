@@ -53,6 +53,22 @@ describe('createButtonOf', () => {
   })
 })
 
+describe('send stages', () => {
+  it('labels the wallet and pending steps and blocks a second click', () => {
+    expect(createButtonOf({ ...BASE, stage: { kind: 'ready' }, sending: 'wallet' })).toEqual({
+      kind: 'wallet',
+      label: 'Confirm in your wallet…',
+      state: 'wallet',
+    })
+    expect(createButtonOf({ ...BASE, stage: { kind: 'ready' }, sending: 'pending' })).toEqual({
+      kind: 'creating',
+      label: 'Creating game…',
+      state: 'pending',
+    })
+    expect(kindOf({ stage: { kind: 'ready' }, sending: 'checking' })).toBe('checking')
+  })
+})
+
 describe('announcementOf', () => {
   it('announces stage changes but not idle', () => {
     expect(announcementOf({ kind: 'idle' }, false)).toBe('')

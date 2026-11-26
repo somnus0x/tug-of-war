@@ -24,7 +24,7 @@ export type CreateActionName = (typeof CREATE_ACTIONS)[number]
 
 export type TokenActionName = (typeof TOKEN_ACTIONS)[number]
 
-export type TxActionName = LauncherActionName | VaultActionName | TokenActionName
+export type TxActionName = LauncherActionName | VaultActionName | TokenActionName | CreateActionName
 
 export type ActionName = LauncherActionName | VaultActionName | CreateActionName | TokenActionName
 
@@ -39,6 +39,7 @@ export const TX_ACTIONS: readonly TxActionName[] = [
   ...LAUNCHER_ACTIONS,
   ...VAULT_ACTIONS,
   ...TOKEN_ACTIONS,
+  ...CREATE_ACTIONS,
 ]
 
 export const isLauncherAction = (name: TxActionName): name is LauncherActionName =>

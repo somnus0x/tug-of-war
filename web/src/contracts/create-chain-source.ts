@@ -23,6 +23,7 @@ export const createChainCreateSource = (): CreateSource => ({
       functionName: 'SALT_LOCK_FEE',
     })
     return {
+      factory: TUG_FACTORY_ADDRESS,
       defaults: mapConfig(defaults),
       vaultFactory,
       portal,
@@ -42,6 +43,15 @@ export const createChainCreateSource = (): CreateSource => ({
         args: [configArg(config)],
       }),
     ),
+  readFee: async (portal) =>
+    bnbWei(
+      await publicClient.readContract({
+        address: portal,
+        abi: portalAbi,
+        functionName: 'SALT_LOCK_FEE',
+      }),
+    ),
+  readBalance: async (account) => bnbWei(await publicClient.getBalance({ address: account })),
   encodeConfig: (config) =>
     publicClient.readContract({
       ...factory,

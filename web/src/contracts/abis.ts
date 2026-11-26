@@ -21,6 +21,13 @@ export const flapTriggerServiceErrorAbi = parseAbi([
   'error FeePaidOverflow(uint256 provided)',
 ])
 
+export const unexportedErrorAbi = parseAbi([
+  'error InvalidSaltLockPayment()',
+  'error DescriptionTooLong()',
+  'error InvalidDistribution()',
+  'error GameIndexOutOfRange()',
+])
+
 const isError = (item: Abi[number]): item is AbiError => item.type === 'error'
 
 const uniqueErrors = (abis: readonly Abi[]): AbiError[] => {
@@ -41,4 +48,5 @@ export const errorAbi: readonly AbiError[] = uniqueErrors([
   portalAbi,
   erc20Abi,
   flapTriggerServiceErrorAbi,
+  unexportedErrorAbi,
 ])

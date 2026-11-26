@@ -1,5 +1,7 @@
 import type { ConfigCheck, CreateLimits, CreateSetup, CreateSource } from '../create-types'
 import type { GameConfig, SourceScope } from '../types'
+import type { CreateLedger } from './create-ledger'
+import type { BnbWei } from '@/lib/units'
 import type { Address } from 'viem'
 
 import { encodeAbiParameters, getAbiItem, parseEther } from 'viem'
@@ -9,7 +11,8 @@ import { bnbWei, bps } from '@/lib/units'
 
 import { tugLauncherFactoryAbi } from '../abis'
 import { configArg } from '../create-mappers'
-import { FIXTURE_ADDRESSES, ZERO_ADDRESS } from './constants'
+import { FIXTURE_ADDRESSES, VIEWER_BALANCE, ZERO_ADDRESS } from './constants'
+import { balanceAfter, createLedger } from './create-ledger'
 
 export const CREATE_FIXTURES = [
   'floor-unavailable',
@@ -17,6 +20,8 @@ export const CREATE_FIXTURES = [
   'floor-rising',
   'salt-mismatch',
   'upload-fail',
+  'fee-rising',
+  'low-balance',
 ] as const
 
 export type CreateFixtureName = (typeof CREATE_FIXTURES)[number] | 'default'
@@ -31,7 +36,11 @@ const WRONG_DEPLOYER: Address = '0x00000000000000000000000000000000000000ff'
 const MOCK_FLOOR = parseEther('2.3456')
 const RISING_START = parseEther('1.5')
 const RISING_STEP = parseEther('0.5')
-const MOCK_FEE = parseEther('0.005')
+export const MOCK_FEE = bnbWei(parseEther('0.005'))
+const RISEN_FEE = bnbWei(parseEther('0.006'))
+
+export const mockFeeOf = (fixture: string | undefined): BnbWei =>
+  resolveCreateFixture(fixture) === 'fee-rising' ? RISEN_FEE : MOCK_FEE
 const MOCK_LATENCY_MS = 120
 
 const DAY = 86_400
@@ -92,11 +101,20 @@ const floorOf = (fixture: CreateFixtureName, reads: number) => {
   return { creationFloorAvailable: true, minRaiseFloor: bnbWei(MOCK_FLOOR) }
 }
 
-export type CreateFixtureOptions = { readonly latency?: boolean }
+export type CreateFixtureOptions = {
+  readonly latency?: boolean
+  readonly ledger?: CreateLedger
+}
+
+const LOW_BALANCE = bnbWei(parseEther('0.0055'))
+
+export const mockBaseBalance = (fixture: string | undefined): BnbWei =>
+  resolveCreateFixture(fixture) === 'low-balance' ? LOW_BALANCE : bnbWei(parseEther(VIEWER_BALANCE))
 
 export const createFixtureCreateSource = (options: CreateFixtureOptions = {}): CreateSource => {
   const reply = options.latency === false ? <T>(value: T) => Promise.resolve(value) : later
   const risingReads = new Map<string, number>()
+  const ledger = options.ledger ?? createLedger
 
   const limitsOf = (scope: SourceScope, advance: boolean): CreateLimits => {
     const fixture = resolveCreateFixture(scope.fixture)
@@ -122,7 +140,11 @@ export const createFixtureCreateSource = (options: CreateFixtureOptions = {}): C
     if (blue === ZERO_ADDRESS || red === ZERO_ADDRESS || blue === red) {
       return 'InvalidCaptains'
     }
-    if (/^0x0*$/.test(config.salt) || !isVanityAddress(predict(config.salt, scope))) {
+    if (
+      /^0x0*$/.test(config.salt) ||
+      ledger.isSpent(config.salt) ||
+      !isVanityAddress(predict(config.salt, scope))
+    ) {
       return 'InvalidSalt'
     }
     const ranges: readonly [number, { min: number; max: number }, string][] = [
@@ -153,11 +175,12 @@ export const createFixtureCreateSource = (options: CreateFixtureOptions = {}): C
   }
 
   const setup: CreateSetup = {
+    factory: FIXTURE_ADDRESSES.factory,
     defaults: MOCK_DEFAULT_CONFIG,
     vaultFactory: MOCK_DEFAULT_CONFIG.vaultFactory,
     portal: MOCK_PORTAL,
     tokenImplementation: MOCK_TOKEN_IMPLEMENTATION,
-    fee: bnbWei(MOCK_FEE),
+    fee: MOCK_FEE,
   }
 
   return {
@@ -170,5 +193,8 @@ export const createFixtureCreateSource = (options: CreateFixtureOptions = {}): C
       return reply(check)
     },
     encodeConfig: (config) => reply(encodeAbiParameters(encodeConfigInputs, [configArg(config)])),
+    readFee: (_portal, scope) => reply(mockFeeOf(scope.fixture)),
+    readBalance: (account, scope) =>
+      reply(balanceAfter(mockBaseBalance(scope.fixture), ledger.charged(account))),
   }
 }

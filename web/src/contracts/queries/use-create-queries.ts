@@ -1,5 +1,6 @@
-import type { ConfigCheck } from '../create-types'
+import type { ConfigCheck, CreateLimits } from '../create-types'
 import type { GameConfig } from '../types'
+import type { BnbWei } from '@/lib/units'
 import type { Address, Hex } from 'viem'
 
 import { useQuery } from '@tanstack/react-query'
@@ -44,6 +45,9 @@ export type CreateCalls = {
   readonly predictToken: (salt: Hex) => Promise<Address>
   readonly validateConfig: (config: GameConfig) => Promise<ConfigCheck>
   readonly encodeConfig: (config: GameConfig) => Promise<Hex>
+  readonly readLimits: () => Promise<CreateLimits>
+  readonly readFee: (portal: Address) => Promise<BnbWei>
+  readonly readBalance: (account: Address) => Promise<BnbWei>
 }
 
 export const useCreateCalls = (): CreateCalls => {
@@ -54,6 +58,9 @@ export const useCreateCalls = (): CreateCalls => {
       predictToken: (salt) => createSource.predictToken(salt, scope),
       validateConfig: (config) => createSource.validateConfig(config, scope),
       encodeConfig: (config) => createSource.encodeConfig(config, scope),
+      readLimits: () => createSource.readLimits(scope),
+      readFee: (portal) => createSource.readFee(portal, scope),
+      readBalance: (account) => createSource.readBalance(account, scope),
     }),
     [scope],
   )

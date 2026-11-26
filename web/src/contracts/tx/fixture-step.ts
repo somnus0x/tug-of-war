@@ -8,6 +8,7 @@ import type { LauncherActionName, TxActionName } from '@/lib/actions'
 import type { Address } from 'viem'
 
 import { CAPTAIN_STEPS } from '../fixtures/captain-world'
+import { createFixtureStep } from '../fixtures/create-tx-fixture'
 import { applyEffect } from '../fixtures/effects'
 import { VAULT_STEPS } from '../fixtures/vault-effects'
 import { vaultWorldOf } from '../fixtures/vault-world'
@@ -141,6 +142,7 @@ const STEPS: StepBuilders = {
   claimRewards: vaultStep('claimRewards'),
   claimVaultCaptain: captainStep('claimVaultCaptain', VAULT_ENTRIES.claimVaultCaptain.args),
   approve: vaultStep('approve'),
+  createGame: (params, place) => createFixtureStep(params, place),
 }
 
 export const fixtureStep = <Name extends TxActionName>(

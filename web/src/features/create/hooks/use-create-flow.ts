@@ -34,6 +34,7 @@ import {
 } from '../model/flow-state'
 import { inputsKeyOf } from '../model/form-values'
 import { reasonProblem } from '../model/reason-field'
+import { reasonAppliesTo } from '../model/send-attempt'
 import { simulateUpload, uploadImage } from '../model/upload'
 import { useSaltSearch } from './use-salt-search'
 
@@ -65,6 +66,7 @@ export type CreateFlow = {
   readonly submit: () => void
   readonly sendPrepared: () => void
   readonly cancelSearch: () => void
+  readonly reportReason: (reason: string, fresh: CreateLimits | null, attemptKey: string) => void
 }
 
 const RECHECK_DELAY_MS = 300
@@ -261,5 +263,16 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
       }
     },
     cancelSearch: cancel,
+    reportReason: (reason, fresh, attemptKey) => {
+      if (!reasonAppliesTo(attemptKey, liveKey)) {
+        return
+      }
+      checkedKey.current = attemptKey
+      const mapped = reasonProblem(reason, fresh ?? limits)
+      setFlow((state) => checkRejected(withStage(state, IDLE_STAGE), attemptKey, mapped))
+      if (reason === 'InvalidSalt') {
+        setSalt(null)
+      }
+    },
   }
 }

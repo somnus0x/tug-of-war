@@ -79,6 +79,7 @@ const BUILDERS: Builders = {
   claimVaultCaptain: (outcome) =>
     TX_COPY.success.captainShareClaimed({ amount: formatBnb(outcome.amount, { precise: true }) }),
   approve: () => TX_COPY.success.approved,
+  createGame: () => TX_COPY.success.done('createGame'),
 }
 
 export const successMessage = <Name extends TxActionName>(

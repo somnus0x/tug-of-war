@@ -1,4 +1,5 @@
 import type { PickedTeam } from './actions'
+import type { CreateOutcomes } from './create-tx'
 import type { VaultOutcomes } from './vault-outcome'
 import type { LauncherActionName, TxActionName } from '@/lib/actions'
 import type { BnbWei, Bps, PullWei, TokenWei } from '@/lib/units'
@@ -10,6 +11,7 @@ import { teamFromId } from '@/lib/team'
 import { bnbWei, bps, pullWei, tokenWei } from '@/lib/units'
 
 import { tugLauncherAbi } from '../abis'
+import { decodeCreatedGame } from './create-tx'
 import { VAULT_DECODERS } from './vault-outcome'
 
 export type ActionOutcomes = {
@@ -36,7 +38,8 @@ export type ActionOutcomes = {
   readonly claim: { readonly base: TokenWei; readonly bonus: TokenWei }
   readonly claimCaptain: { readonly amount: TokenWei }
   readonly withdrawTriggerBudget: { readonly amount: BnbWei }
-} & VaultOutcomes
+} & VaultOutcomes &
+  CreateOutcomes
 
 export type ActionOutcome<Name extends LauncherActionName> = ActionOutcomes[Name]
 
@@ -138,6 +141,7 @@ const DECODERS: Decoders = {
     return event === undefined ? null : { amount: bnbWei(event.args.amount) }
   },
   ...VAULT_DECODERS,
+  createGame: (context) => decodeCreatedGame({ factory: context.launcher, logs: context.logs }),
 }
 
 export const decodeOutcome = <Name extends TxActionName>(
