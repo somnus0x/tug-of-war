@@ -613,6 +613,7 @@ contract TugLauncher is LauncherBase, Initializable, IStrategy, ReentrancyGuard,
     }
 
     function _currentWeight() private view returns (uint16) {
+        if (gameStart == 0) return TugMath.START_WEIGHT_BPS;
         return TugMath.timeWeightBps(gameStart, _originalDeadline, block.timestamp);
     }
 

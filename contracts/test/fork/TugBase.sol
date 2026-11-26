@@ -92,11 +92,15 @@ abstract contract TugBase is Test {
     }
 
     function _config() internal view returns (TugConfig memory config) {
+        return _config("Tug launcher fork");
+    }
+
+    function _config(string memory saltDomain) internal view returns (TugConfig memory config) {
         config = factory.defaultConfig();
         config.name = "Tug of War";
         config.symbol = "TUG";
         config.meta = "QmTug";
-        config.salt = _mineSalt();
+        config.salt = _mineSalt(saltDomain);
         config.minRaise = 3 ether;
         config.walletCap = 10 ether;
         config.captainBlue = blue;
@@ -104,8 +108,8 @@ abstract contract TugBase is Test {
         config.captainMinDeposit = CAPTAIN_DEPOSIT;
     }
 
-    function _mineSalt() private view returns (bytes32 salt) {
-        bytes32 seed = keccak256(abi.encode("Tug launcher fork", block.number, address(factory)));
+    function _mineSalt(string memory saltDomain) private view returns (bytes32 salt) {
+        bytes32 seed = keccak256(abi.encode(saltDomain, block.number, address(factory)));
         address hub = address(portal);
         for (uint256 i;; ++i) {
             assembly ("memory-safe") {

@@ -96,6 +96,22 @@ contract TugLauncherForkTest is TugBase {
         assertEq(factory.gamesCount(), 0);
     }
 
+    function test_PortalLaunchesWithEachTokenFieldEmpty() public {
+        _setFactories(10_000, true, 10_000, true);
+
+        TugConfig memory noName = _config("empty token name");
+        noName.name = "";
+        _assertLaunchWithEmptyTokenField(noName, "name");
+
+        TugConfig memory noSymbol = _config("empty token symbol");
+        noSymbol.symbol = "";
+        _assertLaunchWithEmptyTokenField(noSymbol, "symbol");
+
+        TugConfig memory noMeta = _config("empty token metadata");
+        noMeta.meta = "";
+        _assertLaunchWithEmptyTokenField(noMeta, "meta");
+    }
+
     function test_CaptainDepositsAreNamedOnceAndAtLeastTheMinimum() public {
         TugLauncher launcher = _newGame();
         (bool ok, bytes4 reason) = launcher.canDepositCaptain(alice, CAPTAIN_DEPOSIT);
@@ -111,6 +127,7 @@ contract TugLauncherForkTest is TugBase {
         _deposit(launcher, red, CAPTAIN_DEPOSIT);
         assertEq(launcher.phase(), Phase.AWAITING_CAPTAINS);
         assertEq(launcher.gameStart(), 0);
+        assertEq(launcher.getGame().currentWeightBps, 20_000);
         assertEq(launcher.pullOf(red), 2 * CAPTAIN_DEPOSIT);
 
         (ok, reason) = launcher.canDepositCaptain(red, CAPTAIN_DEPOSIT);
@@ -242,7 +259,7 @@ contract TugLauncherForkTest is TugBase {
         launcher.scheduleAutoLaunch{value: fee}();
         uint256 requestId = launcher.autoLaunchRequestId();
         vm.warp(launcher.deadline());
-        _mockQuoteReverting();
+        _mockPortalReadReverting(IPortalFloor.launchQuoteConfig.selector);
         _assertLaunchError(launcher, ITugLauncher.CreationFloorUnavailable.selector);
 
         vm.warp(launcher.deadline() + launcher.getRules().launchGrace);
@@ -287,8 +304,33 @@ contract TugLauncherForkTest is TugBase {
         _assertUnavailableFloor(config);
 
         vm.clearMockedCalls();
-        _mockQuoteReverting();
+        _mockPortalReadReverting(IPortalFloor.launchQuoteConfig.selector);
         _assertUnavailableFloor(config);
+    }
+
+    function test_UnavailableFloorWhenVaultFactoryMultiplierReverts() public {
+        _setFactories(10_000, true, 10_000, true);
+        _mockPortalReadReverting(IPortalFloor.vaultFactoryMultiplier.selector);
+        _assertUnavailableFloor(_config());
+    }
+
+    function test_UnavailableFloorWhenLauncherFactoryMultiplierReverts() public {
+        _setFactories(10_000, false, 10_000, true);
+        _mockPortalReadReverting(IPortal.launcherFactoryMultiplier.selector);
+        _assertUnavailableFloor(_config());
+    }
+
+    function test_UnavailableFloorWhenGraduationFloorV2Reverts() public {
+        _setFactories(10_000, true, 10_000, true);
+        _mockPortalReadReverting(IPortalFloor.graduationFloorV2.selector);
+        _assertUnavailableFloor(_config());
+    }
+
+    function test_UnavailableLaunchFloorWhenGraduationFloorV2ForLauncherReverts() public {
+        TugLauncher launcher = _readyToLaunch();
+        vm.warp(launcher.deadline());
+        _mockPortalReadReverting(IPortalFloor.graduationFloorV2ForLauncher.selector);
+        _assertLaunchError(launcher, ITugLauncher.CreationFloorUnavailable.selector);
     }
 
     function test_ZeroFloorIsAvailableButZeroMinRaiseIsRejected() public {
@@ -417,6 +459,68 @@ contract TugLauncherForkTest is TugBase {
         assertEq(launcher.triggerBudget(), budget);
     }
 
+    function test_MeasureTriggerLaunchAgainstCallbackGasCap() public {
+        TugLauncher launcher = _newGame();
+        _start(launcher);
+        _scheduleFromBob(launcher);
+        _contribute(launcher, alice, Team.BLUE, launcher.minRaise());
+        vm.warp(launcher.deadline());
+
+        uint256 maxGas = IFlapTriggerService(TRIGGER_SERVICE).getMaxCallbackGas();
+        uint256 requestId = launcher.autoLaunchRequestId();
+        bytes memory data = abi.encodeCall(ITugLauncher.trigger, (requestId));
+        vm.prank(TRIGGER_SERVICE);
+        (bool fits, bytes memory revertData) = address(launcher).call{gas: maxGas}(data);
+        uint256 cappedGasUsed = vm.lastCallGas().gasTotalUsed;
+
+        emit log_named_uint("Trigger Service callback cap", maxGas);
+        emit log_named_uint("Capped callback gas used", cappedGasUsed);
+        emit log_named_string("Capped callback", fits ? "succeeded" : "reverted");
+        if (!fits) {
+            emit log_named_bytes("Capped callback revert data", revertData);
+            assertFalse(launcher.launched());
+
+            // The revert leaves the game eligible for an uncapped retry to measure the launch cost.
+            vm.prank(TRIGGER_SERVICE);
+            launcher.trigger(requestId);
+            uint256 uncappedGasUsed = vm.lastCallGas().gasTotalUsed;
+            emit log_named_uint("Uncapped callback gas used", uncappedGasUsed);
+        }
+        assertTrue(launcher.launched());
+    }
+
+    function test_WithdrawTriggerBudgetAfterLaunch() public {
+        TugLauncher launcher = _readyToLaunch();
+        _scheduleFromBob(launcher);
+        assertEq(launcher.phase(), Phase.BUY_IN);
+
+        vm.expectRevert(ITugLauncher.TriggerBudgetLocked.selector);
+        vm.prank(bob);
+        launcher.withdrawTriggerBudget();
+
+        vm.expectRevert(ITugLauncher.NotTriggerFunder.selector);
+        vm.prank(alice);
+        launcher.withdrawTriggerBudget();
+
+        vm.warp(launcher.deadline());
+        launcher.launch();
+        _assertTriggerBudgetWithdrawn(launcher);
+
+        vm.expectRevert(ITugLauncher.NothingToClaim.selector);
+        vm.prank(bob);
+        launcher.withdrawTriggerBudget();
+    }
+
+    function test_WithdrawTriggerBudgetWhileRefunding() public {
+        TugLauncher launcher = _newGame();
+        _start(launcher);
+        _scheduleFromBob(launcher);
+
+        vm.warp(launcher.deadline());
+        assertEq(launcher.phase(), Phase.REFUNDING);
+        _assertTriggerBudgetWithdrawn(launcher);
+    }
+
     function test_RefundRejectsReentrancyAndPaysOnce() public {
         TugLauncher launcher = _newGame();
         _start(launcher);
@@ -509,10 +613,8 @@ contract TugLauncherForkTest is TugBase {
         _assertConfigRevert(config, ITugLauncherFactory.CreationFloorUnavailable.selector);
     }
 
-    function _mockQuoteReverting() private {
-        vm.mockCallRevert(
-            address(portal), abi.encodeCall(IPortalFloor.launchQuoteConfig, (LAUNCH_KIND, address(0))), ""
-        );
+    function _mockPortalReadReverting(bytes4 selector) private {
+        vm.mockCallRevert(address(portal), abi.encodePacked(selector), "");
     }
 
     function _assertConfigRevert(TugConfig memory config, bytes4 expected) private {
@@ -526,6 +628,37 @@ contract TugLauncherForkTest is TugBase {
         launcher = _newGame();
         _start(launcher);
         _contribute(launcher, alice, Team.BLUE, 3 ether);
+    }
+
+    function _assertLaunchWithEmptyTokenField(TugConfig memory config, string memory field) private {
+        TugLauncher launcher = _create(config);
+        _start(launcher);
+        _contribute(launcher, alice, Team.BLUE, config.minRaise);
+        vm.warp(launcher.deadline());
+        launcher.launch();
+        assertTrue(launcher.launched());
+        assertGt(launcher.token().code.length, 0);
+        emit log_named_string(field, "empty value accepted");
+    }
+
+    function _scheduleFromBob(TugLauncher launcher) private {
+        uint256 fee = launcher.autoLaunchQuote();
+        vm.prank(bob);
+        launcher.scheduleAutoLaunch{value: fee}();
+    }
+
+    function _assertTriggerBudgetWithdrawn(TugLauncher launcher) private {
+        uint256 budget = launcher.triggerBudget();
+        uint256 balanceBefore = bob.balance;
+        assertGt(budget, 0);
+
+        vm.expectEmit(true, false, false, true, address(launcher));
+        emit ITugLauncher.TriggerBudgetWithdrawn(bob, budget);
+        vm.prank(bob);
+        launcher.withdrawTriggerBudget();
+
+        assertEq(bob.balance, balanceBefore + budget);
+        assertEq(launcher.triggerBudget(), 0);
     }
 
     function _assertLaunchError(TugLauncher launcher, bytes4 expected) private {

@@ -40,6 +40,17 @@ Action gates return `(bool ok, bytes4 reason)`. A successful gate returns `(true
 | `CreationFloorUnavailable` | The native quote is disabled, its price is zero, or a required Portal read reverted. |
 | `NonCanonicalConfig` | The factory received decodable creation bytes that differ from their canonical encoding. Use `encodeConfig` for the creation call. |
 
+## Errors outside the exported ABIs
+
+Match the first four bytes of the revert data against these selectors.
+
+| Error | Selector | When it happens |
+|---|---|---|
+| `InvalidSaltLockPayment()` | `0x4f1de29d` | Creation sent a value other than `SALT_LOCK_FEE()`. |
+| `DescriptionTooLong()` | `0xd7cfc590` | The name and symbol make the launcher description 4 KB or more at creation. |
+| `InvalidDistribution()` | `0x68b5c198` | The Portal's reserve handoff is missing or invalid during launch. |
+| `GameIndexOutOfRange()` | `0x556fe26a` | `gameAt(i)` was called with `i >= gamesCount()`. |
+
 ## Waiting for captains
 
 | Call | Arguments and return fields | What the UI handles |
