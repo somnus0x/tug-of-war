@@ -80,6 +80,21 @@ describe('VITE_TRADE_URL', () => {
   })
 })
 
+const autoLaunch = (value: string | undefined) => {
+  const result = readEnv({ ...readExample(), VITE_AUTO_LAUNCH: value })
+  return result.ok ? result.env.VITE_AUTO_LAUNCH : result.issues.map((issue) => issue.name)
+}
+
+describe('VITE_AUTO_LAUNCH', () => {
+  it('is off unless set to 1', () => {
+    expect(autoLaunch(undefined)).toBe(false)
+    expect(autoLaunch('')).toBe(false)
+    expect(autoLaunch('0')).toBe(false)
+    expect(autoLaunch('yes')).toBe(false)
+    expect(autoLaunch('1')).toBe(true)
+  })
+})
+
 describe('formatEnvIssues', () => {
   it('starts with the fixed line and lists one line per issue', () => {
     const issues: EnvIssue[] = [

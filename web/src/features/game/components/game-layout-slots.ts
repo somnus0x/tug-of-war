@@ -8,6 +8,7 @@ export type GameLayoutSlots = {
   blueTotals: ReactNode
   redTotals: ReactNode
   pull: ReactNode
+  autoLaunch: ReactNode
   picker: ReactNode
   you: ReactNode
   feed: ReactNode

@@ -6,6 +6,7 @@ import type { Gate } from '@/contracts/types'
 import { describe, expect, it } from 'vitest'
 
 import { FIXTURE_ADDRESSES } from '@/contracts/fixtures/constants'
+import { pullWei } from '@/lib/units'
 
 import { deriveEndedPanel } from './ended-panel'
 import {
@@ -34,8 +35,12 @@ const inputOf = (
     gates: { ...NO_GATES, launch },
     roles: deriveRoles(game, accountOf(viewer)),
     chainNow: LOAD,
+    refundedAmount: null,
+    autoLaunchStatus: game.triggerFunder === ZERO ? 'off' : 'scheduled',
   }
 }
+
+const ZERO = '0x0000000000000000000000000000000000000000'
 
 const panelOf = (input: EndedPanelInput) => deriveEndedPanel(input)?.panel
 
@@ -99,10 +104,43 @@ describe('deriveEndedPanel', () => {
     expect(panel).toMatchObject({ kind: 'refundAvailable', reason: 'graceExpired' })
   })
 
-  it('shows refunded for a wallet with a team and nothing refundable', () => {
+  it('shows refunded only with a zero contribution and evidence of a refund', () => {
+    const input = inputOf('refunding-min-missed')
+    const player =
+      input.player === null
+        ? null
+        : { ...input.player, contribution: bnb('0'), refundable: bnb('0') }
+    expect(panelOf({ ...input, player })).toEqual({ kind: 'refunded', amount: null })
+    expect(panelOf({ ...input, player, refundedAmount: bnb('0.25') })).toEqual({
+      kind: 'refunded',
+      amount: bnb('0.25'),
+    })
+  })
+
+  it('waits for a fresh read when a contributor shows nothing refundable', () => {
     const input = inputOf('refunding-min-missed')
     const player = input.player === null ? null : { ...input.player, refundable: bnb('0') }
-    expect(panelOf({ ...input, player })).toEqual({ kind: 'refunded', amount: bnb('0.25') })
+    expect(panelOf({ ...input, player })).toEqual({ kind: 'updating', reason: 'minMissed' })
+  })
+
+  it('does not call a zero-deposit captain refunded', () => {
+    const input = inputOf('refunding-min-missed', 'captain-blue')
+    const player =
+      input.player === null
+        ? null
+        : {
+            ...input.player,
+            contribution: bnb('0'),
+            pull: pullWei(0n),
+            refundable: bnb('0'),
+          }
+    expect(panelOf({ ...input, player })?.kind).toBe('nothingToRefund')
+  })
+
+  it('shows the plain launch panel after auto-launch stopped', () => {
+    const input = inputOf('ended-auto-launch')
+    expect(panelOf(input)?.kind).toBe('autoLaunchScheduled')
+    expect(panelOf({ ...input, autoLaunchStatus: 'stopped' })?.kind).toBe('canLaunch')
   })
 
   it('shows nothing to refund for a wallet with no team', () => {

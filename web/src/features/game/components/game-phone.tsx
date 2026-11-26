@@ -18,6 +18,7 @@ export const GamePhone = ({ slots, hasBar, rulesLast }: GamePhoneProps) => {
       {slots.capNote}
       <div className="game__sections">
         {hasBar ? slots.picker : slots.pull}
+        {slots.autoLaunch}
         {slots.you}
         {slots.feed}
         {rulesLast ? null : slots.rules}

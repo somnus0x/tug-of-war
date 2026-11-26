@@ -14,6 +14,7 @@ export const FIXTURE_ADDRESSES = {
   fanNew: '0x0f1e2d3c4b5a69788796a5b4c3d2e1f00f1e2d3c',
   fanBlue: '0x71c4a2d9e8b3f6c5a4d7e2b1c0f9e8d7c6b59e02',
   fanRed: '0x0b8e5f4a3c2d1e0f9a8b7c6d5e4f3a2b1c0d44d1',
+  fanRefunded: '0x5e1f3a2b4c6d8e0f1a3b5c7d9e1f2a4b6c8d0e2f',
   fanCapped: '0x2c60b9a8f7e6d5c4b3a2918f7e6d5c4b3a2b1d9a',
   funder: '0xf00d1e2d3c4b5a69788796a5b4c3d2e1f0abcdef',
   token: '0x9c3b5e7a1d2f4c6b8a0e9d7c5b3a1f2e4d6c7777',

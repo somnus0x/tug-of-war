@@ -213,11 +213,24 @@ const EFFECTS: Effects = {
     }
   },
   refund: (input) => ({
-    overlay: withPlayer(input.overlay, input.state.account, (current) => ({
-      ...current,
-      refunded: true,
-      spent: current.spent - input.player.refundable,
-    })),
+    overlay: withPlayer(
+      {
+        ...input.overlay,
+        refunds: [
+          ...(input.overlay.refunds ?? []),
+          {
+            account: input.state.account ?? FIXTURE_ADDRESSES.funder,
+            amount: input.player.refundable,
+          },
+        ],
+      },
+      input.state.account,
+      (current) => ({
+        ...current,
+        refunded: true,
+        spent: current.spent - input.player.refundable,
+      }),
+    ),
     outcome: { amount: input.player.refundable },
   }),
   claim: (input) => ({

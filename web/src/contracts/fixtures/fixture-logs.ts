@@ -10,11 +10,12 @@ import { bnbWei, bps, pullWei } from '@/lib/units'
 
 import { blockKey, logId } from '../logs'
 import { ZERO_ADDRESS } from './constants'
+import { refundedViewerOf, resolveViewer } from './viewers'
 
 type Ledger = {
   served: bigint
   readonly blocks: bigint[]
-  cancelBlock?: bigint
+  readonly marks: Map<string, bigint>
 }
 
 const pullLogs = (pull: OverlayPull, txHash: Hash, blockNumber: bigint): GameLog[] => {
@@ -69,6 +70,76 @@ const cancelledLog = (game: Game, txHash: Hash, blockNumber: bigint): GameLog =>
   }
 }
 
+type MarkedEvent = {
+  readonly name: string
+  readonly log: (txHash: Hash, blockNumber: bigint) => GameLog
+}
+
+const at = (txHash: Hash, blockNumber: bigint) => ({
+  id: logId(txHash, 0),
+  txHash,
+  blockNumber,
+  logIndex: 0,
+})
+
+const eventsOf = (
+  world: FixtureWorld,
+  launcher: Address,
+  scope: SourceScope,
+  game: Game,
+  stopped: boolean,
+): MarkedEvent[] => {
+  const events: MarkedEvent[] = []
+  if (game.triggerFunder !== ZERO_ADDRESS) {
+    events.push({
+      name: 'schedule',
+      log: (txHash, block) => ({
+        ...at(txHash, block),
+        kind: 'autoLaunchScheduled',
+        requestId: 1n,
+      }),
+    })
+    if (stopped) {
+      events.push({
+        name: 'stop',
+        log: (txHash, block) => ({
+          ...at(txHash, block),
+          kind: 'autoLaunchStopped',
+          requestId: 1n,
+        }),
+      })
+    }
+  }
+  const refunded = refundedViewerOf(resolveViewer(scope.viewer, false), game)
+  if (refunded !== null) {
+    events.push({
+      name: 'viewer-refund',
+      log: (txHash, block) => ({
+        ...at(txHash, block),
+        kind: 'refunded',
+        account: refunded.account,
+        amount: refunded.amount,
+      }),
+    })
+  }
+  const refunds = world.overlay(launcher, scope).refunds ?? []
+  refunds.forEach((refund, index) => {
+    events.push({
+      name: `refund:${String(index)}`,
+      log: (txHash, block) => ({
+        ...at(txHash, block),
+        kind: 'refunded',
+        account: refund.account,
+        amount: bnbWei(refund.amount),
+      }),
+    })
+  })
+  if (game.phase === 'cancelled') {
+    events.push({ name: 'cancel', log: (txHash, block) => cancelledLog(game, txHash, block) })
+  }
+  return events
+}
+
 export const createFixtureLogs = (world: FixtureWorld) => {
   const ledgers = new Map<string, Ledger>()
 
@@ -77,7 +148,7 @@ export const createFixtureLogs = (world: FixtureWorld) => {
     if (known !== undefined) {
       return known
     }
-    const fresh: Ledger = { served: start, blocks: [] }
+    const fresh: Ledger = { served: start, blocks: [], marks: new Map() }
     ledgers.set(key, fresh)
     return fresh
   }
@@ -98,21 +169,33 @@ export const createFixtureLogs = (world: FixtureWorld) => {
       times[blockKey(block)] = pull.at
       return pullLogs(pull, keccak256(toHex(`${key}:pull:${index}`)), block)
     })
-    const { game } = world.game(launcher, scope)
-    if (game.phase === 'cancelled' && ledger.cancelBlock === undefined) {
-      ledger.cancelBlock = maxBig(now, ledger.served + 1n, ...ledger.blocks.map((b) => b + 1n))
+    const { game, input } = world.game(launcher, scope)
+    const marked = (name: string): { block: bigint; txHash: Hash } => {
+      let block = ledger.marks.get(name)
+      if (block === undefined) {
+        block = maxBig(
+          now,
+          ledger.served + 1n,
+          ...ledger.blocks.map((b) => b + 1n),
+          ...[...ledger.marks.values()].map((b) => b + 1n),
+        )
+        ledger.marks.set(name, block)
+      }
+      times[blockKey(block)] = Number(block)
+      return { block, txHash: keccak256(toHex(`${key}:${name}`)) }
     }
-    const cancel = ledger.cancelBlock
-    if (cancel !== undefined) {
-      times[blockKey(cancel)] = Number(cancel)
-      extra.push(cancelledLog(game, keccak256(toHex(`${key}:cancel`)), cancel))
-    }
-    const latest = maxBig(
-      now,
-      ledger.served,
-      ...ledger.blocks,
-      ...(cancel === undefined ? [] : [cancel]),
+    const events = eventsOf(
+      world,
+      launcher,
+      scope,
+      game,
+      input.stage === 'live' && input.autoLaunchStopped === true,
     )
+    for (const event of events) {
+      const { block, txHash } = marked(event.name)
+      extra.push(event.log(txHash, block))
+    }
+    const latest = maxBig(now, ledger.served, ...ledger.blocks, ...ledger.marks.values())
     ledger.served = latest
     return { logs: [...history.logs, ...extra], times, latest }
   }

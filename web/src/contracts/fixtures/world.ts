@@ -17,7 +17,7 @@ import { fixtureInput, resolveFixture } from './catalog'
 import { AUTO_LAUNCH_QUOTE, FIXTURE_RULES } from './constants'
 import { buildHistory, historyFits } from './history'
 import { EMPTY_OVERLAY, overlayGame, overlayPlayer, playerOverlayOf } from './overlay'
-import { captainRead, resolveViewer, viewerAddress, viewerPlayer, viewerRead } from './viewers'
+import { captainRead, historyStakeOf, resolveViewer, viewerAddress, viewerRead } from './viewers'
 
 export type FixtureWorldOptions = { readonly nowSeconds?: () => number }
 
@@ -54,7 +54,7 @@ const keyOf = (launcher: Address, scope: SourceScope): string =>
 
 const viewerStake = (name: ViewerName, game: Game): HistoryStake | null => {
   const address = viewerAddress(name)
-  const player = viewerPlayer(name, game, FIXTURE_RULES)
+  const player = historyStakeOf(name, game, FIXTURE_RULES)
   const isCaptain = [game.config.captainBlue, game.config.captainRed].some(
     (captain) => captain.toLowerCase() === address?.toLowerCase(),
   )

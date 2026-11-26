@@ -37,7 +37,24 @@ export type CancelledLog = LogPosition & {
   readonly refunded: BnbWei
 }
 
-export type GameLog = ContributedLog | CaptainDepositedLog | OvertimeLog | CancelledLog
+export type RefundedLog = LogPosition & {
+  readonly kind: 'refunded'
+  readonly account: Address
+  readonly amount: BnbWei
+}
+
+export type AutoLaunchLog = LogPosition & {
+  readonly kind: 'autoLaunchScheduled' | 'autoLaunchStopped'
+  readonly requestId: bigint
+}
+
+export type GameLog =
+  | ContributedLog
+  | CaptainDepositedLog
+  | OvertimeLog
+  | CancelledLog
+  | RefundedLog
+  | AutoLaunchLog
 
 export type PullLog = ContributedLog | CaptainDepositedLog
 

@@ -49,6 +49,10 @@ const REQUIRED = [
   'refunding-grace-expired',
   'launched',
   'launched-quiet',
+  'launched-auto-launch',
+  'refunding-auto-launch',
+  'live-auto-launch',
+  'live-auto-stopped',
   'cancelled',
 ]
 

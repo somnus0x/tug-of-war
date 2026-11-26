@@ -280,6 +280,9 @@ export const runFixtureTx = async <Name extends TxActionName>(
     context.dispatch({ type: 'submitted', hash })
     context.report().onSubmitted(hash)
     await pause(context, pendingDelay(run.mode))
+    if (run.mode === 'raced') {
+      step.race?.()
+    }
     const landing = step.check()
     if ((run.mode === 'revert' && step.failsOnDemand) || !landing.gate.ok) {
       throw revertError(

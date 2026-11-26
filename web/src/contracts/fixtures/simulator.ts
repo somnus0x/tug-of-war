@@ -125,8 +125,8 @@ export const canScheduleAutoLaunch = (state: SimulatorState): Gate => {
   if (game.phase === 'cancelled') return fail('GameCancelled')
   if (game.phase === 'launched') return fail('AlreadyLaunched')
   if (!bothCaptainsIn(game)) return fail('GameNotStarted')
-  if (game.triggerFunder !== ZERO_ADDRESS) return fail('AutoLaunchAlreadyScheduled')
   if (now > game.deadline || game.phase === 'refunding') return fail('BuyInClosed')
+  if (game.triggerFunder !== ZERO_ADDRESS) return fail('AutoLaunchAlreadyScheduled')
   return OK
 }
 
@@ -142,8 +142,8 @@ const afterClockGate = (state: SimulatorState): Gate | null => {
 export const canLaunch = (state: SimulatorState): Gate => {
   const blocked = afterClockGate(state)
   if (blocked !== null) return blocked
-  if (!minMet(state.game)) return fail('BelowMinRaise')
   if (graceOver(state)) return fail('LaunchGraceExpired')
+  if (!minMet(state.game)) return fail('BelowMinRaise')
   if (state.floorBlocked) return fail('BelowCreationFloor')
   return OK
 }

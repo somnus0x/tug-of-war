@@ -28,6 +28,10 @@ const envSchema = z.object({
     .optional()
     .transform((value) => (value === undefined || value === '' ? null : value))
     .refine((value) => value === null || value.includes('{token}'), 'must contain {token}'),
+  VITE_AUTO_LAUNCH: z
+    .string()
+    .optional()
+    .transform((value) => value?.trim() === '1'),
 })
 
 export type Env = z.infer<typeof envSchema>

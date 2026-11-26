@@ -29,6 +29,7 @@ export type FixtureStep<Name extends TxActionName> = {
   readonly args: readonly unknown[]
   readonly failsOnDemand: boolean
   readonly check: () => FixtureLanding<Name>
+  readonly race?: () => void
 }
 
 const NO_WALLET: Gate = { ok: false, reason: 'TransferFailed' }
@@ -37,11 +38,27 @@ const noWallet = (): never => {
   throw new Error('No wallet to apply the transaction to')
 }
 
+const launchElsewhere = ({ world, scope, launcher }: StepPlace): void => {
+  const state = world.simulatorState(launcher, undefined, scope)
+  if (!fixtureGate('launch', state, {}).ok) {
+    return
+  }
+  const result = applyEffect({
+    action: 'launch',
+    params: {},
+    state,
+    player: world.player(launcher, undefined, scope, state.now).player,
+    overlay: world.overlay(launcher, scope),
+  })
+  world.commit(launcher, scope, result.overlay)
+}
+
 const launcherStep =
   <Name extends LauncherActionName>(name: Name) =>
   (params: ActionParams[Name], place: StepPlace): FixtureStep<Name> => ({
     args: buildCall(name, params).args,
     failsOnDemand: true,
+    ...(name === 'launch' ? { race: () => launchElsewhere(place) } : {}),
     check: () => {
       const { world, scope, account, launcher } = place
       const state = world.simulatorState(launcher, account, scope)

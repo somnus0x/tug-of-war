@@ -57,8 +57,17 @@ const CASES = FIXTURE_NAMES.flatMap((fixture) =>
 
 const FULL = { fromBlock: null, startHint: undefined, createdAt: 0 }
 
-const ownTotals = (logs: readonly GameLog[], account: string) =>
+const refundedTo = (logs: readonly GameLog[], account: string): bigint =>
   logs.reduce(
+    (sum, log) =>
+      log.kind === 'refunded' && log.account.toLowerCase() === account.toLowerCase()
+        ? sum + log.amount
+        : sum,
+    0n,
+  )
+
+const ownTotals = (logs: readonly GameLog[], account: string) => {
+  const pulled = logs.reduce(
     (sum, log) =>
       !isPullLog(log) || log.account.toLowerCase() !== account.toLowerCase()
         ? sum
@@ -72,6 +81,8 @@ const ownTotals = (logs: readonly GameLog[], account: string) =>
           },
     { bnb: 0n, pull: 0n },
   )
+  return { bnb: pulled.bnb - refundedTo(logs, account), pull: pulled.pull }
+}
 
 const expectAgreement = (context: ReturnType<typeof setup>, viewer: ViewerName) => {
   const { world, scope, logs } = context
@@ -93,7 +104,7 @@ const expectAgreement = (context: ReturnType<typeof setup>, viewer: ViewerName) 
   expect(ownTotals(read.logs, account)).toEqual({ bnb: player.contribution, pull: player.pull })
   const onSide =
     player.team === 'none' ? false : totals[player.team].wallets.has(account.toLowerCase())
-  expect(onSide).toBe(player.contribution > 0n)
+  expect(onSide).toBe(player.contribution > 0n || refundedTo(read.logs, account) > 0n)
 }
 
 describe('fixture history', () => {

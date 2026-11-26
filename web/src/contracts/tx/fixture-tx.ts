@@ -28,7 +28,7 @@ import {
   canWithdrawTriggerBudget,
 } from '../fixtures/simulator'
 
-export type FixtureMode = 'normal' | 'reject' | 'revert' | 'slow'
+export type FixtureMode = 'normal' | 'reject' | 'revert' | 'slow' | 'raced'
 
 export const FIXTURE_DELAYS = {
   simulating: 300,
@@ -37,7 +37,7 @@ export const FIXTURE_DELAYS = {
   slow: 8000,
 } as const
 
-const MODES: readonly FixtureMode[] = ['reject', 'revert', 'slow']
+const MODES: readonly FixtureMode[] = ['reject', 'revert', 'slow', 'raced']
 
 export const fixtureModeFromSearch = (searchStr: string): FixtureMode => {
   const value = new URLSearchParams(searchStr).get('tx')

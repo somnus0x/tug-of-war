@@ -26,6 +26,7 @@ export type LiveInput = {
   readonly blue: TeamInput
   readonly red: TeamInput
   readonly autoLaunch?: boolean
+  readonly autoLaunchStopped?: boolean
   readonly launched?: boolean
 }
 

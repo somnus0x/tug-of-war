@@ -23,6 +23,7 @@ export const VIEWERS = [
   'holder-free',
   'staker-rewards',
   'staker-quiet',
+  'fan-refunded',
 ] as const
 
 export type ViewerName = (typeof VIEWERS)[number]
@@ -49,6 +50,7 @@ const VIEWER_ADDRESSES: Record<ViewerName, Address | undefined> = {
   'holder-free': FIXTURE_ADDRESSES.holderFree,
   'staker-rewards': FIXTURE_ADDRESSES.stakerRewards,
   'staker-quiet': FIXTURE_ADDRESSES.stakerQuiet,
+  'fan-refunded': FIXTURE_ADDRESSES.fanRefunded,
 }
 
 export const viewerAddress = (name: ViewerName): Address | undefined => VIEWER_ADDRESSES[name]
@@ -58,6 +60,7 @@ type Stake = {
   readonly bnb: string
   readonly pull: string
   readonly claimed?: boolean
+  readonly refunded?: boolean
 }
 
 const FAN_STAKES: Partial<Record<ViewerName, Stake>> = {
@@ -67,6 +70,7 @@ const FAN_STAKES: Partial<Record<ViewerName, Stake>> = {
   'holder-blue': { team: 'blue', bnb: '0.30', pull: '0.45', claimed: true },
   'staker-rewards': { team: 'red', bnb: '0.15', pull: '0.24', claimed: true },
   'staker-quiet': { team: 'blue', bnb: '0.10', pull: '0.18', claimed: true },
+  'fan-refunded': { team: 'blue', bnb: '0.30', pull: '0.45', refunded: true },
 }
 
 export const freshPlayer = (game: Game): Player => ({
@@ -108,8 +112,24 @@ const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
     bnb: bnbWei(parseEther(stake.bnb)),
     pull: pullWei(parseEther(stake.pull)),
     claimed: stake.claimed === true,
+    refunded: stake.refunded === true && game.phase === 'refunding',
   }
 }
+
+export const refundedViewerOf = (
+  name: ViewerName,
+  game: Game,
+): { readonly account: Address; readonly amount: BnbWei } | null => {
+  const stake = FAN_STAKES[name]
+  const account = VIEWER_ADDRESSES[name]
+  if (stake?.refunded !== true || account === undefined || game.phase !== 'refunding') {
+    return null
+  }
+  return { account, amount: bnbWei(parseEther(stake.bnb)) }
+}
+
+export const historyStakeOf = (name: ViewerName, game: Game, rules: Rules) =>
+  playerOfStake(stakeOf(name, game, rules), game, rules, false)
 
 export const entitlements = (
   game: Game,
@@ -131,15 +151,23 @@ export const entitlements = (
 }
 
 const playerOfStake = (
-  stake: { team: Team; bnb: BnbWei; pull: PullWei; claimed?: boolean } | null,
+  stake: { team: Team; bnb: BnbWei; pull: PullWei; claimed?: boolean; refunded?: boolean } | null,
   game: Game,
   rules: Rules,
+  honourRefund = true,
 ): Player => {
   if (stake === null || stake.team === 'none') {
     return freshPlayer(game)
   }
   const { base, bonus } = entitlements(game, rules, stake.team, stake.bnb, stake.pull)
   const cap = game.config.walletCap
+  if (honourRefund && stake.refunded === true) {
+    return {
+      ...freshPlayer(game),
+      team: stake.team,
+      pull: stake.pull,
+    }
+  }
   return {
     team: stake.team,
     contribution: stake.bnb,
