@@ -17,39 +17,11 @@ import {TugMath} from "src/libraries/TugMath.sol";
 import {TugVault} from "src/vault/TugVault.sol";
 import {TugVaultFactory} from "src/vault/TugVaultFactory.sol";
 
+import {IPancakeV2Router, ITugTaxToken, ITugTaxProcessor, TugTestnet} from "../../script/TugTestnet.sol";
 import {TugBase} from "./TugBase.sol";
-
-interface IPancakeV2Router {
-    function factory() external view returns (address);
-    function WETH() external view returns (address);
-
-    function swapExactETHForTokensSupportingFeeOnTransferTokens(
-        uint256 minOut,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external payable;
-
-    function swapExactTokensForETHSupportingFeeOnTransferTokens(
-        uint256 amount,
-        uint256 minOut,
-        address[] calldata path,
-        address to,
-        uint256 deadline
-    ) external;
-}
 
 interface IV2PairFactory {
     function factory() external view returns (address);
-}
-
-interface ITugTaxToken {
-    function taxProcessor() external view returns (address);
-}
-
-interface ITugTaxProcessor {
-    function marketQuoteBalance() external view returns (uint256);
-    function dispatch() external;
 }
 
 contract NonPayableStaker {
@@ -75,7 +47,7 @@ contract TugForkTest is TugBase {
         bool sellReverted;
     }
 
-    IPancakeV2Router private constant ROUTER = IPancakeV2Router(0xc9D63ddCB9549578057EAB6A83a543DdFEE2b8c3);
+    IPancakeV2Router private constant ROUTER = TugTestnet.ROUTER;
     address private constant TRADER = address(0xA6);
     address private constant DISPATCHER = address(0xBEEF);
 
