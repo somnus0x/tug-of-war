@@ -14,8 +14,6 @@ import type { Address } from 'viem'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { FIXTURES_ON } from '@/contracts/source'
-import { CREATE_COPY } from '@/copy/create'
-import { contractErrorMessage } from '@/copy/errors'
 import { isVanityAddress } from '@/lib/clone-address'
 
 import { buildConfig, configKey, withMeta } from '../model/config'
@@ -24,6 +22,8 @@ import { runCreate } from '../model/create-run'
 import {
   IDLE_STAGE,
   INITIAL_FLOW,
+  READ_FAILED,
+  SEARCH_FAILED,
   checkFailed,
   checkPassed,
   checkRejected,
@@ -37,7 +37,7 @@ import {
 import { inputsKeyOf } from '../model/form-values'
 import { reasonProblem } from '../model/reason-field'
 import { reasonAppliesTo } from '../model/send-attempt'
-import { simulateUpload, uploadImage } from '../model/upload'
+import { uploadChosen } from '../model/upload'
 import { useSaltSearch } from './use-salt-search'
 
 export type { FieldProblem } from '../model/flow-state'
@@ -68,12 +68,16 @@ export type CreateFlow = {
   readonly submit: () => void
   readonly sendPrepared: () => void
   readonly cancelSearch: () => void
-  readonly reportReason: (reason: string, fresh: CreateLimits | null, attemptKey: string) => void
+  readonly liveKey: string | null
+  readonly reportReason: (
+    reason: string,
+    fresh: CreateLimits | null,
+    attemptKey: string,
+    showProblem: boolean,
+  ) => void
 }
 
 const RECHECK_DELAY_MS = 300
-const SEARCH_FAILED = contractErrorMessage('createGame', 'InvalidSalt')
-const READ_FAILED: TxMessage = { title: CREATE_COPY.readFailed }
 
 export const useCreateFlow = (input: FlowInput): CreateFlow => {
   const { setup, limits, check, calls, send } = input
@@ -170,9 +174,8 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
-    return FIXTURES_ON
-      ? simulateUpload(controller.signal, calls.fixture === 'upload-fail')
-      : uploadImage({ file, fileName: file.name, description }, { signal: controller.signal })
+    const mock = { on: FIXTURES_ON, fails: calls.fixture === 'upload-fail' }
+    return uploadChosen(file, description, controller.signal, mock)
   }
 
   const findSalt = async (run: number): Promise<SaltFound | null> => {
@@ -221,8 +224,17 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
       findSalt: () => findSalt(id),
       check: (form, found, fresh) => checkConfig(id, form, found, fresh),
       setStage,
-      setCid: input.setCid,
+      setCid: (cid) => {
+        liveRef.current = {
+          ...liveRef.current,
+          inputsKey: inputsKeyOf({ ...values, cid }, fileVersion),
+        }
+        input.setCid(cid)
+      },
       uploadFailed: setFailedFile,
+      readFailed: () => {
+        setFlow((state) => checkFailed(state, READ_FAILED))
+      },
       send,
     })
   }
@@ -237,9 +249,7 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
     if (busy) {
       return
     }
-    run().catch(() => {
-      setFlow((state) => checkFailed(state, READ_FAILED))
-    })
+    void run()
   }
 
   const current = keyedFor(flow.prepared, liveKey)
@@ -267,14 +277,17 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
       }
     },
     cancelSearch: cancel,
-    reportReason: (reason, fresh, attemptKey) => {
+    liveKey,
+    reportReason: (reason, fresh, attemptKey, showProblem) => {
       if (!reasonAppliesTo(attemptKey, liveKey)) {
         return
       }
       const judged = judgedKey(attemptKey, fresh ?? limits)
-      checkedKey.current = judged
       const mapped = reasonProblem(reason, fresh ?? limits)
-      setFlow((state) => checkRejected(withStage(state, IDLE_STAGE), judged, mapped))
+      if (showProblem || mapped.kind === 'field') {
+        checkedKey.current = judged
+        setFlow((state) => checkRejected(withStage(state, IDLE_STAGE), judged, mapped))
+      }
       if (fresh !== null) {
         void input.refetchLimits()
       }

@@ -1,4 +1,4 @@
-import type { ConfigCheck, CreateLimits } from '../create-types'
+import type { ConfigCheck, CreateCostRequest, CreateLimits } from '../create-types'
 import type { GameConfig } from '../types'
 import type { BnbWei } from '@/lib/units'
 import type { Address, Hex } from 'viem'
@@ -48,6 +48,7 @@ export type CreateCalls = {
   readonly readLimits: () => Promise<CreateLimits>
   readonly readFee: (portal: Address) => Promise<BnbWei>
   readonly readBalance: (account: Address) => Promise<BnbWei>
+  readonly estimateCreateCost: (request: CreateCostRequest) => Promise<BnbWei>
 }
 
 export const useCreateCalls = (): CreateCalls => {
@@ -61,6 +62,7 @@ export const useCreateCalls = (): CreateCalls => {
       readLimits: () => createSource.readLimits(scope),
       readFee: (portal) => createSource.readFee(portal, scope),
       readBalance: (account) => createSource.readBalance(account, scope),
+      estimateCreateCost: (request) => createSource.estimateCreateCost(request, scope),
     }),
     [scope],
   )

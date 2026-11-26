@@ -4,7 +4,7 @@ import type { CreateLimits } from '@/contracts/create-types'
 
 import { useMemo, useState } from 'react'
 
-import { cidAfterFileChange, inputsKeyOf } from '../model/form-values'
+import { cidAfterFileChange, inputsKeyOf, typedCidDropsFile } from '../model/form-values'
 import { validateForm } from '../model/validate'
 
 export type TextField = Exclude<keyof FormValues, 'hasFile'>
@@ -39,18 +39,29 @@ export const useCreateForm = (initial: FormValues, limits: CreateLimits): Create
     setTouched((previous) => (previous.has(field) ? previous : new Set([...previous, field])))
   }
 
-  const setText = (field: TextField, text: string): void => {
+  const writeText = (field: TextField, text: string): void => {
     setTexts((previous) => ({ ...previous, [field]: text }))
+  }
+
+  const setText = (field: TextField, text: string): void => {
+    writeText(field, text)
+    if (field === 'cid' && typedCidDropsFile(text) && chosen.file !== null) {
+      setChosen((previous) => ({ file: null, version: previous.version + 1 }))
+      setUploadedCid(null)
+    }
   }
 
   const fillUploadedCid = (cid: string): void => {
     setUploadedCid(cid)
-    setText('cid', cid)
+    writeText('cid', cid)
   }
 
   const setFile = (next: File | null): void => {
     setChosen((previous) => ({ file: next, version: previous.version + 1 }))
-    setTexts((previous) => ({ ...previous, cid: cidAfterFileChange(previous.cid, uploadedCid) }))
+    setTexts((previous) => ({
+      ...previous,
+      cid: cidAfterFileChange(previous.cid, uploadedCid, next),
+    }))
     setUploadedCid(null)
     touch('image')
   }

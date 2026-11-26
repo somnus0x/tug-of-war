@@ -5,6 +5,9 @@ import type { ReasonProblem } from './reason-field'
 import type { CreateLimits } from '@/contracts/create-types'
 import type { TxMessage } from '@/copy/tx'
 
+import { CREATE_COPY } from '@/copy/create'
+import { contractErrorMessage } from '@/copy/errors'
+
 export type FieldProblem = { readonly field: FieldName; readonly text: string }
 
 export type Keyed<T> = { readonly key: string; readonly value: T }
@@ -37,6 +40,7 @@ export const checkStarted = (state: FlowState): FlowState => ({
   stage: { kind: 'checking' },
   problem: null,
   fieldProblem: null,
+  prepared: null,
 })
 
 export const checkRejected = (state: FlowState, key: string, problem: ReasonProblem): FlowState =>
@@ -44,9 +48,10 @@ export const checkRejected = (state: FlowState, key: string, problem: ReasonProb
     ? {
         ...state,
         stage: IDLE_STAGE,
+        prepared: null,
         fieldProblem: { key, value: { field: problem.field, text: problem.text } },
       }
-    : { ...state, stage: IDLE_STAGE, problem: problem.message }
+    : { ...state, stage: IDLE_STAGE, prepared: null, problem: problem.message }
 
 export const checkPassed = (state: FlowState, key: string, ready: PreparedCreate): FlowState => ({
   ...state,
@@ -59,6 +64,7 @@ export const checkPassed = (state: FlowState, key: string, ready: PreparedCreate
 export const checkFailed = (state: FlowState, problem: TxMessage): FlowState => ({
   ...state,
   stage: IDLE_STAGE,
+  prepared: null,
   problem,
 })
 
@@ -75,3 +81,7 @@ export const judgedKey = (configKey: string, limits: CreateLimits): string =>
 
 export const recheckDue = (judgedLive: string | null, checked: string | null): boolean =>
   judgedLive !== null && judgedLive !== checked
+
+export const SEARCH_FAILED: TxMessage = contractErrorMessage('createGame', 'InvalidSalt')
+
+export const READ_FAILED: TxMessage = { title: CREATE_COPY.readFailed }

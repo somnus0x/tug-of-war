@@ -10,6 +10,7 @@ import { bnbWei } from '@/lib/units'
 import { hasBlockingErrors } from './create-button'
 import {
   INITIAL_FLOW,
+  checkFailed,
   checkPassed,
   checkRejected,
   checkStarted,
@@ -17,7 +18,7 @@ import {
   keyedFor,
   recheckDue,
 } from './flow-state'
-import { cidAfterFileChange } from './form-values'
+import { cidAfterFileChange, typedCidDropsFile } from './form-values'
 import { reasonProblem } from './reason-field'
 
 const LIMITS: CreateLimits = {
@@ -112,8 +113,36 @@ describe('cidAfterFileChange', () => {
     expect(cidAfterFileChange(' QmA ', 'QmA')).toBe('')
   })
 
-  it('keeps a CID the creator pasted', () => {
+  it('keeps a pasted CID when the file is removed', () => {
     expect(cidAfterFileChange('QmPasted', 'QmA')).toBe('QmPasted')
     expect(cidAfterFileChange('QmPasted', null)).toBe('QmPasted')
+  })
+
+  it('clears any CID, pasted or uploaded, when a new file is chosen', () => {
+    const file = new File(['x'], 'coin.png')
+    expect(cidAfterFileChange('QmPasted', null, file)).toBe('')
+    expect(cidAfterFileChange('QmA', 'QmA', file)).toBe('')
+  })
+})
+
+describe('ready only after a passing check', () => {
+  it('drops the ready config when a recheck fails or is rejected', () => {
+    const ready = checkPassed(INITIAL_FLOW, 'k', READY)
+    expect(keyedFor(ready.prepared, 'k')).toBe(READY)
+    expect(checkStarted(ready).prepared).toBeNull()
+    expect(
+      checkFailed(ready, { title: 'Could not reach the factory. Try again.' }).prepared,
+    ).toBeNull()
+    const unavailable = checkRejected(ready, 'k', reasonProblem('CreationFloorUnavailable', LIMITS))
+    expect(unavailable.prepared).toBeNull()
+    expect(unavailable.problem).not.toBeNull()
+  })
+})
+
+describe('typedCidDropsFile', () => {
+  it('drops the chosen file once a CID is typed or pasted', () => {
+    expect(typedCidDropsFile('Qm')).toBe(true)
+    expect(typedCidDropsFile('   ')).toBe(false)
+    expect(typedCidDropsFile('')).toBe(false)
   })
 })

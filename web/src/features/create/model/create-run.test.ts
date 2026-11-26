@@ -107,6 +107,9 @@ const harness = (patch: Partial<CreateRunDeps> = {}, values: FormValues = VALUES
       world.liveKey = inputsKeyOf({ ...values, cid }, 0)
     },
     uploadFailed: () => undefined,
+    readFailed: () => {
+      world.calls.push('readFailed')
+    },
     send: (ready) => {
       world.sent.push(ready)
     },
@@ -208,5 +211,35 @@ describe('runCreate', () => {
     const { world, deps } = harness({ salt: FOUND })
     await expect(runCreate(deps)).resolves.toBe('sent')
     expect(world.calls).toEqual(['limits', 'check'])
+  })
+
+  it('reports a read failure for the current run', async () => {
+    const { world, deps } = harness({ readLimits: () => Promise.reject(new Error('rpc down')) })
+    await expect(runCreate(deps)).resolves.toBe('failed')
+    expect(world.calls).toEqual(['readFailed'])
+  })
+
+  it('drops a late failure after Stop or a newer run', async () => {
+    const stopped = harness({
+      findSalt: () => {
+        stopped.world.runId += 1
+        return Promise.reject(new Error('predictToken failed'))
+      },
+    })
+    await expect(runCreate(stopped.deps)).resolves.toBe('replaced')
+    expect(stopped.world.calls).toEqual(['limits'])
+  })
+
+  it('keeps the run current when the CID it filled is reflected at once', async () => {
+    const values = { ...VALUES, cid: '', hasFile: true }
+    const instant = harness(
+      {
+        file: new File(['x'], 'coin.png'),
+        salt: FOUND,
+        check: () => Promise.resolve(READY),
+      },
+      values,
+    )
+    await expect(runCreate(instant.deps)).resolves.toBe('sent')
   })
 })

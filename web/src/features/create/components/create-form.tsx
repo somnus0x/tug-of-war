@@ -20,7 +20,6 @@ import { PixelBox } from '@/ui/pixel-box'
 import { useCreateFlow } from '../hooks/use-create-flow'
 import { fieldOfText, useCreateForm } from '../hooks/use-create-form'
 import { useSendCreate } from '../hooks/use-send-create'
-import { configKey } from '../model/config'
 import {
   announcementOf,
   createButtonOf,
@@ -75,8 +74,8 @@ export const CreateForm = ({
     onCreated: (result) => {
       onCreated({ ...result, found: saltRef.current })
     },
-    onReason: (reason, fresh, attemptKey) => {
-      reportRef.current(reason, fresh, attemptKey)
+    onReason: (reason, fresh, attemptKey, showProblem) => {
+      reportRef.current(reason, fresh, attemptKey, showProblem)
     },
   })
   const form = useCreateForm(initial, limits)
@@ -112,8 +111,8 @@ export const CreateForm = ({
     uploadFailed: flow.uploadFailed,
   }
   const showsErrors = anyErrorShown(shown)
-  const liveKey = flow.prepared === null ? null : configKey(flow.prepared.config)
-  const sendFailed = sendFailedFor(sender.failure, liveKey)
+  const sendFailed = sendFailedFor(sender.failure, flow.liveKey)
+  const feeChanged = sender.feeChangedFor !== null && sender.feeChangedFor === flow.liveKey
   const failureLine = sendFailed ? (sender.failure?.message ?? null) : null
   const isReady = flow.prepared !== null && flow.fieldProblem === null && !sendFailed
   const button = createButtonOf({
@@ -253,14 +252,12 @@ export const CreateForm = ({
           isReady={isReady}
           failure={failureLine}
           announcement={
-            sender.feeChanged
+            feeChanged
               ? CREATE_COPY.button.feeChanged(formatBnbExact(sender.fee))
               : announcementOf(flow.stage, showsErrors, flow.uploadFailed)
           }
           feeNotice={
-            sender.feeChanged
-              ? CREATE_COPY.button.feeChanged(formatBnbExact(sender.fee))
-              : undefined
+            feeChanged ? CREATE_COPY.button.feeChanged(formatBnbExact(sender.fee)) : undefined
           }
         />
       </div>

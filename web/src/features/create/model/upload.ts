@@ -91,3 +91,13 @@ export const simulateUpload = (signal: AbortSignal, fails: boolean): Promise<Upl
       resolve({ ok: false, reason: 'aborted' })
     })
   })
+
+export const uploadChosen = (
+  file: File,
+  description: string,
+  signal: AbortSignal,
+  mock: { readonly on: boolean; readonly fails: boolean },
+): Promise<UploadResult> =>
+  mock.on
+    ? simulateUpload(signal, mock.fails)
+    : uploadImage({ file, fileName: file.name, description }, { signal })

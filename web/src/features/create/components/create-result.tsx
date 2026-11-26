@@ -1,7 +1,7 @@
 import type { CreatedResult } from '../model/created'
 
 import { Link } from '@tanstack/react-router'
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import { useSourceScope } from '@/contracts/queries/use-game-queries'
 import { FIXTURES_ON } from '@/contracts/source'
@@ -42,6 +42,14 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
   const linkId = useId()
   const [copy, setCopy] = useState<CopyState>('idle')
   const linkField = useAutoHeight()
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const target = cardRef.current?.querySelector('a.tile-button--primary, a.tile-button')
+    if (target instanceof HTMLElement) {
+      target.focus()
+    }
+  }, [])
   const { game } = result
   const another = (
     <TileButton variant="ghost" onClick={onAnother}>
@@ -51,7 +59,7 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
   if (game === null) {
     return (
       <PixelBox heading={RESULT.heading} variant="warm">
-        <div className="create-result">
+        <div className="create-result" ref={cardRef}>
           <p>{RESULT.missingTitle}</p>
           <p className="create-note">{RESULT.missingBody}</p>
           <div className="create-result__actions">
@@ -90,8 +98,9 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
   const found = result.found ?? null
   return (
     <PixelBox heading={RESULT.heading} variant="hot">
-      <div className="create-result">
+      <div className="create-result" ref={cardRef}>
         <p className="create-note">{RESULT.intro}</p>
+        <output className="create-announcer">{CREATE_COPY.announce.created}</output>
         {found === null ? null : (
           <div className="create-search">
             <div className="create-search__top">

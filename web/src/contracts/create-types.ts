@@ -34,6 +34,15 @@ export type CreateSource = {
   readonly encodeConfig: (config: GameConfig, scope: SourceScope) => Promise<Hex>
   readonly readFee: (portal: Address, scope: SourceScope) => Promise<BnbWei>
   readonly readBalance: (account: Address, scope: SourceScope) => Promise<BnbWei>
+  readonly estimateCreateCost: (request: CreateCostRequest, scope: SourceScope) => Promise<BnbWei>
+}
+
+export type CreateCostRequest = {
+  readonly portal: Address
+  readonly factory: Address
+  readonly data: Hex
+  readonly fee: BnbWei
+  readonly account: Address
 }
 
 export const TUG_CONFIG_FIELDS = [

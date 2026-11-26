@@ -2,7 +2,7 @@ import type { CreateFlow } from '../hooks/use-create-flow'
 import type { CreateButton } from '../model/create-button'
 import type { TxMessage } from '@/copy/tx'
 
-import { useId } from 'react'
+import { useId, useRef } from 'react'
 
 import { CREATE_COPY } from '@/copy/create'
 import { formatCount } from '@/lib/format'
@@ -31,12 +31,13 @@ export const CreateAction = ({
   failure,
 }: CreateActionProps) => {
   const noteId = useId()
+  const actionRef = useRef<HTMLDivElement>(null)
   const reasonId = useId()
   const { stage } = flow
   const isSearching = stage.kind === 'searching'
   const tries = shownTries(stage, flow.salt)
   return (
-    <div className="create-action">
+    <div className="create-action" ref={actionRef}>
       <div className="create-search">
         <div className="create-search__top">
           <span className="create-search__label">{SEARCH.label}</span>
@@ -63,7 +64,18 @@ export const CreateAction = ({
         )}
         {isReady ? <p className="create-search__ready">{SEARCH.ready}</p> : null}
         {isSearching ? (
-          <TileButton variant="ghost" onClick={flow.cancelSearch}>
+          <TileButton
+            variant="ghost"
+            onClick={() => {
+              flow.cancelSearch()
+              requestAnimationFrame(() => {
+                const primary = actionRef.current?.querySelector('button[type="submit"]')
+                if (primary instanceof HTMLElement) {
+                  primary.focus()
+                }
+              })
+            }}
+          >
             {CREATE_COPY.stopSearch}
           </TileButton>
         ) : null}

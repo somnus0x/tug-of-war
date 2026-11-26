@@ -20,6 +20,7 @@ export type RunEnd =
   | 'noSalt'
   | 'notReady'
   | 'cannotSend'
+  | 'failed'
 
 export type CreateRunDeps = {
   readonly values: FormValues
@@ -39,15 +40,15 @@ export type CreateRunDeps = {
   readonly setStage: (stage: CreateStage) => void
   readonly setCid: (cid: string) => void
   readonly uploadFailed: (file: File | null) => void
+  readonly readFailed: () => void
   readonly send: (prepared: PreparedCreate) => void
 }
 
 const IDLE: CreateStage = { kind: 'idle' }
 
-export const runCreate = async (deps: CreateRunDeps): Promise<RunEnd> => {
-  let key = deps.inputsKey(deps.values)
+const runSteps = async (deps: CreateRunDeps, keyOf: { current: string }): Promise<RunEnd> => {
   const leftBehind = (): RunEnd | null => {
-    const status = deps.status(key)
+    const status = deps.status(keyOf.current)
     if (status === 'edited') {
       deps.setStage(IDLE)
     }
@@ -86,7 +87,7 @@ export const runCreate = async (deps: CreateRunDeps): Promise<RunEnd> => {
       deps.uploadFailed(result.reason === 'aborted' ? null : deps.file)
       return stopWith('uploadFailed')
     }
-    key = deps.inputsKey({ ...deps.values, cid: result.cid })
+    keyOf.current = deps.inputsKey({ ...deps.values, cid: result.cid })
     deps.setCid(result.cid)
     form = withMeta(parsed, result.cid)
   }
@@ -114,4 +115,21 @@ export const runCreate = async (deps: CreateRunDeps): Promise<RunEnd> => {
   }
   deps.send(ready)
   return 'sent'
+}
+
+export const runCreate = async (deps: CreateRunDeps): Promise<RunEnd> => {
+  const keyOf = { current: deps.inputsKey(deps.values) }
+  try {
+    return await runSteps(deps, keyOf)
+  } catch {
+    const status = deps.status(keyOf.current)
+    if (status !== 'current') {
+      if (status === 'edited') {
+        deps.setStage(IDLE)
+      }
+      return status
+    }
+    deps.readFailed()
+    return 'failed'
+  }
 }

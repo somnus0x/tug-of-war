@@ -52,6 +52,20 @@ export const createChainCreateSource = (): CreateSource => ({
       }),
     ),
   readBalance: async (account) => bnbWei(await publicClient.getBalance({ address: account })),
+  estimateCreateCost: async ({ portal, factory: launcherFactory, data, fee, account }) => {
+    const [gas, price] = await Promise.all([
+      publicClient.estimateContractGas({
+        address: portal,
+        abi: portalAbi,
+        functionName: 'newLauncher',
+        args: [launcherFactory, data],
+        value: fee,
+        account,
+      }),
+      publicClient.getGasPrice(),
+    ])
+    return bnbWei(gas * price)
+  },
   encodeConfig: (config) =>
     publicClient.readContract({
       ...factory,

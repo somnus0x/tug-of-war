@@ -88,5 +88,15 @@ export const valuesKey = (values: FormValues): string => JSON.stringify(values)
 export const inputsKeyOf = (values: FormValues, fileVersion: number): string =>
   `${valuesKey(values)}|${String(fileVersion)}`
 
-export const cidAfterFileChange = (cid: string, uploadedCid: string | null): string =>
-  uploadedCid !== null && cid.trim() === uploadedCid ? '' : cid
+export const cidAfterFileChange = (
+  cid: string,
+  uploadedCid: string | null,
+  next: File | null = null,
+): string => {
+  if (next !== null) {
+    return ''
+  }
+  return uploadedCid !== null && cid.trim() === uploadedCid ? '' : cid
+}
+
+export const typedCidDropsFile = (text: string): boolean => text.trim() !== ''

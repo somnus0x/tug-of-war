@@ -1,4 +1,4 @@
-import { useId, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 
 import { CREATE_COPY } from '@/copy/create'
 import { TileButton } from '@/ui/tile-button'
@@ -29,6 +29,12 @@ export const ImageField = ({
   const fileId = useId()
   const noteId = useId()
   const fileInput = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (file === null && fileInput.current !== null) {
+      fileInput.current.value = ''
+    }
+  }, [file])
   return (
     <div className="create-image">
       <CreateField

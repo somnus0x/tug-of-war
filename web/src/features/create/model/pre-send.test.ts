@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { MOCK_DEFAULT_CONFIG } from '@/contracts/fixtures/create-fixture'
 import { bnbWei } from '@/lib/units'
 
-import { CREATE_GAS_RESERVE, preSendChecks } from './pre-send'
+import { CREATE_GAS_RESERVE, networkCostOf, preSendChecks } from './pre-send'
 
 const TOKEN = '0xcFC33677f4e3f9fAADD6e853553D43e8d1627777'
 
@@ -55,6 +55,10 @@ const harness = (patch: Partial<PreSendDeps> = {}) => {
       calls.push('balance')
       return Promise.resolve(bnbWei(parseEther('1')))
     },
+    estimateCost: () => {
+      calls.push('cost')
+      return Promise.resolve(null)
+    },
     ...patch,
   }
   return { calls, deps }
@@ -64,7 +68,7 @@ describe('preSendChecks', () => {
   it('runs the checks in order and sends the fresh fee', async () => {
     const { calls, deps } = harness()
     await expect(preSendChecks(PREPARED, deps)).resolves.toEqual({ ok: true, fee: FRESH_FEE })
-    expect(calls).toEqual(['limits', 'predict', 'validate', 'fee', 'balance'])
+    expect(calls).toEqual(['limits', 'predict', 'validate', 'fee', 'cost', 'balance'])
   })
 
   it('stops first when the floor is unavailable', async () => {
@@ -74,6 +78,7 @@ describe('preSendChecks', () => {
     await expect(preSendChecks(PREPARED, deps)).resolves.toEqual({
       ok: false,
       kind: 'unavailable',
+      limits: { ...LIMITS, creationFloorAvailable: false },
     })
     expect(calls).toEqual([])
   })
@@ -112,5 +117,29 @@ describe('preSendChecks', () => {
       ok: true,
       fee: FRESH_FEE,
     })
+  })
+
+  it('uses the estimated network cost with a margin when it can be read', async () => {
+    const estimate = bnbWei(parseEther('0.0003'))
+    const cost = networkCostOf(estimate)
+    expect(cost).toBe(parseEther('0.00036'))
+    const needed = bnbWei(FRESH_FEE + cost)
+    const enough = harness({
+      estimateCost: () => Promise.resolve(estimate),
+      readBalance: () => Promise.resolve(needed),
+    })
+    await expect(preSendChecks(PREPARED, enough.deps)).resolves.toEqual({
+      ok: true,
+      fee: FRESH_FEE,
+    })
+    const short = harness({
+      estimateCost: () => Promise.resolve(estimate),
+      readBalance: () => Promise.resolve(bnbWei(needed - 1n)),
+    })
+    await expect(preSendChecks(PREPARED, short.deps)).resolves.toMatchObject({ kind: 'balance' })
+  })
+
+  it('falls back to the fixed reserve when the cost cannot be estimated', () => {
+    expect(networkCostOf(null)).toBe(CREATE_GAS_RESERVE)
   })
 })

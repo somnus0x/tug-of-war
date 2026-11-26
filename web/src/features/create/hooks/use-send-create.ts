@@ -4,18 +4,14 @@ import type { BlockedResult, SendFailure } from '../model/send-attempt'
 import type { CreateLimits, CreateSetup } from '@/contracts/create-types'
 import type { CreateCalls } from '@/contracts/queries/use-create-queries'
 import type { TxErrorInfo } from '@/contracts/tx/classify-error'
-import type { TxState } from '@/contracts/tx/lifecycle'
 import type { TxMessage } from '@/copy/tx'
 import type { BnbWei } from '@/lib/units'
-import type { ToastKind } from '@/ui/toast-store'
 import type { Address, Hash } from 'viem'
 
 import { useEffect, useRef, useState } from 'react'
 
-import { explorerTxUrl } from '@/contracts/tx/explorer'
 import { useTx } from '@/contracts/tx/use-tx'
 import { CREATE_COPY } from '@/copy/create'
-import { NOT_TAKEN } from '@/copy/error-rows'
 import { contractErrorMessage, errorMessage } from '@/copy/errors'
 import { TX_COPY } from '@/copy/tx'
 import { txToasts } from '@/features/tx/tx-toasts'
@@ -27,18 +23,26 @@ import { preSendChecks } from '../model/pre-send'
 import { isFieldReason } from '../model/reason-field'
 import { failureMessageOf, failureStageOf, runSendAttempt } from '../model/send-attempt'
 import { floorText } from '../model/validate'
+import { freshLimits, messageText, sendStageOf, toast } from './send-helpers'
 
 export type SendCreate = (prepared: PreparedCreate) => void
 
 export type SendStage = 'idle' | 'checking' | 'wallet' | 'pending'
 
-export type ReportReason = (reason: string, limits: CreateLimits | null, attemptKey: string) => void
+export { sendStageOf } from './send-helpers'
+
+export type ReportReason = (
+  reason: string,
+  limits: CreateLimits | null,
+  attemptKey: string,
+  showProblem: boolean,
+) => void
 
 export type CreateSender = {
   readonly send: SendCreate
   readonly stage: SendStage
   readonly fee: BnbWei
-  readonly feeChanged: boolean
+  readonly feeChangedFor: string | null
   readonly failure: SendFailure | null
 }
 
@@ -52,36 +56,7 @@ export type SendInput = {
 
 const READ_FAILED: TxMessage = { title: CREATE_COPY.readFailed }
 
-const messageText = (message: TxMessage): string =>
-  (message.body === undefined ? message.title : `${message.title} ${message.body}`)
-    .replace(NOT_TAKEN, '')
-    .trim()
-
-const toast = (kind: ToastKind, message: TxMessage, hash?: Hash): number =>
-  txToasts.push({
-    kind,
-    title: message.title,
-    ...(message.body === undefined ? {} : { body: message.body }),
-    ...(hash === undefined ? {} : { link: { href: explorerTxUrl(hash), label: TX_COPY.explorer } }),
-  })
-
-export const sendStageOf = <Outcome>(checking: boolean, state: TxState<Outcome>): SendStage => {
-  if (state.stage === 'simulating' || state.stage === 'wallet') {
-    return 'wallet'
-  }
-  if (state.stage === 'pending') {
-    return 'pending'
-  }
-  return checking ? 'checking' : 'idle'
-}
-
-const freshLimits = async (calls: CreateCalls): Promise<CreateLimits | null> => {
-  try {
-    return await calls.readLimits()
-  } catch {
-    return null
-  }
-}
+const FEE_REVERT = 'InvalidSaltLockPayment'
 
 export const useSendCreate = (input: SendInput): CreateSender => {
   const { setup, calls } = input
@@ -93,7 +68,7 @@ export const useSendCreate = (input: SendInput): CreateSender => {
   const attempt = useRef(0)
   const attempted = useRef<{ id: number; key: string } | null>(null)
   const [fee, setFee] = useState<BnbWei>(setup.fee)
-  const [feeChanged, setFeeChanged] = useState(false)
+  const [feeChangedFor, setFeeChangedFor] = useState<string | null>(null)
   const [failure, setFailure] = useState<SendFailure | null>(null)
   const account = input.account
   const network = `${wallet.status}|${wallet.chainName ?? ''}`
@@ -161,13 +136,31 @@ export const useSendCreate = (input: SendInput): CreateSender => {
     }
     const name = error.name
     const limits = await freshLimits(calls)
-    if (ticket.id !== attempt.current) {
-      return
-    }
-    latest.current.onReason(name, limits, ticket.key)
     const values = limits === null ? {} : { floor: floorText(limits.minRaiseFloor) }
     const text = errorMessage('createGame', error, values)
+    if (ticket.id !== attempt.current) {
+      if (hash !== undefined) {
+        toast('err', text, hash)
+      }
+      return
+    }
+    latest.current.onReason(name, limits, ticket.key, false)
+    if (name === FEE_REVERT) {
+      await refreshFee(ticket)
+    }
     showFailure(error, hash, ticket.key, messageText(text), isFieldReason(name))
+  }
+
+  const refreshFee = async (ticket: { id: number; key: string }): Promise<void> => {
+    try {
+      const fresh = await calls.readFee(setup.portal)
+      if (ticket.id === attempt.current && fresh !== fee) {
+        setFee(fresh)
+        setFeeChangedFor(ticket.key)
+      }
+    } catch {
+      return
+    }
   }
 
   const tx = useTx('createGame', {
@@ -198,14 +191,33 @@ export const useSendCreate = (input: SendInput): CreateSender => {
 
   const stage = sendStageOf(checking, tx.state)
 
+  const estimateCost = async (
+    prepared: PreparedCreate,
+    fresh: BnbWei,
+    sender: Address,
+  ): Promise<BnbWei | null> => {
+    try {
+      return await calls.estimateCreateCost({
+        portal: setup.portal,
+        factory: setup.factory,
+        data: prepared.encoded,
+        fee: fresh,
+        account: sender,
+      })
+    } catch {
+      return null
+    }
+  }
+
   const handleBlocked = (result: BlockedResult, key: string): void => {
     if (result.kind === 'unavailable') {
+      latest.current.onReason('CreationFloorUnavailable', result.limits, key, false)
       toast('err', contractErrorMessage('createGame', 'CreationFloorUnavailable'))
     } else if (result.kind === 'salt') {
-      latest.current.onReason('InvalidSalt', null, key)
+      latest.current.onReason('InvalidSalt', null, key, true)
       toast('err', contractErrorMessage('createGame', 'InvalidSalt'))
     } else if (result.kind === 'reason') {
-      latest.current.onReason(result.reason, result.limits, key)
+      latest.current.onReason(result.reason, result.limits, key, true)
     } else {
       toast('err', CREATE_COPY.sent.balance(formatBnbExact(result.needed)))
     }
@@ -216,7 +228,7 @@ export const useSendCreate = (input: SendInput): CreateSender => {
     const id = attempt.current
     const key = configKey(prepared.config)
     setChecking(true)
-    setFeeChanged(false)
+    setFeeChangedFor(null)
     setFailure(null)
     await runSendAttempt({
       checks: () =>
@@ -226,6 +238,7 @@ export const useSendCreate = (input: SendInput): CreateSender => {
           validateConfig: calls.validateConfig,
           readFee: () => calls.readFee(setup.portal),
           readBalance: () => calls.readBalance(sender),
+          estimateCost: (fresh) => estimateCost(prepared, fresh, sender),
         }),
       isCurrent: () => attempt.current === id,
       shownFee: fee,
@@ -239,7 +252,7 @@ export const useSendCreate = (input: SendInput): CreateSender => {
       },
       feeChanged: (fresh) => {
         setFee(fresh)
-        setFeeChanged(true)
+        setFeeChangedFor(key)
       },
       readFailed: () => {
         toast('err', READ_FAILED)
@@ -258,5 +271,5 @@ export const useSendCreate = (input: SendInput): CreateSender => {
     void check(prepared, sender)
   }
 
-  return { send, stage, fee, feeChanged, failure }
+  return { send, stage, fee, feeChangedFor, failure }
 }

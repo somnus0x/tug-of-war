@@ -38,6 +38,7 @@ const RISING_START = parseEther('1.5')
 const RISING_STEP = parseEther('0.5')
 export const MOCK_FEE = bnbWei(parseEther('0.005'))
 const RISEN_FEE = bnbWei(parseEther('0.006'))
+const MOCK_CREATE_COST = bnbWei(parseEther('0.0004'))
 
 export const mockFeeOf = (fixture: string | undefined): BnbWei =>
   resolveCreateFixture(fixture) === 'fee-rising' ? RISEN_FEE : MOCK_FEE
@@ -203,6 +204,7 @@ export const createFixtureCreateSource = (options: CreateFixtureOptions = {}): C
     },
     encodeConfig: (config) => reply(encodeAbiParameters(encodeConfigInputs, [configArg(config)])),
     readFee: (_portal, scope) => reply(mockFeeOf(scope.fixture)),
+    estimateCreateCost: () => reply(MOCK_CREATE_COST),
     readBalance: (account, scope) =>
       reply(balanceAfter(mockBaseBalance(scope.fixture), ledger.charged(account))),
   }
