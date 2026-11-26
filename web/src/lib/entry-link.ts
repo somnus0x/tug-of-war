@@ -57,3 +57,35 @@ export const gameShareLink = (
   }
   return `${origin}${baseUrl}?${params.toString()}`
 }
+
+const GAME_PATH = /^\/g\/(0x[0-9a-fA-F]{40})(\/vault)?\/?$/
+const BLOCK_PATTERN = /^\d+$/
+
+const isHexAddress = (value: string | undefined): value is `0x${string}` =>
+  value !== undefined && ADDRESS_PATTERN.test(value)
+
+const shareTeam = (value: string | null): Exclude<Team, 'none'> | undefined =>
+  value === 'blue' || value === 'red' ? value : undefined
+
+export const pageShareLink = (
+  origin: string,
+  baseUrl: string,
+  pathname: string,
+  search: string,
+): string => {
+  const match = GAME_PATH.exec(pathname)
+  const launcher = match?.[1]
+  if (!isHexAddress(launcher)) {
+    return `${origin}${baseUrl}`
+  }
+  if (match?.[2] !== undefined) {
+    return gameShareLink(origin, baseUrl, launcher, { vault: true })
+  }
+  const params = new URLSearchParams(search)
+  const team = shareTeam(params.get(TEAM_PARAM))
+  const block = params.get(BLOCK_PARAM)
+  return gameShareLink(origin, baseUrl, launcher, {
+    ...(team === undefined ? {} : { team }),
+    ...(block !== null && BLOCK_PATTERN.test(block) ? { block: BigInt(block) } : {}),
+  })
+}

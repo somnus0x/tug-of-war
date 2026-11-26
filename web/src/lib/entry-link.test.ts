@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { entryLinkTarget, gameShareLink } from './entry-link'
+import { entryLinkTarget, gameShareLink, pageShareLink } from './entry-link'
 
 const BASE = '/tug-of-war/'
 const GAME = '0x0000000000000000000000000000000000000001'
@@ -89,5 +89,38 @@ describe('gameShareLink', () => {
     expect(entryLinkTarget(link.search, link.hash, BASE)).toBe(
       `/tug-of-war/#/g/${GAME}/vault?team=blue&b=9`,
     )
+  })
+})
+
+describe('pageShareLink', () => {
+  const ORIGIN = 'https://example.org'
+
+  it('gives the site address for home and create', () => {
+    expect(pageShareLink(ORIGIN, BASE, '/', '')).toBe('https://example.org/tug-of-war/')
+    expect(pageShareLink(ORIGIN, BASE, '/create', '?fx=live')).toBe(
+      'https://example.org/tug-of-war/',
+    )
+  })
+
+  it('gives the game query form with team and block', () => {
+    expect(pageShareLink(ORIGIN, BASE, `/g/${GAME}`, '?fx=live&team=red&b=42&as=fan-new')).toBe(
+      `https://example.org/tug-of-war/?g=${GAME}&team=red&b=42`,
+    )
+  })
+
+  it('drops a team or block it does not understand', () => {
+    expect(pageShareLink(ORIGIN, BASE, `/g/${GAME}`, '?team=none&b=12x')).toBe(
+      `https://example.org/tug-of-war/?g=${GAME}`,
+    )
+  })
+
+  it('gives the vault form on the vault page', () => {
+    expect(pageShareLink(ORIGIN, BASE, `/g/${GAME}/vault`, '?team=blue')).toBe(
+      `https://example.org/tug-of-war/?g=${GAME}&v=vault`,
+    )
+  })
+
+  it('falls back to the site address for a bad game address', () => {
+    expect(pageShareLink(ORIGIN, BASE, '/g/0x123', '')).toBe('https://example.org/tug-of-war/')
   })
 })

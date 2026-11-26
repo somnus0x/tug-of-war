@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { classifySwitchError, deriveWalletStatus, switchWithFallback } from './wallet-state'
+import {
+  classifySwitchError,
+  deriveWalletStatus,
+  planSwitch,
+  switchWithFallback,
+} from './wallet-state'
 
 const ADDRESS = '0x71C4a0e3f1b2c3d4e5f60718293a4b5c6d7e9e02'
 
@@ -105,5 +110,51 @@ describe('switchWithFallback', () => {
       addChain: async () => undefined,
     })
     expect(result).toEqual({ ok: false, reason: 'failed' })
+  })
+})
+
+const fail = (error: unknown) => ({ ok: false, error }) as const
+const done = { ok: true } as const
+
+describe('planSwitch', () => {
+  it('starts with a switch', () => {
+    expect(planSwitch([])).toEqual({ next: 'switch' })
+  })
+
+  it('adds the chain after an unknown-chain error, then switches again', () => {
+    expect(planSwitch([fail({ code: 4902 })])).toEqual({ next: 'add' })
+    expect(planSwitch([fail({ code: 4902 }), done])).toEqual({ next: 'switch' })
+    expect(planSwitch([fail({ code: 4902 }), done, done])).toEqual({ done: { ok: true } })
+  })
+
+  it('adds the chain when the wallet wraps the unknown-chain code', () => {
+    expect(planSwitch([fail({ code: -32603, data: { originalError: { code: 4902 } } })])).toEqual({
+      next: 'add',
+    })
+  })
+
+  it('fails when the add went through but the network did not change', () => {
+    expect(planSwitch([fail({ code: 4902 }), done, fail({ code: 4902 })])).toEqual({
+      done: { ok: false, reason: 'failed' },
+    })
+  })
+
+  it('does not call an unsupported add a rejection', () => {
+    expect(planSwitch([fail({ code: 4902 }), fail({ code: 4200 })])).toEqual({
+      done: { ok: false, reason: 'unsupported' },
+    })
+    expect(planSwitch([fail({ code: 4902 }), fail({ code: -32603, message: 'boom' })])).toEqual({
+      done: { ok: false, reason: 'failed' },
+    })
+  })
+
+  it('stays quiet when the user says no at any step', () => {
+    expect(planSwitch([fail({ code: 4001 })])).toEqual({ done: { ok: false, reason: 'rejected' } })
+    expect(planSwitch([fail({ code: 4902 }), fail({ code: 4001 })])).toEqual({
+      done: { ok: false, reason: 'rejected' },
+    })
+    expect(planSwitch([fail({ code: 4902 }), done, fail({ code: 4001 })])).toEqual({
+      done: { ok: false, reason: 'rejected' },
+    })
   })
 })
