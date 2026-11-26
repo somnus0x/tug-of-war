@@ -2,9 +2,10 @@ import type { Game, Rules } from '@/contracts/types'
 
 import { useChainClock } from '@/contracts/queries/use-chain-clock'
 import { GAME_COPY } from '@/copy/game'
-import { secondsLeft, weightBpsAt } from '@/lib/clock'
+import { weightBpsAt } from '@/lib/clock'
 import { formatClock, formatWeight } from '@/lib/format'
 
+import { deriveScreen } from '../model/derive-screen'
 import { ReadoutRow } from './readout-row'
 
 type ClockLinesProps = {
@@ -12,24 +13,28 @@ type ClockLinesProps = {
   rules: Rules
 }
 
-const clockText = (game: Game, chainNow: number | null): string | null => {
+const clockText = (game: Game, rules: Rules, chainNow: number | null): string | null => {
   if (game.phase !== 'buyIn' && game.phase !== 'awaitingCaptains') {
     return null
   }
   if (chainNow === null) {
     return GAME_COPY.clockSyncing
   }
-  if (game.phase === 'awaitingCaptains') {
-    const left = secondsLeft(game.acceptDeadline, chainNow)
-    return left > 0 ? GAME_COPY.acceptLeft(formatClock(left)) : GAME_COPY.acceptClosed
+  const screen = deriveScreen(game, rules, chainNow)
+  if (screen.kind === 'waiting') {
+    return screen.acceptOpen
+      ? GAME_COPY.acceptLeft(formatClock(screen.acceptLeft))
+      : GAME_COPY.acceptClosed
   }
-  const left = secondsLeft(game.deadline, chainNow)
-  return left > 0 ? GAME_COPY.timeLeft(formatClock(left)) : GAME_COPY.timeUp
+  if (screen.kind !== 'live' || screen.live.clock === 'closing') {
+    return GAME_COPY.timeUp
+  }
+  return GAME_COPY.timeLeft(formatClock(screen.live.left))
 }
 
 export const ClockLines = ({ game, rules }: ClockLinesProps) => {
   const { chainNow } = useChainClock()
-  const clock = clockText(game, chainNow)
+  const clock = clockText(game, rules, chainNow)
   const weight =
     game.phase === 'buyIn' && chainNow !== null
       ? weightBpsAt(

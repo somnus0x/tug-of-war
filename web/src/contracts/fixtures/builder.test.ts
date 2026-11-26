@@ -7,14 +7,14 @@ import { weightBpsAt } from '@/lib/clock'
 import { shareBps } from '@/lib/units'
 
 import { buildGame, livePhaseAt } from './builder'
-import { DEFAULT_FIXTURE, FIXTURE_NAMES, fixtureSpec, resolveFixture } from './catalog'
+import { DEFAULT_FIXTURE, FIXTURE_NAMES, fixtureInput, resolveFixture } from './catalog'
 import { FIXTURE_ADDRESSES, FIXTURE_RULES } from './constants'
 
 const LOAD = 1_800_000_000
 const launcher = '0x0000000000000000000000000000000000000001'
 
 const build = (name: (typeof FIXTURE_NAMES)[number], now = LOAD) =>
-  buildGame(fixtureSpec(name), { launcher, loadTime: LOAD, now })
+  buildGame(fixtureInput(name), { launcher, loadTime: LOAD, now })
 
 const expectedPhase = (game: Game, now: number) => {
   if (game.phase === 'awaitingCaptains' || game.phase === 'cancelled') {

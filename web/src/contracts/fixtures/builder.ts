@@ -12,14 +12,14 @@ import { FIXTURE_ADDRESSES, FIXTURE_RULES, FIXTURE_SALT, ZERO_ADDRESS } from './
 
 export type TeamInput = { readonly bnb: string; readonly pull: string; readonly players: number }
 
-export type WaitingSpec = {
+export type WaitingInput = {
   readonly stage: 'waiting'
   readonly acceptLeft: number
   readonly captainsIn: TeamPair<boolean>
   readonly cancelled?: boolean
 }
 
-export type LiveSpec = {
+export type LiveInput = {
   readonly stage: 'live'
   readonly secondsLeft: number
   readonly extensionsUsed: number
@@ -29,7 +29,7 @@ export type LiveSpec = {
   readonly launched?: boolean
 }
 
-export type FixtureSpec = (WaitingSpec | LiveSpec) & {
+export type FixtureInput = (WaitingInput | LiveInput) & {
   readonly minRaise?: string
   readonly floorBlocked?: boolean
 }
@@ -108,10 +108,10 @@ const UNSET = {
   finalBlueShareBps: bps(0),
 }
 
-const buildWaiting = (spec: WaitingSpec, config: GameConfig, context: BuildContext): Game => {
+const buildWaiting = (input: WaitingInput, config: GameConfig, context: BuildContext): Game => {
   const rules = context.rules ?? FIXTURE_RULES
   const deposit = (isIn: boolean) => bnbWei(isIn ? config.captainMinDeposit : 0n)
-  const raisedByTeam = pairOf(deposit(spec.captainsIn.blue), deposit(spec.captainsIn.red))
+  const raisedByTeam = pairOf(deposit(input.captainsIn.blue), deposit(input.captainsIn.red))
   const pullByTeam = pairOf(
     pullWei(mulBps(raisedByTeam.blue, rules.startWeightBps)),
     pullWei(mulBps(raisedByTeam.red, rules.startWeightBps)),
@@ -121,9 +121,9 @@ const buildWaiting = (spec: WaitingSpec, config: GameConfig, context: BuildConte
     creator: FIXTURE_ADDRESSES.creator,
     factory: FIXTURE_ADDRESSES.factory,
     config,
-    phase: spec.cancelled === true ? 'cancelled' : 'awaitingCaptains',
-    captainDeposited: spec.captainsIn,
-    acceptDeadline: context.loadTime + spec.acceptLeft,
+    phase: input.cancelled === true ? 'cancelled' : 'awaitingCaptains',
+    captainDeposited: input.captainsIn,
+    acceptDeadline: context.loadTime + input.acceptLeft,
     gameStart: 0,
     originalDeadline: 0,
     deadline: 0,
@@ -132,21 +132,24 @@ const buildWaiting = (spec: WaitingSpec, config: GameConfig, context: BuildConte
     raised: bnbWei(raisedByTeam.blue + raisedByTeam.red),
     raisedByTeam,
     pullByTeam,
-    playersByTeam: pairOf(spec.captainsIn.blue ? 1 : 0, spec.captainsIn.red ? 1 : 0),
+    playersByTeam: pairOf(input.captainsIn.blue ? 1 : 0, input.captainsIn.red ? 1 : 0),
     ropeBps: ropeBpsOf(pullByTeam),
     ...UNSET,
   }
 }
 
-const buildLive = (spec: LiveSpec, config: GameConfig, context: BuildContext): Game => {
+const buildLive = (input: LiveInput, config: GameConfig, context: BuildContext): Game => {
   const rules = context.rules ?? FIXTURE_RULES
-  const deadline = context.loadTime + spec.secondsLeft
-  const originalDeadline = deadline - spec.extensionsUsed * rules.overtimeExtension
+  const deadline = context.loadTime + input.secondsLeft
+  const originalDeadline = deadline - input.extensionsUsed * rules.overtimeExtension
   const gameStart = originalDeadline - config.duration
-  const raisedByTeam = pairOf(bnbWei(parseEther(spec.blue.bnb)), bnbWei(parseEther(spec.red.bnb)))
-  const pullByTeam = pairOf(pullWei(parseEther(spec.blue.pull)), pullWei(parseEther(spec.red.pull)))
+  const raisedByTeam = pairOf(bnbWei(parseEther(input.blue.bnb)), bnbWei(parseEther(input.red.bnb)))
+  const pullByTeam = pairOf(
+    pullWei(parseEther(input.blue.pull)),
+    pullWei(parseEther(input.red.pull)),
+  )
   const raised = bnbWei(raisedByTeam.blue + raisedByTeam.red)
-  const launched = spec.launched === true
+  const launched = input.launched === true
   const phase = livePhaseAt(
     context.now,
     deadline,
@@ -154,7 +157,7 @@ const buildLive = (spec: LiveSpec, config: GameConfig, context: BuildContext): G
     rules.launchGrace,
     launched,
   )
-  const autoLaunch = spec.autoLaunch === true
+  const autoLaunch = input.autoLaunch === true
   return {
     launcher: context.launcher,
     creator: FIXTURE_ADDRESSES.creator,
@@ -166,7 +169,7 @@ const buildLive = (spec: LiveSpec, config: GameConfig, context: BuildContext): G
     gameStart,
     originalDeadline,
     deadline,
-    extensionsUsed: spec.extensionsUsed,
+    extensionsUsed: input.extensionsUsed,
     currentWeightBps: weightBpsAt(
       { gameStart, originalDeadline, startWeightBps: rules.startWeightBps },
       context.now,
@@ -174,7 +177,7 @@ const buildLive = (spec: LiveSpec, config: GameConfig, context: BuildContext): G
     raised,
     raisedByTeam,
     pullByTeam,
-    playersByTeam: pairOf(spec.blue.players, spec.red.players),
+    playersByTeam: pairOf(input.blue.players, input.red.players),
     ropeBps: ropeBpsOf(pullByTeam),
     ...UNSET,
     ...(autoLaunch
@@ -194,9 +197,9 @@ const buildLive = (spec: LiveSpec, config: GameConfig, context: BuildContext): G
   }
 }
 
-export const buildGame = (spec: FixtureSpec, context: BuildContext): Game => {
-  const config = fixtureConfig(spec.minRaise ?? '3')
-  return spec.stage === 'waiting'
-    ? buildWaiting(spec, config, context)
-    : buildLive(spec, config, context)
+export const buildGame = (input: FixtureInput, context: BuildContext): Game => {
+  const config = fixtureConfig(input.minRaise ?? '3')
+  return input.stage === 'waiting'
+    ? buildWaiting(input, config, context)
+    : buildLive(input, config, context)
 }

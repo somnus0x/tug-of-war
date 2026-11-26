@@ -10,7 +10,7 @@ import { weightBpsAt } from '@/lib/clock'
 import { bnbWei, mulBps } from '@/lib/units'
 
 import { buildGame } from './builder'
-import { fixtureSpec } from './catalog'
+import { fixtureInput } from './catalog'
 import { FIXTURE_ADDRESSES, FIXTURE_RULES } from './constants'
 import {
   canCancel,
@@ -33,15 +33,15 @@ const bnb = (value: string) => bnbWei(parseEther(value))
 
 const stateOf = (name: FixtureName, viewer: ViewerName = 'fan-new', at = 0): SimulatorState => {
   const now = LOAD + at
-  const spec = fixtureSpec(name)
-  const game = buildGame(spec, { launcher, loadTime: LOAD, now })
+  const input = fixtureInput(name)
+  const game = buildGame(input, { launcher, loadTime: LOAD, now })
   return {
     game,
     rules: FIXTURE_RULES,
     now,
     account: viewerAddress(viewer),
     player: viewer === 'visitor' ? undefined : viewerPlayer(viewer, game, FIXTURE_RULES),
-    floorBlocked: spec.floorBlocked === true,
+    floorBlocked: input.floorBlocked === true,
     autoLaunchQuote: bnb('0.006'),
   }
 }

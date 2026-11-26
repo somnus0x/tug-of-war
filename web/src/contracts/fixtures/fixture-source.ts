@@ -6,7 +6,7 @@ import { parseEther } from 'viem'
 import { bnbWei } from '@/lib/units'
 
 import { buildGame } from './builder'
-import { fixtureSpec, resolveFixture } from './catalog'
+import { fixtureInput, resolveFixture } from './catalog'
 import { AUTO_LAUNCH_QUOTE, FIXTURE_RULES } from './constants'
 import { simulateGates } from './simulator'
 import { resolveViewer, viewerAddress, viewerPlayer, viewerRead } from './viewers'
@@ -20,8 +20,8 @@ export const createFixtureSource = (options: FixtureSourceOptions = {}): GameSou
   const loadTime = nowSeconds()
 
   const gameAt = (launcher: Address, scope: SourceScope, now: number) => {
-    const spec = fixtureSpec(resolveFixture(scope.fixture))
-    return { spec, game: buildGame(spec, { launcher, loadTime, now }) }
+    const input = fixtureInput(resolveFixture(scope.fixture))
+    return { input, game: buildGame(input, { launcher, loadTime, now }) }
   }
 
   return {
@@ -37,7 +37,7 @@ export const createFixtureSource = (options: FixtureSourceOptions = {}): GameSou
     },
     readGates: (request, scope) => {
       const now = nowSeconds()
-      const { spec, game } = gameAt(request.launcher, scope, now)
+      const { input, game } = gameAt(request.launcher, scope, now)
       const viewer = resolveViewer(scope.viewer, request.account !== undefined)
       const player =
         request.account === undefined ? undefined : viewerPlayer(viewer, game, FIXTURE_RULES)
@@ -49,7 +49,7 @@ export const createFixtureSource = (options: FixtureSourceOptions = {}): GameSou
             now,
             account: request.account,
             player,
-            floorBlocked: spec.floorBlocked === true,
+            floorBlocked: input.floorBlocked === true,
             autoLaunchQuote: bnbWei(parseEther(AUTO_LAUNCH_QUOTE)),
           },
           request.draft,

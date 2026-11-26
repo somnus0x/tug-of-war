@@ -1,8 +1,8 @@
-import type { FixtureSpec, LiveSpec, TeamInput } from './builder'
+import type { FixtureInput, LiveInput, TeamInput } from './builder'
 
 const team = (bnb: string, pull: string, players: number): TeamInput => ({ bnb, pull, players })
 
-const ENDED: Pick<LiveSpec, 'stage' | 'extensionsUsed' | 'blue' | 'red'> = {
+const ENDED: Pick<LiveInput, 'stage' | 'extensionsUsed' | 'blue' | 'red'> = {
   stage: 'live',
   extensionsUsed: 0,
   blue: team('2.60', '4.10', 11),
@@ -108,7 +108,7 @@ export const FIXTURES = {
     captainsIn: { blue: true, red: false },
     cancelled: true,
   },
-} as const satisfies Record<string, FixtureSpec>
+} as const satisfies Record<string, FixtureInput>
 
 export type FixtureName = keyof typeof FIXTURES
 
@@ -121,4 +121,4 @@ export const FIXTURE_NAMES: readonly FixtureName[] = Object.keys(FIXTURES).filte
 export const resolveFixture = (name: string | undefined): FixtureName =>
   name !== undefined && isFixtureName(name) ? name : DEFAULT_FIXTURE
 
-export const fixtureSpec = (name: FixtureName): FixtureSpec => FIXTURES[name]
+export const fixtureInput = (name: FixtureName): FixtureInput => FIXTURES[name]
