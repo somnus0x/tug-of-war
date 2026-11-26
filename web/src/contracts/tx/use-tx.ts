@@ -114,7 +114,7 @@ export const useTx = <Name extends TxActionName>(
     generation.current += 1
     const context = contextFor(generation.current)
     dispatch({ type: 'start' })
-    if (FIXTURES_ON) {
+    if (import.meta.env.DEV && FIXTURES_ON && fixtureWorld !== null) {
       void runFixtureTx(
         context,
         {

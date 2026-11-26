@@ -8,13 +8,7 @@ import { formatEnvIssues, readEnv } from './env-schema'
 
 const EXAMPLE_PATH = fileURLToPath(new URL('../../.env.example', import.meta.url))
 
-const REQUIRED_NAMES = [
-  'VITE_CHAIN_ID',
-  'VITE_RPC_URLS',
-  'VITE_TUG_FACTORY',
-  'VITE_WC_PROJECT_ID',
-  'VITE_FIXTURES',
-]
+const REQUIRED_NAMES = ['VITE_CHAIN_ID', 'VITE_RPC_URLS', 'VITE_TUG_FACTORY', 'VITE_WC_PROJECT_ID']
 
 const readExample = (): Record<string, string> => {
   const entries = readFileSync(EXAMPLE_PATH, 'utf8')
@@ -92,6 +86,28 @@ describe('VITE_AUTO_LAUNCH', () => {
     expect(autoLaunch('0')).toBe(false)
     expect(autoLaunch('yes')).toBe(false)
     expect(autoLaunch('1')).toBe(true)
+  })
+})
+
+const fixtures = (value: string | undefined) => {
+  const result = readEnv({ ...readExample(), VITE_FIXTURES: value })
+  return result.ok ? result.env.VITE_FIXTURES : result.issues.map((issue) => issue.name)
+}
+
+describe('VITE_FIXTURES', () => {
+  it('is optional and off when absent, empty or 0', () => {
+    expect(fixtures(undefined)).toBe(false)
+    expect(fixtures('')).toBe(false)
+    expect(fixtures('0')).toBe(false)
+  })
+
+  it('is on when set to 1', () => {
+    expect(fixtures('1')).toBe(true)
+  })
+
+  it('rejects any other value', () => {
+    expect(fixtures('yes')).toEqual(['VITE_FIXTURES'])
+    expect(fixtures('2')).toEqual(['VITE_FIXTURES'])
   })
 })
 

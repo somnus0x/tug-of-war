@@ -24,6 +24,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
-    env: exampleSettings(),
+    env: { ...exampleSettings(), VITE_FIXTURES: '1' },
   },
 })

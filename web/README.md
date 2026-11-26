@@ -4,9 +4,9 @@ The browser app for Tug of War Launch: two captains open a game, fans pull the r
 
 ![The live game screen on desktop: Blue and Red crews on either side of the rope, with the clock and the pull panel](docs/screenshots/live-desktop.png)
 
-Live site: <https://somnus0x.github.io/tug-of-war/>. It reads the contracts on BSC testnet (chain 97). Mock mode, described below, runs the whole app locally with no chain.
+Live site: <https://somnus0x.github.io/tug-of-war/>. It reads the contracts on BSC testnet (chain 97). Mock mode, described below, is a development and testing tool that runs only in the dev server and the tests.
 
-[What it is](#what-it-is) · [Screens](#screens) · [Quick start](#quick-start) · [Try it without a chain](#try-it-without-a-chain) · [Settings](#settings) · [Going live on testnet](#going-live-on-testnet) · [Scripts](#scripts) · [How the code is organised](#how-the-code-is-organised) · [Deploy](#deploy)
+[What it is](#what-it-is) · [Screens](#screens) · [Quick start](#quick-start) · [Mock mode for development and tests](#mock-mode-for-development-and-tests) · [Settings](#settings) · [Going live on testnet](#going-live-on-testnet) · [Scripts](#scripts) · [How the code is organised](#how-the-code-is-organised) · [Deploy](#deploy)
 
 ## What it is
 
@@ -43,11 +43,15 @@ pnpm dev
 
 The dev server runs on Vite's default port and serves under the base path from `VITE_BASE`, so the app opens at <http://localhost:5173/tug-of-war/>.
 
-The example settings turn mock mode on (`VITE_FIXTURES=1`), so the app works with no wallet and no chain.
+The example settings point at the deployed contracts on BSC testnet, so the home page lists the real games. Connect a wallet on BSC testnet to pull. No mock mode is needed.
 
-## Try it without a chain
+## Mock mode for development and tests
 
-Mock mode serves games, viewers and transactions from local data. Open any game with this link form:
+Mock mode serves games, viewers and transactions from local data. It exists only in the dev server and the tests. A production build (`pnpm build`) always reads the chain, ignores every mock link switch, and refuses to build when `VITE_FIXTURES=1`.
+
+To turn it on, set `VITE_FIXTURES=1` in `web/.env`, then run `pnpm dev`. The tests turn it on by themselves.
+
+Open any game with this link form:
 
 ```text
 #/g/0x0000000000000000000000000000000000000001?fx=<game>&as=<viewer>&tx=<mode>
@@ -136,7 +140,7 @@ Launched:
 
 ### Ready-made links
 
-These open on a local dev server with mock mode on (`pnpm dev` with the example settings).
+These open on a local dev server with mock mode on (`VITE_FIXTURES=1` in `web/.env`, then `pnpm dev`).
 
 - [Live game as a new fan](http://localhost:5173/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=live-mid&as=fan-new)
 - [Waiting for captains, as the Red captain](http://localhost:5173/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=waiting-blue-in&as=captain-red)
@@ -155,7 +159,7 @@ These open on a local dev server with mock mode on (`pnpm dev` with the example 
 
 The router uses hash history, so these work on static hosting.
 
-The other pages have mock switches too: `#/?fx=empty` (no games), `#/?fx=unreadable` (the list cannot be read), `#/create?as=fan-new` (a connected creator), `#/create?fx=floor-unavailable` (creation closed). Add `&auto=1` to a live game link to see the auto-launch card, which is off unless `VITE_AUTO_LAUNCH=1`.
+In mock mode the other pages have switches too: `#/?fx=empty` (no games), `#/?fx=unreadable` (the list cannot be read), `#/create?as=fan-new` (a connected creator), `#/create?fx=floor-unavailable` (creation closed). Add `&auto=1` to a live game link to see the auto-launch card, which is off unless `VITE_AUTO_LAUNCH=1`.
 
 ## Settings
 
@@ -165,9 +169,9 @@ Settings are read from `web/.env` (see [`.env.example`](.env.example)) and valid
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------ |
 | `VITE_CHAIN_ID`      | Chain the app talks to. A positive integer.                                                                                           | `97`                                                                  | Required                             |
 | `VITE_RPC_URLS`      | Comma-separated RPC addresses, at least one, `http` or `https`.                                                                       | `https://bsc-testnet-rpc.publicnode.com,https://bsc-testnet.drpc.org` | Required                             |
-| `VITE_TUG_FACTORY`   | Address of the game factory, `0x` and 40 hex digits.                                                                                  | `0x0000000000000000000000000000000000000000`                          | Required                             |
+| `VITE_TUG_FACTORY`   | Address of the game factory, `0x` and 40 hex digits.                                                                                  | `0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431`                          | Required                             |
 | `VITE_WC_PROJECT_ID` | WalletConnect (Reown) project id. Must not be empty.                                                                                  | `replace-with-reown-project-id`                                       | Required                             |
-| `VITE_FIXTURES`      | `1` for mock data, `0` for the chain.                                                                                                 | `1`                                                                   | Required                             |
+| `VITE_FIXTURES`      | `1` turns on mock data in the dev server and the tests. A production build ignores it and refuses to build with it on.                | `0`                                                                   | Optional, off unless `1`             |
 | `VITE_BASE`          | Base path. Starts and ends with `/`.                                                                                                  | `/tug-of-war/`                                                        | Optional, defaults to `/tug-of-war/` |
 | `VITE_TRADE_URL`     | Trade link for the launched coin. Must contain `{token}`.                                                                             | `https://example.com/trade/{token}`                                   | Optional, empty means none           |
 | `VITE_AUTO_LAUNCH`   | Set to `1` to show the option to schedule auto-launch. Leave it off on testnet, where the trigger cannot launch within its gas limit. | `1`                                                                   | Optional, off unless `1`             |
@@ -178,13 +182,12 @@ If a required setting is missing or invalid, the dev server shows a settings scr
 
 ## Going live on testnet
 
-The contracts are deployed on BSC testnet. The launcher factory is `0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431`. To point a build at them:
+The contracts are deployed on BSC testnet. The launcher factory is `0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431`. The example settings and the GitHub Pages build already use it. To finish a build for real use:
 
-1. Set `VITE_TUG_FACTORY` to the deployed factory address.
-2. Set `VITE_FIXTURES=0`.
-3. Set `VITE_WC_PROJECT_ID` to a real project id from Reown.
-4. Set `VITE_RPC_URLS` to your RPC addresses, and keep `VITE_CHAIN_ID=97` for BSC testnet.
-5. For the GitHub Pages build, add repository variables with the same names (Settings, Secrets and variables, Actions, Variables). The workflow reads `VITE_BASE`, `VITE_CHAIN_ID`, `VITE_RPC_URLS`, `VITE_TUG_FACTORY`, `VITE_WC_PROJECT_ID` and `VITE_FIXTURES` from `vars` and falls back to the example values when a variable is not set.
+1. Set `VITE_WC_PROJECT_ID` to a real project id from Reown.
+2. Set `VITE_RPC_URLS` to your RPC addresses, and keep `VITE_CHAIN_ID=97` for BSC testnet.
+3. To point at another factory, set `VITE_TUG_FACTORY` to its address.
+4. For the GitHub Pages build, add repository variables with the same names (Settings, Secrets and variables, Actions, Variables). The workflow reads `VITE_BASE`, `VITE_CHAIN_ID`, `VITE_RPC_URLS`, `VITE_TUG_FACTORY`, `VITE_WC_PROJECT_ID` and `VITE_FIXTURES` from `vars`. When a variable is not set it falls back to the example values: the factory above and mock mode off.
 
 If the contract interface changes, copy the new ABIs and regenerate the typed bindings:
 
@@ -262,7 +265,7 @@ The linter ([`.oxlintrc.json`](.oxlintrc.json)) and two scripts in [`tools/`](to
 - Features do not import each other. Only `features/wallet` is shared.
 - `scene/` and `ui/` take plain values and import no wallet or chain code.
 
-Every page reads through a source interface: one each for the game ([`src/contracts/source.ts`](src/contracts/source.ts)), the vault, the create form and the home list. Each is either its chain source or its mock source, chosen once by `VITE_FIXTURES`. Pages never know which one they have.
+Every page reads through a source interface: one each for the game ([`src/contracts/source.ts`](src/contracts/source.ts)), the vault, the create form and the home list. Each is either its chain source or its mock source, chosen once in [`src/contracts/source.ts`](src/contracts/source.ts): the mock source only in the dev server and the tests with `VITE_FIXTURES=1`, the chain source everywhere else. Pages never know which one they have.
 
 Every transaction goes through one lifecycle in [`src/contracts/tx/lifecycle.ts`](src/contracts/tx/lifecycle.ts): check, simulate, wallet, pending, mined. Failures pass through one error map in [`src/copy/errors.ts`](src/copy/errors.ts), so a rejection, a revert or a missing fee reads the same on every screen.
 

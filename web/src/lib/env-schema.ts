@@ -20,7 +20,10 @@ const envSchema = z.object({
     'must be a 0x address with 40 hex digits',
   ),
   VITE_WC_PROJECT_ID: z.string().trim().min(1, 'must not be empty'),
-  VITE_FIXTURES: z.enum(['0', '1']).transform((value) => value === '1'),
+  VITE_FIXTURES: z
+    .enum(['', '0', '1'])
+    .optional()
+    .transform((value) => value === '1'),
   VITE_BASE: basePathSchema,
   VITE_TRADE_URL: z
     .string()
