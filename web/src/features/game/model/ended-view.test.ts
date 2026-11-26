@@ -76,8 +76,8 @@ describe('endedViewOf', () => {
   it('names the coin and the pool after launch and links to the vault', () => {
     expect(view({ kind: 'launched', raised: bnb('5') })).toEqual({
       title: 'Rope Coin is live',
-      body: `The pool holds 5.00 BNB and ${poolCoinsOf(RULES)} ROPE. Claim your coins next.`,
-      action: { kind: 'vault' },
+      body: `The pool holds 5.00 BNB and ${poolCoinsOf(RULES)} ROPE.`,
+      action: { kind: 'vault', claim: false, primary: false },
     })
     expect(poolCoinsOf(RULES)).toBe('500,000')
   })

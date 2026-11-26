@@ -1,4 +1,5 @@
 import type { ContributeDraft, SourceScope } from '../types'
+import type { AskedDraft } from './freshness'
 import type { Address } from 'viem'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -9,7 +10,7 @@ import { env } from '@/app/env'
 
 import { scopeFromSearch } from '../scope'
 import { FIXTURES_ON, gameSource } from '../source'
-import { isFreshAnswer } from './freshness'
+import { currentGateAnswer, nextAsked } from './freshness'
 import {
   gameQueryOptions,
   gatesQueryOptions,
@@ -47,12 +48,6 @@ export const usePlayer = (launcher: Address, account: Address | undefined) => {
   return useQuery(playerQueryOptions(launcher, account, scope, phase))
 }
 
-type AskedDraft = {
-  readonly account: Address | undefined
-  readonly draft: ContributeDraft | null
-  readonly askedAt: number
-}
-
 const useDebouncedDraft = (
   account: Address | undefined,
   draft: ContributeDraft | null,
@@ -62,11 +57,8 @@ const useDebouncedDraft = (
   const [asked, setAsked] = useState<AskedDraft>(() => ({ account, draft, askedAt: Date.now() }))
   useEffect(() => {
     const timer = setTimeout(() => {
-      setAsked({
-        account,
-        draft: team === undefined || amount === undefined ? null : { team, amount },
-        askedAt: Date.now(),
-      })
+      const next = team === undefined || amount === undefined ? null : { team, amount }
+      setAsked((previous) => nextAsked(previous, account, next, Date.now()))
     }, DRAFT_DEBOUNCE_MS)
     return () => {
       clearTimeout(timer)
@@ -84,11 +76,12 @@ export const useGates = (
   const phase = useGame(launcher).data?.game.phase
   const asked = useDebouncedDraft(account, draft)
   const query = useQuery(gatesQueryOptions(launcher, asked.account, asked.draft, scope, phase))
+  const answer = currentGateAnswer(query, asked.askedAt)
   return {
     account: asked.account,
-    gates: query.data,
+    gates: answer.data,
     draft: asked.draft,
-    isFresh: isFreshAnswer(query.dataUpdatedAt, asked.askedAt),
+    isFresh: answer.isFresh,
   }
 }
 

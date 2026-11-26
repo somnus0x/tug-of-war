@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest'
 import { buildGame } from '@/contracts/fixtures/builder'
 import { fixtureInput } from '@/contracts/fixtures/catalog'
 import { FIXTURE_RULES } from '@/contracts/fixtures/constants'
+import { freshPlayer } from '@/contracts/fixtures/viewers'
 import { TX_COPY } from '@/copy/tx'
 import { bnbWei, bps, pullWei, tokenWei } from '@/lib/units'
 
 import { errorValues, successMessage } from './tx-messages'
 
-const LAUNCHER = '0x0000000000000000000000000000000000000001'
+const LAUNCHER: `0x${string}` = '0x0000000000000000000000000000000000000001'
 
 const game: Game = buildGame(fixtureInput('launched'), {
   launcher: LAUNCHER,
@@ -53,6 +54,20 @@ describe('successMessage', () => {
         context,
       ).body,
     ).toBe('1,234 ROPE are in your wallet.')
+  })
+
+  it('never mentions claiming in the launch toast', () => {
+    const outcome = {
+      raised: bnbWei(parseEther('5')),
+      token: LAUNCHER,
+      finalBlueShareBps: bps(5_300),
+    }
+    const launched = { ...context, game: { ...game, phase: 'launched' as const } }
+    const withCoins = { ...freshPlayer(game), claimable: tokenWei(1n) }
+    expect(successMessage('launch', outcome, { ...launched, player: withCoins }).body).toBe(
+      'The pool holds 5.00 BNB.',
+    )
+    expect(successMessage('launch', outcome, launched).body).toBe('The pool holds 5.00 BNB.')
   })
 
   it('uses a plain line when the receipt carried no event', () => {
