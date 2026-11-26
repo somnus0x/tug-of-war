@@ -4,7 +4,7 @@ The browser app for Tug of War Launch: two captains open a game, fans pull the r
 
 ![The live game screen on desktop: Blue and Red crews on either side of the rope, with the clock and the pull panel](docs/screenshots/live-desktop.png)
 
-Live site: <https://somnus0x.github.io/tug-of-war/>. It runs on mock data for now, because the contracts are not deployed yet.
+Live site: <https://somnus0x.github.io/tug-of-war/>. It reads the contracts on BSC testnet (chain 97). Mock mode, described below, runs the whole app locally with no chain.
 
 [What it is](#what-it-is) · [Screens](#screens) · [Quick start](#quick-start) · [Try it without a chain](#try-it-without-a-chain) · [Settings](#settings) · [Going live on testnet](#going-live-on-testnet) · [Scripts](#scripts) · [How the code is organised](#how-the-code-is-organised) · [Deploy](#deploy)
 
@@ -136,10 +136,12 @@ Launched:
 
 ### Ready-made links
 
-- [Live game as a new fan](https://somnus0x.github.io/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=live-mid&as=fan-new)
-- [Waiting for captains, as the Red captain](https://somnus0x.github.io/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=waiting-blue-in&as=captain-red)
-- [Clock ended, ready to launch](https://somnus0x.github.io/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=ended-can-launch&as=fan-blue)
-- [Vault as a staker with rewards](https://somnus0x.github.io/tug-of-war/#/g/0x0000000000000000000000000000000000000001/vault?fx=launched&as=staker-rewards)
+These open on a local dev server with mock mode on (`pnpm dev` with the example settings).
+
+- [Live game as a new fan](http://localhost:5173/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=live-mid&as=fan-new)
+- [Waiting for captains, as the Red captain](http://localhost:5173/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=waiting-blue-in&as=captain-red)
+- [Clock ended, ready to launch](http://localhost:5173/tug-of-war/#/g/0x0000000000000000000000000000000000000001?fx=ended-can-launch&as=fan-blue)
+- [Vault as a staker with rewards](http://localhost:5173/tug-of-war/#/g/0x0000000000000000000000000000000000000001/vault?fx=launched&as=staker-rewards)
 
 ### Other pages
 
@@ -176,7 +178,7 @@ If a required setting is missing or invalid, the dev server shows a settings scr
 
 ## Going live on testnet
 
-Do this once the contracts are deployed.
+The contracts are deployed on BSC testnet. The launcher factory is `0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431`. To point a build at them:
 
 1. Set `VITE_TUG_FACTORY` to the deployed factory address.
 2. Set `VITE_FIXTURES=0`.
@@ -194,7 +196,7 @@ What the contracts expose is described in [`../contracts/docs/frontend-api.md`](
 
 ### Not yet verified
 
-- Nothing has been run against deployed contracts.
+- Reads work against the deployed testnet contracts: the home list, a game with its crowd and pull log, the vault and the create page. No transaction has been signed from the app on the real chain yet.
 - No real wallet or phone has been tested.
 - The WalletConnect id in the example is a placeholder.
 
