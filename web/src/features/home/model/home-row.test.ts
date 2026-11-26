@@ -37,7 +37,9 @@ describe('homeRowOf', () => {
   it('shows the countdown only while live', () => {
     const live = homeRowOf(gameOf('live-mid'), LOAD)
     expect(live.countdown).toBe(HOME_COPY.timeLeft('1:24'))
+    expect(live.clock).toBe('1:24')
     expect(homeRowOf(gameOf('waiting-none'), LOAD).countdown).toBeNull()
+    expect(homeRowOf(gameOf('waiting-none'), LOAD).clock).toBeNull()
     expect(homeRowOf(gameOf('live-mid'), null).countdown).toBeNull()
   })
 
@@ -61,6 +63,7 @@ describe('homeRowOf', () => {
     expect(row.name).toBe(game.config.name)
     expect(row.symbol).toBe(game.config.symbol)
     expect(row.raised).toBe('3.95 BNB raised')
+    expect(row.raisedAmount).toBe('3.95 BNB')
     expect(row.captainBlue).toBe(
       `${game.config.captainBlue.slice(0, 6)}…${game.config.captainBlue.slice(-4)}`,
     )

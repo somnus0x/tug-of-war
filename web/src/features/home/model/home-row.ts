@@ -21,7 +21,9 @@ export type HomeRow = {
   readonly ropeBps: Bps
   readonly ropeLabel: string
   readonly raised: string
+  readonly raisedAmount: string
   readonly countdown: string | null
+  readonly clock: string | null
 }
 
 export const phaseKindOf = (game: Game, chainNow: number | null): PhaseKind => {
@@ -40,11 +42,11 @@ export const phaseKindOf = (game: Game, chainNow: number | null): PhaseKind => {
   }
 }
 
-const countdownOf = (game: Game, phase: PhaseKind, chainNow: number | null): string | null => {
+const clockOf = (game: Game, phase: PhaseKind, chainNow: number | null): string | null => {
   if (phase !== 'live' || chainNow === null) {
     return null
   }
-  return HOME_COPY.timeLeft(formatClock(secondsLeft(game.deadline, chainNow)))
+  return formatClock(secondsLeft(game.deadline, chainNow))
 }
 
 export const ropeLabelOf = (game: Game): string => {
@@ -62,6 +64,7 @@ const ropeIsIdle = (phase: PhaseKind): boolean => phase === 'waiting' || phase =
 export const homeRowOf = (game: Game, chainNow: number | null, me?: Address): HomeRow => {
   const phase = phaseKindOf(game, chainNow)
   const idle = ropeIsIdle(phase)
+  const clock = clockOf(game, phase, chainNow)
   return {
     name: game.config.name,
     symbol: game.config.symbol,
@@ -72,7 +75,9 @@ export const homeRowOf = (game: Game, chainNow: number | null, me?: Address): Ho
     ropeBps: idle ? HALF_BPS : game.ropeBps,
     ropeLabel: idle ? HOME_COPY.ropeIdle : ropeLabelOf(game),
     raised: HOME_COPY.raised(formatBnb(game.raised)),
-    countdown: countdownOf(game, phase, chainNow),
+    raisedAmount: HOME_COPY.amount(formatBnb(game.raised)),
+    countdown: clock === null ? null : HOME_COPY.timeLeft(clock),
+    clock,
   }
 }
 

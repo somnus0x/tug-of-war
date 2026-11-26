@@ -70,14 +70,62 @@
   font-size: var(--text-small);
 }
 
+.home-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.home-head,
 .home-row__link {
   display: grid;
   grid-template-columns: minmax(0, 2fr) 150px minmax(0, 1.6fr) 120px 130px 70px;
   grid-template-areas: 'title phase captains rope raised clock';
   align-items: center;
   gap: 6px 14px;
-  min-height: 64px;
   padding: 8px 12px;
+}
+
+.home-head {
+  padding-top: 0;
+  padding-bottom: 6px;
+  box-shadow: 0 var(--outline) 0 0 var(--ink-2);
+  color: var(--mute);
+  font-size: var(--text-small);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.home-head__title {
+  grid-area: title;
+}
+
+.home-head__phase {
+  grid-area: phase;
+}
+
+.home-head__captains {
+  grid-area: captains;
+}
+
+.home-head__rope {
+  grid-area: rope;
+  text-align: center;
+}
+
+.home-head__raised {
+  grid-area: raised;
+  text-align: right;
+}
+
+.home-head__clock {
+  grid-area: clock;
+  text-align: right;
+}
+
+.home-row__link {
+  min-height: 64px;
   color: var(--cream);
   text-decoration: none;
 }
@@ -174,7 +222,14 @@
   grid-area: raised;
   font-family: var(--font-digits);
   font-size: 18px;
+  text-align: right;
   white-space: nowrap;
+}
+
+@media (min-width: 760px) {
+  .home-row__unit {
+    display: none;
+  }
 }
 
 .home-row__clock {
@@ -187,6 +242,14 @@
 }
 
 @media (max-width: 759px) {
+  .home-head {
+    display: none;
+  }
+
+  .home-row__raised {
+    text-align: left;
+  }
+
   .home-row__link {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:

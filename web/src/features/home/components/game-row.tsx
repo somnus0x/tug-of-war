@@ -56,8 +56,18 @@ export const GameRow = ({ entry, me }: GameRowProps) => {
           <MiniRope ropeBps={row.ropeBps} />
           <span className="home-sr">{row.ropeLabel}</span>
         </span>
-        <span className="home-row__raised">{row.raised}</span>
-        <span className="home-row__clock">{row.countdown}</span>
+        <span className="home-row__raised">
+          {row.raisedAmount}
+          <span className="home-row__unit"> {HOME_COPY.raisedUnit}</span>
+        </span>
+        <span className="home-row__clock">
+          {row.clock === null ? null : (
+            <>
+              {row.clock}
+              <span className="home-row__unit"> {HOME_COPY.leftUnit}</span>
+            </>
+          )}
+        </span>
       </Link>
     </li>
   )

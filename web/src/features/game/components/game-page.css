@@ -49,17 +49,9 @@
   min-width: 0;
 }
 
-.game__column--rules {
-  grid-column: 1 / -1;
-}
-
 @media (min-width: 1200px) {
   .game__columns {
-    grid-template-columns: 448px minmax(0, 1fr) 410px;
-  }
-
-  .game__column--rules {
-    grid-column: auto;
+    grid-template-columns: 448px minmax(0, 1fr);
   }
 }
 

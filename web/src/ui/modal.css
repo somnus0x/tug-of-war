@@ -52,6 +52,10 @@
   line-height: 1;
 }
 
+.modal__title:focus {
+  outline: none;
+}
+
 .modal__body {
   font-size: var(--text-body);
   line-height: 1.45;

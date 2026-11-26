@@ -249,23 +249,6 @@
   text-transform: uppercase;
 }
 
-.rules-panel__summary {
-  min-height: var(--touch-target);
-  display: flex;
-  align-items: center;
-  color: var(--gold);
-  font-family: var(--font-heading);
-  font-size: var(--text-label);
-  letter-spacing: 0.06em;
-  text-decoration: underline;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-.rules-panel__details[open] .rules-panel__summary {
-  margin-bottom: 6px;
-}
-
 .you-box {
   display: flex;
   flex-direction: column;
