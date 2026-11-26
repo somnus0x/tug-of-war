@@ -37,7 +37,9 @@ export const FIXTURE_DELAYS = {
   slow: 8000,
 } as const
 
-const MODES: readonly FixtureMode[] = ['reject', 'revert', 'slow', 'raced']
+export const FIXTURE_MODES = ['reject', 'revert', 'slow', 'raced'] as const
+
+const MODES: readonly FixtureMode[] = FIXTURE_MODES
 
 export const fixtureModeFromSearch = (searchStr: string): FixtureMode => {
   const value = new URLSearchParams(searchStr).get('tx')

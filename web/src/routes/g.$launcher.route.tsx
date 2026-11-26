@@ -1,17 +1,9 @@
 import { Outlet, createFileRoute, retainSearchParams } from '@tanstack/react-router'
-import { z } from 'zod'
 
 import { GameLoadError } from '@/features/game/components/game-load-error'
 import { NotAGame } from '@/features/game/components/not-a-game'
+import { gameSearchSchema } from '@/features/game/game-search'
 import { loadGameRoute } from '@/features/game/load-game'
-
-const gameSearchSchema = z.object({
-  team: z.enum(['blue', 'red']).optional().catch(undefined),
-  b: z.coerce.number().int().positive().optional().catch(undefined),
-  fx: z.string().optional().catch(undefined),
-  as: z.string().optional().catch(undefined),
-  tx: z.enum(['reject', 'revert', 'slow']).optional().catch(undefined),
-})
 
 const GameLayout = () => {
   const data = Route.useLoaderData()
