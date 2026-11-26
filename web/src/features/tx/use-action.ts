@@ -67,9 +67,14 @@ const toastOf = (kind: ToastKind, message: TxMessage, hash: Hash | undefined): T
   ...(hash === undefined ? {} : { link: { href: explorerTxUrl(hash), label: TX_COPY.explorer } }),
 })
 
+export type ActionOptions = {
+  readonly onSuccess?: () => void
+}
+
 export const useAction = <Name extends LauncherActionName>(
   action: Name,
   input: ActionInput<Name>,
+  options: ActionOptions = {},
 ): Action => {
   const wallet = useWallet()
   const account = useViewerAccount(wallet.address)
@@ -97,6 +102,7 @@ export const useAction = <Name extends LauncherActionName>(
     onSuccess: (outcome: ActionOutcomes[Name] | null, hash: Hash) => {
       clearSent()
       txToasts.push(toastOf('ok', successMessage(action, outcome, context), hash))
+      options.onSuccess?.()
     },
     onFailure: (error: TxErrorInfo, hash: Hash | undefined) => {
       clearSent()

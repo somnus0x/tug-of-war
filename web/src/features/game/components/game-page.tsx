@@ -18,6 +18,7 @@ import './game-hud.css'
 import './game-page.css'
 import './game-panels.css'
 import './game-readout.css'
+import './pull-box.css'
 
 type GamePageProps = {
   launcher: Address

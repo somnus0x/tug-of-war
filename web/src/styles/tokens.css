@@ -86,5 +86,6 @@
   --touch-target: 44px;
   --primary-height: 54px;
   --bottom-bar-height: 0px;
+  --keyboard-inset: 0px;
   --gutter: 16px;
 }

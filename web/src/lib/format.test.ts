@@ -240,10 +240,37 @@ describe('parseBnb', () => {
     expect(parseBnb('1e3')).toBeNull()
     expect(parseBnb('abc')).toBeNull()
     expect(parseBnb('1.2.3')).toBeNull()
-    expect(parseBnb('1,5')).toBeNull()
-    expect(parseBnb('1,000')).toBeNull()
     expect(parseBnb('0.0000000000000000001')).toBeNull()
     expect(parseBnb('+1')).toBeNull()
+  })
+
+  it('takes one comma as the decimal separator', () => {
+    expect(parseBnb('0,5')).toBe(500_000_000_000_000_000n)
+    expect(parseBnb('1,000')).toBe(1_000_000_000_000_000_000n)
+    expect(parseBnb(',5')).toBe(500_000_000_000_000_000n)
+  })
+
+  it('trims outer spaces only', () => {
+    expect(parseBnb(' 0.5 ')).toBe(500_000_000_000_000_000n)
+    expect(parseBnb('0 5')).toBeNull()
+    expect(parseBnb('0. 5')).toBeNull()
+  })
+
+  it('rejects grouping, signs, exponents and extra separators', () => {
+    expect(parseBnb('1,000.5')).toBeNull()
+    expect(parseBnb('1.000,5')).toBeNull()
+    expect(parseBnb('1e3')).toBeNull()
+    expect(parseBnb('-1')).toBeNull()
+    expect(parseBnb('+1')).toBeNull()
+    expect(parseBnb('5.')).toBe(5_000_000_000_000_000_000n)
+    expect(parseBnb('.')).toBeNull()
+    expect(parseBnb('')).toBeNull()
+    expect(parseBnb(`0.${'1'.repeat(19)}`)).toBeNull()
+  })
+
+  it('reads a very long whole number exactly', () => {
+    const digits = '1234567890'.repeat(4)
+    expect(parseBnb(digits)).toBe(BigInt(digits) * 10n ** 18n)
   })
 
   it('round-trips through formatBnb', () => {

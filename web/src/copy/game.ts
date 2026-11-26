@@ -60,6 +60,7 @@ export const GAME_COPY = {
     lastOvertime: 'Last overtime',
     closing: 'Time is up',
     ended: 'Clock ended',
+    cancelled: 'Cancelled',
   },
   clockBlank: '-:--',
   pullSplit: (blue: string, red: string) => `Blue ${blue} pull · Red ${red} pull`,
@@ -84,10 +85,6 @@ export const GAME_COPY = {
     ended: 'Time is up.',
   },
   status: 'Game status',
-  tryPull: {
-    heading: 'Try a pull',
-    button: (amount: string, team: string) => `Pull ${amount} BNB for ${team}`,
-  },
   viewer: {
     heading: 'You',
     team: 'Team',

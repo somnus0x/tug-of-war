@@ -9,6 +9,7 @@ import { env } from '@/app/env'
 
 import { scopeFromSearch } from '../scope'
 import { FIXTURES_ON, gameSource } from '../source'
+import { isFreshAnswer } from './freshness'
 import {
   gameQueryOptions,
   gatesQueryOptions,
@@ -46,19 +47,32 @@ export const usePlayer = (launcher: Address, account: Address | undefined) => {
   return useQuery(playerQueryOptions(launcher, account, scope, phase))
 }
 
-const useDebouncedDraft = (draft: ContributeDraft | null): ContributeDraft | null => {
+type AskedDraft = {
+  readonly account: Address | undefined
+  readonly draft: ContributeDraft | null
+  readonly askedAt: number
+}
+
+const useDebouncedDraft = (
+  account: Address | undefined,
+  draft: ContributeDraft | null,
+): AskedDraft => {
   const team = draft?.team
   const amount = draft?.amount
-  const [debounced, setDebounced] = useState<ContributeDraft | null>(draft)
+  const [asked, setAsked] = useState<AskedDraft>(() => ({ account, draft, askedAt: Date.now() }))
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebounced(team === undefined || amount === undefined ? null : { team, amount })
+      setAsked({
+        account,
+        draft: team === undefined || amount === undefined ? null : { team, amount },
+        askedAt: Date.now(),
+      })
     }, DRAFT_DEBOUNCE_MS)
     return () => {
       clearTimeout(timer)
     }
-  }, [team, amount])
-  return debounced
+  }, [account, team, amount])
+  return asked
 }
 
 export const useGates = (
@@ -68,8 +82,14 @@ export const useGates = (
 ) => {
   const scope = useSourceScope()
   const phase = useGame(launcher).data?.game.phase
-  const debounced = useDebouncedDraft(draft)
-  return useQuery(gatesQueryOptions(launcher, account, debounced, scope, phase))
+  const asked = useDebouncedDraft(account, draft)
+  const query = useQuery(gatesQueryOptions(launcher, asked.account, asked.draft, scope, phase))
+  return {
+    account: asked.account,
+    gates: query.data,
+    draft: asked.draft,
+    isFresh: isFreshAnswer(query.dataUpdatedAt, asked.askedAt),
+  }
 }
 
 export const useRefetchAtDeadline = (launcher: Address, deadline: number, isReached: boolean) => {

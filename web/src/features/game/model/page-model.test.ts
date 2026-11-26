@@ -35,6 +35,10 @@ describe('clockFaceOf', () => {
     expect(clockFaceOf(gameOf('launched'), RULES, LOAD)).toBe('ended')
   })
 
+  it('gives a cancelled game its own face', () => {
+    expect(clockFaceOf(gameOf('cancelled'), RULES, LOAD)).toBe('cancelled')
+  })
+
   it('stays calm before the chain clock is known', () => {
     expect(clockFaceOf(gameOf('live-final-minute'), RULES, null)).toBe('running')
   })

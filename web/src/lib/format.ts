@@ -6,7 +6,7 @@ const BNB_DECIMALS = 18
 const ONE_BNB = 10n ** 18n
 const SMALL_BNB = 10n ** 16n
 const THOUSANDS = /\B(?=(?:\d{3})+$)/g
-const BNB_INPUT = /^(?:(\d+)(?:\.(\d*))?|\.(\d+))$/
+const BNB_INPUT = /^(?:(\d+)(?:[.,](\d*))?|[.,](\d+))$/
 
 const MINUTE = 60
 const HOUR = 3600

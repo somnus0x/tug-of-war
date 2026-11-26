@@ -88,7 +88,7 @@
 .game__bar {
   position: fixed;
   right: 0;
-  bottom: 0;
+  bottom: var(--keyboard-inset);
   left: 0;
   z-index: 3;
   padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
@@ -96,22 +96,6 @@
   padding-left: max(12px, env(safe-area-inset-left));
   background: var(--ink-1);
   box-shadow: 0 calc(-1 * var(--outline)) 0 0 var(--ink-2);
-}
-
-.game__bar .pixel-box {
-  margin: 0;
-  padding: 6px 8px;
-}
-
-.game__bar .game-readout__actions {
-  flex-wrap: nowrap;
-  gap: 8px;
-}
-
-.game__bar .tile-button {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: var(--touch-target);
 }
 
 .game-announcer {

@@ -15,6 +15,7 @@ type TileButtonProps = {
   fullWidth?: boolean
   type?: 'button' | 'submit'
   ariaLabel?: string | undefined
+  describedBy?: string | undefined
   onClick?: (() => void) | undefined
 }
 
@@ -27,6 +28,7 @@ export const TileButton = ({
   fullWidth = false,
   type = 'button',
   ariaLabel,
+  describedBy,
   onClick,
 }: TileButtonProps) => {
   const { disabled, busy } = tileBehaviour(state)
@@ -38,6 +40,7 @@ export const TileButton = ({
       aria-busy={busy}
       aria-pressed={selected}
       aria-label={ariaLabel}
+      aria-describedby={describedBy}
       onClick={onClick}
     >
       {busy ? <Spinner /> : null}

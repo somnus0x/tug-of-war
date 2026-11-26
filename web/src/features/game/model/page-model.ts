@@ -5,7 +5,7 @@ import type { SceneStage } from '@/scene/types'
 
 import { deriveLive } from './derive-live'
 
-export type ClockFace = Clock | 'captains' | 'ended'
+export type ClockFace = Clock | 'captains' | 'ended' | 'cancelled'
 
 export const RAISE_SEGMENTS = 12
 
@@ -23,6 +23,9 @@ export const sceneStageOf = (phase: Phase): SceneStage => STAGES[phase]
 export const clockFaceOf = (game: Game, rules: Rules, chainNow: number | null): ClockFace => {
   if (game.phase === 'awaitingCaptains') {
     return 'captains'
+  }
+  if (game.phase === 'cancelled') {
+    return 'cancelled'
   }
   if (game.phase !== 'buyIn') {
     return 'ended'

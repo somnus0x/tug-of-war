@@ -16,7 +16,7 @@ export const GameClock = ({ face, target }: GameClockProps) => (
     className={classNames(
       'game-clock',
       isUrgentFace(face) && 'game-clock--urgent',
-      face === 'ended' && 'game-clock--done',
+      (face === 'ended' || face === 'cancelled') && 'game-clock--done',
     )}
     role="timer"
   >

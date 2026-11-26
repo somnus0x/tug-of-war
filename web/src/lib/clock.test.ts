@@ -59,6 +59,25 @@ describe('createChainClock', () => {
     expect(clock.chainNow()).toBe(1_005)
   })
 
+  it('jumps back to a new anchor far behind the shown time', () => {
+    const time = fakeTime()
+    const clock = createChainClock({ now: time.now })
+    clock.anchor(2_000)
+    clock.anchor(1_000)
+    expect(clock.chainNow()).toBe(1_000)
+    time.advance(2_000)
+    expect(clock.chainNow()).toBe(1_002)
+    expect(clock.getSnapshot().chainNow).toBe(1_000)
+  })
+
+  it('holds the floor when the new anchor is behind by the stale threshold or less', () => {
+    const time = fakeTime()
+    const clock = createChainClock({ now: time.now })
+    clock.anchor(2_000)
+    clock.anchor(1_985)
+    expect(clock.chainNow()).toBe(2_000)
+  })
+
   it('freezes after 15 s without an anchor and recovers on the next one', () => {
     const time = fakeTime()
     const clock = createChainClock({ now: time.now })

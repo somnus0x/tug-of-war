@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { bps } from '@/lib/units'
 
 import { gameOf, withPull } from './fixture-games'
-import { announcementOf, capNoteOf, pageHeadline, sceneLabelOf } from './page-text'
+import { announceStateOf, announcementOf, capNoteOf, pageHeadline, sceneLabelOf } from './page-text'
 
 const calm = { lead: 'blue', extensionsUsed: 0, ended: false } as const
 
@@ -65,5 +65,29 @@ describe('announcementOf', () => {
       'The clock was extended by 60 seconds.',
     )
     expect(announcementOf({ ...calm, ended: true }, { ...calm, ended: true }, 30)).toBeNull()
+  })
+})
+
+describe('announceStateOf', () => {
+  it('waits for chain time during buy-in', () => {
+    expect(announceStateOf(gameOf('live-mid'), 'running', false)).toBeNull()
+    expect(announceStateOf(gameOf('live-mid'), 'running', true)).not.toBeNull()
+  })
+
+  it('keeps the lead neutral before buy-in and after a cancel', () => {
+    const waiting = withPull(gameOf('waiting-blue-in'), '0.2', '0')
+    expect(announceStateOf(waiting, 'captains', false)?.lead).toBe('tie')
+    expect(
+      announceStateOf(withPull(gameOf('cancelled'), '0.2', '0'), 'cancelled', true)?.lead,
+    ).toBe('tie')
+    expect(announceStateOf(withPull(gameOf('live-mid'), '2', '1'), 'running', true)?.lead).toBe(
+      'blue',
+    )
+  })
+
+  it('treats only a finished clock as ended, not a cancel', () => {
+    expect(announceStateOf(gameOf('cancelled'), 'cancelled', true)?.ended).toBe(false)
+    expect(announceStateOf(gameOf('launched'), 'ended', true)?.ended).toBe(true)
+    expect(announceStateOf(gameOf('live-mid'), 'closing', true)?.ended).toBe(true)
   })
 })

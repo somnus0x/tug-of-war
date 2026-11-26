@@ -1,0 +1,314 @@
+.pull-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.team-picker {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.team-picker__tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.team-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 50px;
+  margin: var(--outline);
+  padding: 6px 10px;
+  background: var(--ink-2);
+  color: var(--cream);
+  cursor: pointer;
+  box-shadow:
+    inset calc(-1 * var(--outline)) calc(-1 * var(--outline)) 0 var(--shade),
+    0 calc(-1 * var(--outline)) 0 0 var(--ink-0),
+    0 var(--outline) 0 0 var(--ink-0),
+    calc(-1 * var(--outline)) 0 0 0 var(--ink-0),
+    var(--outline) 0 0 0 var(--ink-0);
+}
+
+.team-option:has(.team-option__input:focus-visible) {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: calc(var(--outline) + var(--focus-offset));
+}
+
+.team-option__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.team-option__body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.team-option__note {
+  color: var(--mute);
+  font-size: var(--text-small);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.team-option.is-selected::after {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  background: var(--ink-0);
+  box-shadow: inset var(--bevel-size) var(--bevel-size) 0 var(--cream);
+}
+
+.team-option--blue.is-selected {
+  background: var(--blue);
+  color: var(--ink-0);
+}
+
+.team-option--red.is-selected {
+  background: var(--red);
+  color: var(--ink-0);
+}
+
+.team-option.is-selected .team-mark,
+.team-option.is-selected .team-option__note {
+  color: var(--ink-0);
+}
+
+.team-option.is-locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.team-picker__lock {
+  margin: 6px var(--outline) 0;
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.pull-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.amount-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.amount-field__label {
+  margin: 0 var(--outline);
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.amount-field__row {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.team-picker__legend {
+  margin: 0 var(--outline) 4px;
+  padding: 0;
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.amount-field__presets {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.amount-field__presets .tile-button {
+  min-width: 50px;
+  padding: 6px 8px;
+  font-family: var(--font-digits);
+  font-size: 22px;
+}
+
+.amount-field__box {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: var(--touch-target);
+  margin: var(--outline);
+  padding: 2px 10px;
+  background: var(--ink-0);
+  box-shadow: 0 0 0 var(--outline) var(--ink-2);
+  cursor: text;
+}
+
+.amount-field__box:focus-within {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: calc(var(--outline) + var(--focus-offset));
+}
+
+.amount-field__box.is-invalid {
+  box-shadow: 0 0 0 var(--outline) var(--gold);
+}
+
+.amount-field__input {
+  flex: 1 1 0;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cream);
+  font-family: var(--font-digits);
+  font-size: 30px;
+  line-height: 1;
+  text-align: right;
+}
+
+.amount-field__input:focus-visible {
+  outline: none;
+}
+
+.amount-field__input::placeholder {
+  color: var(--ink-2);
+}
+
+.amount-field__unit {
+  flex: none;
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.pull-controls__notice {
+  margin: 0 var(--outline);
+  font-size: var(--text-small);
+  line-height: 1.3;
+}
+
+.pull-controls__notice--note {
+  color: var(--mute);
+}
+
+.pull-controls__notice--problem {
+  padding: 5px 8px;
+  background: var(--gold);
+  color: var(--ink-0);
+  font-weight: 500;
+}
+
+.pull-controls__late {
+  margin: 0 var(--outline);
+  color: var(--gold);
+  font-size: var(--text-small);
+}
+
+.pull-preview {
+  margin: 2px var(--outline);
+  padding: 4px 10px;
+  background: var(--ink-0);
+  box-shadow: 0 0 0 2px var(--ink-2);
+  font-size: var(--text-small);
+}
+
+.pull-preview__rows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.pull-preview__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 10px;
+}
+
+.pull-preview__row dt {
+  color: var(--mute);
+}
+
+.pull-preview__row dd {
+  margin: 0;
+  color: var(--cream);
+  font-weight: 600;
+  text-align: right;
+}
+
+.pull-preview__row dd.pull-preview__idle {
+  color: var(--mute);
+  font-weight: 400;
+}
+
+.pull-preview__overtime {
+  margin-top: 4px;
+  color: var(--gold);
+}
+
+.pull-controls--bar {
+  gap: 4px;
+}
+
+.pull-controls--bar .pull-preview__rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+}
+
+.pull-controls--bar .pull-preview__row {
+  gap: 0 6px;
+}
+
+.pull-controls--bar .amount-field__input {
+  font-size: 24px;
+}
+
+.pull-controls--bar .tile-button--primary.tile-button--full {
+  min-height: 50px;
+  font-size: var(--text-primary);
+}
+
+.pull-closed {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  color: var(--mute);
+  font-size: var(--text-body);
+}
+
+.pull-closed b {
+  color: var(--cream);
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.pull-closed span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+}

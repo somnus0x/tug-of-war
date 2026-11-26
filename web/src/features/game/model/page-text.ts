@@ -1,4 +1,5 @@
 import type { Lead } from './derive-live'
+import type { ClockFace } from './page-model'
 import type { Game } from '@/contracts/types'
 
 import { GAME_COPY } from '@/copy/game'
@@ -12,6 +13,7 @@ import {
 } from '@/lib/format'
 import { BPS_DENOMINATOR, bps } from '@/lib/units'
 
+import { leadOf } from './derive-live'
 import { headlineOf } from './headline'
 
 export type PageHeadline = { readonly title: string; readonly detail: string | null }
@@ -76,6 +78,22 @@ export const capNoteOf = (ropeBps: number, maxBonusShareBps: number): string => 
     keeper,
     formatShareExact(floor),
   )
+}
+
+export const announceStateOf = (
+  game: Game,
+  face: ClockFace,
+  isClockKnown: boolean,
+): AnnounceState | null => {
+  if (game.phase === 'buyIn' && !isClockKnown) {
+    return null
+  }
+  const isBeforeBuyIn = game.phase === 'awaitingCaptains' || game.phase === 'cancelled'
+  return {
+    lead: isBeforeBuyIn ? 'tie' : leadOf(game.pullByTeam),
+    extensionsUsed: game.extensionsUsed,
+    ended: face === 'closing' || face === 'ended',
+  }
 }
 
 export const announcementOf = (
