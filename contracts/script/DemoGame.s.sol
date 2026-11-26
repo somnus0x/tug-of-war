@@ -98,7 +98,7 @@ contract DemoGame is TugScript {
         for (uint256 i; i < amounts.length; ++i) {
             if (amounts[i] != 0) _contribute(game, players[i], amounts[i]);
         }
-        console2.log("Raised including captain deposits (wei)", game.raised());
+        console2.log("Simulated raise including captain deposits (wei)", game.raised());
         _printClocks(game);
     }
 
@@ -126,7 +126,7 @@ contract DemoGame is TugScript {
         console2.log("Deadline before overtime", state.deadline);
         _contribute(game, trailing, amount);
         uint64 extendedDeadline = game.deadline();
-        console2.log("Deadline after overtime", extendedDeadline);
+        console2.log("Simulated deadline after overtime", extendedDeadline);
         if (extendedDeadline != expectedDeadline) revert OvertimeExtensionMismatch(state.deadline, extendedDeadline);
     }
 
@@ -135,9 +135,9 @@ contract DemoGame is TugScript {
         (bool ok, bytes4 reason) = game.canLaunch();
         TugScriptErrors.check(ok, reason);
         _send(_signer("CREATOR_PRIVATE_KEY"), address(game), abi.encodeCall(ITugLauncher.launch, ()), 0);
-        console2.log("Token", game.token());
-        console2.log("Pool", game.pool());
-        console2.log("Vault", game.vault());
+        console2.log("Simulated token", game.token());
+        console2.log("Simulated pool", game.pool());
+        console2.log("Simulated vault", game.vault());
     }
 
     function cancel() external {
@@ -145,7 +145,7 @@ contract DemoGame is TugScript {
         (bool ok, bytes4 reason) = game.canCancel();
         TugScriptErrors.check(ok, reason);
         _send(_signer("CREATOR_PRIVATE_KEY"), address(game), abi.encodeCall(ITugLauncher.cancel, ()), 0);
-        console2.log("Cancelled launcher", address(game));
+        console2.log("Simulated cancelled launcher", address(game));
     }
 
     function refund() external {
@@ -165,7 +165,7 @@ contract DemoGame is TugScript {
         for (uint256 i; i < players.length; ++i) {
             if (refunds[i] == 0) continue;
             _send(players[i].signer, address(game), abi.encodeCall(ITugLauncher.refund, ()), 0);
-            console2.log("Refund (wei)", players[i].signer.account, refunds[i]);
+            console2.log("Simulated refund (wei)", players[i].signer.account, refunds[i]);
         }
     }
 
@@ -195,17 +195,19 @@ contract DemoGame is TugScript {
             uint256 pending = vault.pendingRewards(player.account);
             if (pending == 0) continue;
             _send(player, address(vault), abi.encodeCall(ITugVault.claimRewards, ()), 0);
-            console2.log("Staker payout (wei)", player.account, pending);
+            console2.log("Simulated staker payout (wei)", player.account, pending);
         }
         for (uint256 i = 4; i < players.length; ++i) {
             Signer memory captain = players[i].signer;
             uint256 pending = vault.pendingCaptain(captain.account);
             if (pending != 0) {
                 _send(captain, address(vault), abi.encodeCall(ITugVault.claimCaptain, ()), 0);
-                console2.log("Captain BNB payout (wei)", captain.account, pending);
+                console2.log("Simulated captain BNB payout (wei)", captain.account, pending);
             }
             console2.log(
-                "Captain token vest end (Unix seconds)", captain.account, game.getCaptain(captain.account).vestEnd
+                "Simulated captain token vest end (Unix seconds)",
+                captain.account,
+                game.getCaptain(captain.account).vestEnd
             );
         }
     }
@@ -230,21 +232,27 @@ contract DemoGame is TugScript {
         if (maxRounds == 0) revert InvalidTradeRounds();
 
         uint256 tradingBalance = trade.trader.account.balance;
+        // Recover a prior buy even if its failed sell left the trader short of the next buy amount.
+        if (trade.token.balanceOf(trade.trader.account) != 0) {
+            _sellBalance(trade);
+        } else if (processor.marketQuoteBalance() == 0) {
+            _requireBalance(trade.trader, BUY_AMOUNT);
+        }
         uint256 rounds;
-        while (rounds < maxRounds && processor.marketQuoteBalance() == 0) {
-            if (rounds != 0 && trade.trader.account.balance < BUY_AMOUNT) break;
+        while (rounds < maxRounds && processor.marketQuoteBalance() == 0 && trade.trader.account.balance >= BUY_AMOUNT)
+        {
             _tradeRound(trade);
             ++rounds;
         }
-        console2.log("Trading rounds", rounds);
+        console2.log("Simulated trading rounds", rounds);
         if (trade.trader.account.balance < tradingBalance) {
-            console2.log("Trader net spend before gas (wei)", tradingBalance - trade.trader.account.balance);
+            console2.log("Simulated trader net spend before gas (wei)", tradingBalance - trade.trader.account.balance);
         }
-        console2.log("Processor market quote (wei)", processor.marketQuoteBalance());
+        console2.log("Simulated processor market quote (wei)", processor.marketQuoteBalance());
 
         uint256 beforeDispatch = address(vault).balance;
         _send(trade.trader, address(processor), abi.encodeCall(ITugTaxProcessor.dispatch, ()), 0);
-        console2.log("Native BNB delivered to the vault (wei)", address(vault).balance - beforeDispatch);
+        console2.log("Simulated native BNB delivered to the vault (wei)", address(vault).balance - beforeDispatch);
     }
 
     function _participants(ITugLauncher game) private view returns (Participant[6] memory players) {
@@ -320,7 +328,7 @@ contract DemoGame is TugScript {
         TugScriptErrors.check(amount != 0, ITugVault.ZeroAmount.selector);
         _approve(player.signer, token, address(vault), amount);
         _send(player.signer, address(vault), abi.encodeCall(ITugVault.stake, (amount, player.team)), 0);
-        console2.log("Total stake (token wei)", account, vault.stakeOf(account));
+        console2.log("Simulated total stake (token wei)", account, vault.stakeOf(account));
     }
 
     function _approve(Signer memory signer, IERC20 token, address spender, uint256 amount) private {
@@ -333,7 +341,6 @@ contract DemoGame is TugScript {
         IPancakeV2Router router = TugTestnet.ROUTER;
         address account = trade.trader.account;
         uint256 deadline = block.timestamp + 5 minutes;
-        uint256 beforeBuy = trade.token.balanceOf(account);
         uint256 buyMin = _tradeMinimum(BUY_AMOUNT, trade.buyPath, trade.buyTaxBps);
         _send(
             trade.trader,
@@ -344,15 +351,22 @@ contract DemoGame is TugScript {
             ),
             BUY_AMOUNT
         );
-        uint256 bought = trade.token.balanceOf(account) - beforeBuy;
-        _approve(trade.trader, trade.token, address(router), bought);
-        uint256 sellMin = _tradeMinimum(bought, trade.sellPath, trade.sellTaxBps);
+        _sellBalance(trade);
+    }
+
+    function _sellBalance(Trade memory trade) private {
+        IPancakeV2Router router = TugTestnet.ROUTER;
+        address account = trade.trader.account;
+        uint256 amount = trade.token.balanceOf(account);
+        _approve(trade.trader, trade.token, address(router), amount);
+        uint256 sellMin = _tradeMinimum(amount, trade.sellPath, trade.sellTaxBps);
+        uint256 deadline = block.timestamp + 5 minutes;
         _send(
             trade.trader,
             address(router),
             abi.encodeCall(
                 IPancakeV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens,
-                (bought, sellMin, trade.sellPath, account, deadline)
+                (amount, sellMin, trade.sellPath, account, deadline)
             ),
             0
         );

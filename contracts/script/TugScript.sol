@@ -81,12 +81,12 @@ abstract contract TugScript is Script {
 
     function _deposit(ITugLauncher game, Signer memory captain, uint256 amount) internal {
         _send(captain, address(game), abi.encodeCall(ITugLauncher.depositCaptain, ()), amount);
-        console2.log("Captain deposit (wei)", captain.account, amount);
+        console2.log("Simulated captain deposit (wei)", captain.account, amount);
     }
 
     function _printClocks(ITugLauncher game) internal view {
         GameView memory state = game.getGame();
-        console2.log("Accept deadline (Unix seconds)", state.acceptDeadline);
-        if (state.deadline != 0) console2.log("Buy-in deadline (Unix seconds)", state.deadline);
+        console2.log("Simulated accept deadline (Unix seconds)", state.acceptDeadline);
+        if (state.deadline != 0) console2.log("Simulated buy-in deadline (Unix seconds)", state.deadline);
     }
 }

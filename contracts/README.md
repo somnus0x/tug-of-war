@@ -19,6 +19,8 @@ For BSC testnet fork work, copy `.env.example` to `.env` and set `BSC_TESTNET_RP
 
 Work from `contracts/` after running the setup above. Nat runs the commands with `--broadcast`.
 
+Console values are simulated, and the transaction receipts and these calls are the record.
+
 ### 1. Prepare the wallets and RPC
 
 Copy the environment template and use testnet-only wallets. Fill in the RPC and the public captain addresses. Fill in the signer variables and the Etherscan API key after the fork check in step 2. The four player wallets and the two captain wallets are distinct. Use a separate wallet for the trader.
@@ -89,11 +91,11 @@ Give Flap both factory addresses and ask them to open both at 10,000 bps. Ask fo
 
 ### 5. Configure the web build
 
-Set the repository Actions variables `VITE_TUG_FACTORY` to the launcher factory address and `VITE_FIXTURES` to `0`. Run the **Web** workflow on `main` and verify the published app shows chain 97.
+Set the repository Actions variables `VITE_TUG_FACTORY` to the launcher factory address, `VITE_FIXTURES` to `0`, and `VITE_WC_PROJECT_ID` to a real Reown project ID. WalletConnect needs that ID to connect. Run the **Web** workflow on `main` and verify the published app shows chain 97.
 
 ### 6. Rehearse cancellation, overtime and refunds
 
-Define these shortcuts in the current shell. The create command prints the launcher address and accept deadline. Replace the address placeholder with that address after each creation. Contribution amounts are per-wallet targets, so a retry sends only the amount still needed.
+Define these shortcuts in the current shell and fill in the public addresses matching the four player keys. `CAPTAIN_BLUE` and `CAPTAIN_RED` come from `.env`. Contribution amounts are per-wallet targets, so a retry sends only the amount still needed.
 
 ```sh
 create_game() {
@@ -102,23 +104,29 @@ create_game() {
 phase() {
   forge script script/DemoGame.s.sol:DemoGame --sig "$1" --rpc-url "$BSC_TESTNET_RPC_URL" --broadcast --slow
 }
+export BLUE_PLAYER_1='<blue-player-1-address>' BLUE_PLAYER_2='<blue-player-2-address>'
+export RED_PLAYER_1='<red-player-1-address>' RED_PLAYER_2='<red-player-2-address>'
 ```
 
-For **cancellation**, set the accept window to 60 seconds and deposit for Blue immediately after creation.
+For **cancellation**, set the accept window to 120 seconds. Once creation confirms, paste the printed `export TUG_LAUNCHER=...` line and run `deposits()` straight away. Check that the game is still awaiting captains (`0`) and that the Blue captain's balance reflects the deposit.
 
 ```sh
 unset MIN_RAISE SALT SALT_SEED
-export DURATION=180 ACCEPT_WINDOW=60 WALLET_CAP=1000000000000000000
+export DURATION=180 ACCEPT_WINDOW=120 WALLET_CAP=1000000000000000000
 export CAPTAIN_MIN_DEPOSIT=15000000000000000 DEPOSIT_CAPTAINS=false
 create_game
-export TUG_LAUNCHER='<cancel-game-address>'
+# Paste the printed export TUG_LAUNCHER line here.
 CAPTAIN_DEPOSIT_TEAM=blue phase 'deposits()'
+cast call "$TUG_LAUNCHER" 'phase()(uint8)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast balance "$CAPTAIN_BLUE" --rpc-url "$BSC_TESTNET_RPC_URL"
 ```
 
-At or after the printed accept deadline, cancel and confirm the Blue captain's deposit came back.
+The accept deadline is the creation block's timestamp plus 120 seconds. At or after that deadline, cancel and confirm the game is cancelled (`5`) and the Blue captain's deposit came back.
 
 ```sh
 phase 'cancel()'
+cast call "$TUG_LAUNCHER" 'phase()(uint8)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast balance "$CAPTAIN_BLUE" --rpc-url "$BSC_TESTNET_RPC_URL"
 ```
 
 For **overtime and refunds**, use a new game and both captains. These planned contributions include the 0.03 tBNB already raised by the deposits and keep the game below its configured minimum.
@@ -129,29 +137,42 @@ export BLUE_PLAYER_1_AMOUNT=10000000000000000 BLUE_PLAYER_2_AMOUNT=1000000000000
 export RED_PLAYER_1_AMOUNT=5000000000000000 RED_PLAYER_2_AMOUNT=5000000000000000
 export OVERTIME_TEAM=red OVERTIME_AMOUNT=40000000000000000
 create_game
-export TUG_LAUNCHER='<refund-game-address>'
+# Paste the printed export TUG_LAUNCHER line here.
 CAPTAIN_DEPOSIT_TEAM=both phase 'deposits()'
+cast call "$TUG_LAUNCHER" 'phase()(uint8)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast balance "$CAPTAIN_BLUE" --rpc-url "$BSC_TESTNET_RPC_URL"
+cast balance "$CAPTAIN_RED" --rpc-url "$BSC_TESTNET_RPC_URL"
 phase 'contribute()'
+cast call "$TUG_LAUNCHER" 'raised()(uint256)' --rpc-url "$BSC_TESTNET_RPC_URL"
 ```
 
-After the clock enters the final 60 seconds, ideally with 30–45 seconds remaining, run overtime. Confirm the deadline advanced by 30 seconds. At or after the extended deadline, refund both captains and all four players.
+Read the on-chain deadline, then run overtime in the final 60 seconds, ideally with 30–45 seconds remaining. Compare the two on-chain deadline values and confirm they differ by 30 seconds. At or after the extended deadline, refund both captains and all four players, then check each balance and the refund receipts.
 
 ```sh
+cast call "$TUG_LAUNCHER" 'deadline()(uint64)' --rpc-url "$BSC_TESTNET_RPC_URL"
 phase 'overtime()'
+cast call "$TUG_LAUNCHER" 'deadline()(uint64)' --rpc-url "$BSC_TESTNET_RPC_URL"
 # Wait until the extended deadline.
 phase 'refund()'
+for wallet in "$CAPTAIN_BLUE" "$CAPTAIN_RED" "$BLUE_PLAYER_1" "$BLUE_PLAYER_2" "$RED_PLAYER_1" "$RED_PLAYER_2"; do
+  printf '%s ' "$wallet"
+  cast balance "$wallet" --rpc-url "$BSC_TESTNET_RPC_URL"
+done
 ```
 
 ### 7. Launch the real game
 
-Keep `MIN_RAISE` unset for the live floor plus the buffer. You can preview a salt and token address without sending a transaction. If you export the printed `SALT`, use it for this creation only. With `SALT` unset, `CreateGame` mines one automatically.
+Keep `MIN_RAISE` unset for the live floor plus the buffer. Use a 10-minute buy-in for the live run so pasting the launcher address and sending four contributions with `--slow` have time to finish. The plan's demo setting is 3 minutes. You can preview a salt and token address without sending a transaction. If you export the printed `SALT`, use it for this creation only. With `SALT` unset, `CreateGame` mines one automatically.
 
 ```sh
 forge script script/MineSalt.s.sol:MineSalt --rpc-url "$BSC_TESTNET_RPC_URL"
 export GAME_MODE=launch DEPOSIT_CAPTAINS=true CAPTAIN_MIN_DEPOSIT=100000000000000000
-export DURATION=180 ACCEPT_WINDOW=120
+export DURATION=600 ACCEPT_WINDOW=120
 create_game
-export TUG_LAUNCHER='<real-game-address>'
+# Paste the printed export TUG_LAUNCHER line here.
+cast call "$TUG_LAUNCHER" 'phase()(uint8)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast balance "$CAPTAIN_BLUE" --rpc-url "$BSC_TESTNET_RPC_URL"
+cast balance "$CAPTAIN_RED" --rpc-url "$BSC_TESTNET_RPC_URL"
 ```
 
 Read the selected minimum from `CreateGame` and fund the players accordingly. The example below brings the raise to 2.26 tBNB including both 0.10 tBNB deposits. Increase the amounts and fund the wallets first if the selected minimum is higher, while staying within each wallet's cap.
@@ -160,14 +181,37 @@ Read the selected minimum from `CreateGame` and fund the players accordingly. Th
 export BLUE_PLAYER_1_AMOUNT=600000000000000000 BLUE_PLAYER_2_AMOUNT=550000000000000000
 export RED_PLAYER_1_AMOUNT=500000000000000000 RED_PLAYER_2_AMOUNT=410000000000000000
 phase 'contribute()'
-# Wait until the displayed buy-in deadline.
+cast call "$TUG_LAUNCHER" 'raised()(uint256)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast call "$TUG_LAUNCHER" 'deadline()(uint64)' --rpc-url "$BSC_TESTNET_RPC_URL"
+# Wait until the on-chain buy-in deadline.
 phase 'launch()'
+cast call "$TUG_LAUNCHER" 'launched()(bool)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast call "$TUG_LAUNCHER" 'token()(address)' --rpc-url "$BSC_TESTNET_RPC_URL"
+cast call "$TUG_LAUNCHER" 'pool()(address)' --rpc-url "$BSC_TESTNET_RPC_URL"
+TUG_VAULT=$(cast call "$TUG_LAUNCHER" 'vault()(address)' --rpc-url "$BSC_TESTNET_RPC_URL")
+printf 'Vault %s\n' "$TUG_VAULT"
 phase 'claimAndStake()'
-phase 'tradeAndDispatch()'
-phase 'claimRewards()'
+cast call "$TUG_VAULT" 'teamStake(uint8)(uint256)' 1 --rpc-url "$BSC_TESTNET_RPC_URL"
+cast call "$TUG_VAULT" 'teamStake(uint8)(uint256)' 2 --rpc-url "$BSC_TESTNET_RPC_URL"
 ```
 
-Stake on both teams before trading so dispatch distributes new tax to both. The trader buys with 0.1 tBNB and sells the full amount bought per round, for up to `TRADE_ROUNDS` (default 5). Check the printed BNB delivered to the vault. If it is zero, replenish the trader's working balance if needed and run the phase again. `claimRewards()` pays available staker and captain BNB and logs the end of the captains' token vesting.
+Confirm `launched()` is `true` and both teams have positive stake before trading. The trader buys with 0.1 tBNB and sells its whole token balance per round, for up to `TRADE_ROUNDS` (default 5). If a trade round reverts, run `tradeAndDispatch()` again. It's safe to repeat.
+
+```sh
+cast balance "$TUG_VAULT" --rpc-url "$BSC_TESTNET_RPC_URL"
+phase 'tradeAndDispatch()'
+cast balance "$TUG_VAULT" --rpc-url "$BSC_TESTNET_RPC_URL"
+```
+
+Confirm tax reached the vault before claiming. If the vault balance stays at zero, replenish the trader's working balance if needed and run the trade phase again. `claimRewards()` pays available staker and captain BNB. Check the payout receipts and confirm pending staker rewards read `0` after claiming.
+
+```sh
+phase 'claimRewards()'
+for wallet in "$CAPTAIN_BLUE" "$CAPTAIN_RED" "$BLUE_PLAYER_1" "$BLUE_PLAYER_2" "$RED_PLAYER_1" "$RED_PLAYER_2"; do
+  printf '%s ' "$wallet"
+  cast call "$TUG_VAULT" 'pendingRewards(address)(uint256)' "$wallet" --rpc-url "$BSC_TESTNET_RPC_URL"
+done
+```
 
 ### 8. Record the result
 

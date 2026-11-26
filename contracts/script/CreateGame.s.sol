@@ -49,7 +49,8 @@ contract CreateGame is TugScript {
                 (address)
             )
         );
-        console2.log("Launcher", address(game));
+        console2.log("Simulated launcher", address(game));
+        console2.log(string.concat("export TUG_LAUNCHER=", vm.toString(address(game))));
 
         if (depositCaptains) {
             _checkCaptain(game, blue, config.captainBlue, config.captainMinDeposit);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
+import {IERC20} from "@openzeppelin/token/ERC20/IERC20.sol";
 import {Test} from "forge-std/Test.sol";
 import {IPortal} from "src/flap/IPortal.sol";
 import {LaunchVaultAddresses} from "src/flap/LaunchVaultAddresses.sol";
@@ -37,6 +38,7 @@ contract ScriptsForkTest is Test {
     CreateGame private createGame;
     DemoGame private demo;
     address[6] private participants;
+    address private trader;
 
     function test_RunDeployAndDemoScriptsOnBscTestnet() public {
         if (bytes(vm.envOr("BSC_TESTNET_RPC_URL", string(""))).length == 0) {
@@ -55,7 +57,7 @@ contract ScriptsForkTest is Test {
         participants[3] = _fund(RED_PLAYER_2_KEY, 6, 3 ether);
         participants[4] = _fund(BLUE_CAPTAIN_KEY, 7, 1 ether);
         participants[5] = _fund(RED_CAPTAIN_KEY, 8, 1 ether);
-        _fund("TRADER_PRIVATE_KEY", 9, 0.15 ether);
+        trader = _fund("TRADER_PRIVATE_KEY", 9, 0.15 ether);
 
         // Execute the Solidity script entrypoints without subjecting the script containers to the EIP-170 size limit.
         ForkDeploy deploy = ForkDeploy(address(0xD001));
@@ -74,12 +76,14 @@ contract ScriptsForkTest is Test {
         vm.setEnv("TUG_LAUNCHER_FACTORY", vm.toString(address(deployed.launcherFactory)));
 
         _realGame();
+        _retryTradeAfterUnfinishedRound();
         _cancelGame();
         _refundGame();
     }
 
     function _realGame() private {
         _configure("Tug Main", 0.1 ether, 120);
+        vm.setEnv("DURATION", "600");
         vm.setEnv("DEPOSIT_CAPTAINS", "true");
         vm.setEnv("GAME_MODE", "launch");
 
@@ -92,7 +96,7 @@ contract ScriptsForkTest is Test {
         _create("CreateGame.run real game");
         GameView memory state = game.getGame();
         assertEq(state.config.salt, salt);
-        assertEq(state.config.duration, 180);
+        assertEq(state.config.duration, 600);
         assertEq(state.config.acceptWindow, 120);
         uint256 floor = deployed.launcherFactory.limits().minRaiseFloor;
         assertGe(state.config.minRaise * 100, floor * 105);
@@ -146,6 +150,22 @@ contract ScriptsForkTest is Test {
         assertGt(vault.getCaptain(participants[5]).claimed, 0);
         assertEq(game.getCaptain(participants[4]).claimed, 0);
         assertEq(game.getCaptain(participants[5]).claimed, 0);
+    }
+
+    function _retryTradeAfterUnfinishedRound() private {
+        IERC20 token = IERC20(game.token());
+        address[] memory path = new address[](2);
+        path[0] = TugTestnet.ROUTER.WETH();
+        path[1] = address(token);
+        vm.prank(trader);
+        TugTestnet.ROUTER.swapExactETHForTokensSupportingFeeOnTransferTokens{value: 0.1 ether}(
+            0, path, trader, block.timestamp
+        );
+        assertGt(token.balanceOf(trader), 0);
+        assertLt(trader.balance, 0.1 ether);
+
+        _phase("DemoGame.tradeAndDispatch retry", DemoGame.tradeAndDispatch.selector);
+        assertEq(token.balanceOf(trader), 0);
     }
 
     function _cancelGame() private {

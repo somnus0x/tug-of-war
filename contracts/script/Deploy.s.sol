@@ -69,8 +69,8 @@ contract Deploy is TugScript {
             revert BeaconOwnerMismatch();
         }
         _writeDeployment(deployed, vaultBeacon, deployer.account);
-        console2.log("Launcher factory", factory);
-        console2.log("Vault factory", address(deployed.vaultFactory));
+        console2.log("Simulated launcher factory", factory);
+        console2.log("Simulated vault factory", address(deployed.vaultFactory));
     }
 
     function _writeDeployment(Deployment memory deployed, UpgradeableBeacon vaultBeacon, address deployer) private {
