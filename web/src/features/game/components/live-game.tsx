@@ -103,7 +103,7 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
         extensionSeconds={rules.overtimeExtension}
       />
     ),
-    headline: <GameHeadline headline={headline} />,
+    headline: <GameHeadline headline={headline} isPhone={mode === 'phone'} />,
     capNote: stageNoteOf(game, rules),
     blueTotals: <TeamTotals game={game} side="blue" account={account} />,
     redTotals: <TeamTotals game={game} side="red" account={account} />,

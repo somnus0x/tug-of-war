@@ -67,6 +67,7 @@ export const GAME_COPY = {
   pullSplit: (blue: string, red: string) => `Blue ${blue} pull · Red ${red} pull`,
   finalHolds: (team: string, share: string) => `Final: ${team} holds ${share} of the pull`,
   finalLevel: (share: string) => `Final: level at ${share}`,
+  finalHoldsShort: (team: string, share: string) => `Final: ${team} holds ${share}`,
   finalSplit: (blue: string, red: string) => `Final rope · Blue ${blue} pull · Red ${red} pull`,
   captainIn: (team: string, other: string) => `${team}’s captain is in. Waiting for ${other}.`,
   capNote: (cap: string, floor: string, keeper: string, floorShare: string) =>
@@ -100,6 +101,8 @@ export const GAME_COPY = {
     bnbIn: 'BNB in',
     capLeft: 'Cap left',
     yourPull: 'Your pull',
+    bnbReturned: 'BNB returned',
+    refunded: 'Refunded',
     pull: 'Pull',
     on: 'on',
     connect: 'Connect a wallet to pull.',

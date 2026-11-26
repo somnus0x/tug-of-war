@@ -2,9 +2,14 @@ import type { Player } from '@/contracts/types'
 import type { Phase } from '@/lib/phase'
 import type { BnbWei, PullWei } from '@/lib/units'
 
+export type YouBnb =
+  | { readonly kind: 'in'; readonly amount: BnbWei }
+  | { readonly kind: 'returned'; readonly amount: BnbWei }
+  | { readonly kind: 'refunded' }
+
 export type YouBox = {
   readonly team: 'blue' | 'red'
-  readonly bnbIn: BnbWei
+  readonly bnb: YouBnb
   readonly pull: PullWei
   readonly capLeft: BnbWei | null
   readonly showsLock: boolean
@@ -12,13 +17,29 @@ export type YouBox = {
 
 const LIVE_PHASES: ReadonlySet<Phase> = new Set(['awaitingCaptains', 'buyIn'])
 
-export const youBoxOf = (player: Player | null, phase: Phase): YouBox | null => {
+const bnbOf = (player: Player, phase: Phase, refunded: BnbWei | null): YouBnb => {
+  const hasRefunded =
+    phase === 'refunding' &&
+    player.contribution === 0n &&
+    player.refundable === 0n &&
+    (refunded !== null || player.pull > 0n)
+  if (!hasRefunded) {
+    return { kind: 'in', amount: player.contribution }
+  }
+  return refunded === null ? { kind: 'refunded' } : { kind: 'returned', amount: refunded }
+}
+
+export const youBoxOf = (
+  player: Player | null,
+  phase: Phase,
+  refunded: BnbWei | null = null,
+): YouBox | null => {
   if (player === null || player.team === 'none' || phase === 'cancelled') {
     return null
   }
   return {
     team: player.team,
-    bnbIn: player.contribution,
+    bnb: bnbOf(player, phase, refunded),
     pull: player.pull,
     capLeft: LIVE_PHASES.has(phase) ? player.remainingCap : null,
     showsLock: phase !== 'buyIn',

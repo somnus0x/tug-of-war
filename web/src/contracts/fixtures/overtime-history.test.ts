@@ -22,8 +22,16 @@ describe('mock overtime history', () => {
     let lastPullAt = 0n
     const marked: boolean[] = []
     const inWindow: boolean[] = []
+    const missed: number[] = []
+    let pendingLate = false
+    let extensions = 0
     for (const log of logs) {
+      if (pendingLate && log.kind !== 'overtime') {
+        missed.push(Number(lastPullAt))
+      }
+      pendingLate = false
       if (log.kind === 'overtime') {
+        extensions += 1
         marked.push(changedLast)
         const deadlineBefore =
           game.originalDeadline + FIXTURE_RULES.overtimeExtension * (log.extensionsUsed - 1)
@@ -34,10 +42,15 @@ describe('mock overtime history', () => {
         totals[log.team] += log.kind === 'contributed' ? log.pull : log.amount * 2n
         changedLast = log.kind === 'contributed' && before !== leaderOf(totals.blue, totals.red)
         lastPullAt = log.blockNumber
+        const deadlineNow = game.originalDeadline + FIXTURE_RULES.overtimeExtension * extensions
+        const at = Number(log.blockNumber)
+        pendingLate =
+          changedLast && at < deadlineNow && deadlineNow - at <= FIXTURE_RULES.overtimeWindow
       }
     }
     expect(marked.every(Boolean)).toBe(true)
     expect(inWindow.every(Boolean)).toBe(true)
+    expect(pendingLate ? [...missed, Number(lastPullAt)] : missed).toEqual([])
     expect(marked.length).toBeLessThanOrEqual(world.game(LAUNCHER, scope).game.extensionsUsed)
   })
 })

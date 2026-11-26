@@ -5,6 +5,7 @@ import type { Address } from 'viem'
 
 import { parseEther } from 'viem'
 
+import { weightBpsAt } from '@/lib/clock'
 import { TOTAL_SUPPLY } from '@/lib/launch'
 import { BPS_DENOMINATOR, bnbWei, mulBps, pullWei, tokenWei } from '@/lib/units'
 
@@ -98,7 +99,30 @@ const captainStake = (team: CaptainSide, game: Game, rules: Rules) => {
   return { team, bnb: bnbWei(game.phase === 'cancelled' ? 0n : bnb), pull }
 }
 
-const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
+const stakePull = (
+  bnb: BnbWei,
+  listed: bigint,
+  game: Game,
+  rules: Rules,
+  loadTime: number | undefined,
+): bigint => {
+  if (loadTime === undefined || game.gameStart === 0) {
+    return listed
+  }
+  const weight = weightBpsAt(
+    {
+      gameStart: game.gameStart,
+      originalDeadline: game.originalDeadline,
+      startWeightBps: rules.startWeightBps,
+    },
+    Math.min(game.deadline, loadTime) - 1,
+  )
+  const unit = 10n ** 15n
+  const atLoad = ((mulBps(bnb, weight) + unit - 1n) / unit) * unit
+  return listed > atLoad ? listed : atLoad
+}
+
+const stakeOf = (name: ViewerName, game: Game, rules: Rules, loadTime?: number) => {
   if (name === 'captain-blue') {
     return captainStake('blue', game, rules)
   }
@@ -112,7 +136,9 @@ const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
   return {
     team: stake.team,
     bnb: bnbWei(parseEther(stake.bnb)),
-    pull: pullWei(parseEther(stake.pull)),
+    pull: pullWei(
+      stakePull(bnbWei(parseEther(stake.bnb)), parseEther(stake.pull), game, rules, loadTime),
+    ),
     claimed: stake.claimed === true,
     refunded: stake.refunded === true && game.phase === 'refunding',
   }
@@ -130,8 +156,8 @@ export const refundedViewerOf = (
   return { account, amount: bnbWei(parseEther(stake.bnb)) }
 }
 
-export const historyStakeOf = (name: ViewerName, game: Game, rules: Rules) =>
-  playerOfStake(stakeOf(name, game, rules), game, rules, false)
+export const historyStakeOf = (name: ViewerName, game: Game, rules: Rules, loadTime?: number) =>
+  playerOfStake(stakeOf(name, game, rules, loadTime), game, rules, false)
 
 export const entitlements = (
   game: Game,
@@ -183,8 +209,12 @@ const playerOfStake = (
   }
 }
 
-export const viewerPlayer = (name: ViewerName, game: Game, rules: Rules): Player =>
-  playerOfStake(stakeOf(name, game, rules), game, rules)
+export const viewerPlayer = (
+  name: ViewerName,
+  game: Game,
+  rules: Rules,
+  loadTime?: number,
+): Player => playerOfStake(stakeOf(name, game, rules, loadTime), game, rules)
 
 const captainSideOf = (game: Game, account: Address): CaptainSide | null => {
   const lower = account.toLowerCase()
@@ -205,7 +235,12 @@ export const captainRead = (game: Game, rules: Rules, account: Address): PlayerR
   }
 }
 
-export const viewerRead = (name: ViewerName, game: Game, rules: Rules): PlayerRead => ({
-  player: viewerPlayer(name, game, rules),
+export const viewerRead = (
+  name: ViewerName,
+  game: Game,
+  rules: Rules,
+  loadTime?: number,
+): PlayerRead => ({
+  player: viewerPlayer(name, game, rules, loadTime),
   balance: bnbWei(name === 'fan-capped' ? parseEther('0.40') : parseEther(VIEWER_BALANCE)),
 })

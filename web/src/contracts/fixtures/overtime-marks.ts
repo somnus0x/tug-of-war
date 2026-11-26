@@ -34,6 +34,12 @@ export const overtimeMarks = (
   return new Map(marked.map((index, order) => [index, first + order]))
 }
 
+export const quietChangesOf = (
+  entries: readonly { readonly team: LogSide; readonly pull: bigint; readonly captain: boolean }[],
+  marks: ReadonlyMap<number, number>,
+): number[] =>
+  leadChangesOf(entries).filter((index) => !marks.has(index) && entries[index]?.captain === false)
+
 export type OvertimeClock = {
   readonly originalDeadline: number
   readonly extension: number
@@ -50,14 +56,17 @@ export const overtimeTimes = (
   times: readonly number[],
   marks: ReadonlyMap<number, number>,
   clock: OvertimeClock,
+  unmarkedChanges: readonly number[] = [],
 ): number[] => {
   const marked = [...marks.keys()].toSorted((a, b) => a - b)
   const first = marked[0]
-  if (first === undefined) {
-    return [...times]
-  }
   const ceiling = clock.originalDeadline - clock.window - 1
-  const result = times.map((time, index) => (index < first ? Math.min(time, ceiling) : time))
+  const lastQuiet = Math.max(-1, ...unmarkedChanges)
+  const cut = first === undefined ? lastQuiet + 1 : Math.max(first, lastQuiet + 1)
+  const result = times.map((time, index) => (index < cut ? Math.min(time, ceiling) : time))
+  if (first === undefined) {
+    return result
+  }
   const targets = new Map<number, number>()
   let floor = result[first - 1] ?? Number.MIN_SAFE_INTEGER
   for (const index of marked) {

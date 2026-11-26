@@ -21,6 +21,7 @@ import { SceneSky } from './scene-sky'
 import { sceneVars } from './scene-vars'
 import { Stand } from './stand'
 import { StandLabels } from './stand-labels'
+import { layoutTags, tagRequestsOf } from './tag-layout'
 import { useArrivalPlays } from './use-arrival-plays'
 import { VacantCaptain } from './vacant-captain'
 import { isVacant } from './vacant-sides'
@@ -72,6 +73,10 @@ export const Stage = memo(
       () => sceneLabels(crowd, walletCap, maxBonusShareBps, mode, text),
       [crowd, walletCap, maxBonusShareBps, mode, text],
     )
+    const tagTops = useMemo(
+      () => layoutTags(tagRequestsOf(crowd, placement, text), geometry.tag, geometry.width),
+      [crowd, placement, text, geometry],
+    )
     const pose = pulling ? 'pull' : 'idle'
     const plays = useArrivalPlays(crew, pulling || stage === 'waiting', playLength(reducedMotion))
     const acts = useMemo(
@@ -116,6 +121,7 @@ export const Stage = memo(
               geometry={geometry}
               youLabel={text.you}
               captainLabel={text.captain}
+              tagTops={tagTops}
               entries={acts.figures.blue}
               slides={slides}
             />
@@ -127,6 +133,7 @@ export const Stage = memo(
               geometry={geometry}
               youLabel={text.you}
               captainLabel={text.captain}
+              tagTops={tagTops}
               entries={acts.figures.red}
               slides={slides}
             />

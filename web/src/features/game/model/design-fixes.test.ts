@@ -74,7 +74,7 @@ describe('youBoxOf', () => {
     const game = gameOf('live-mid')
     expect(youBoxOf(playerOf('fan-blue', game), 'buyIn')).toEqual({
       team: 'blue',
-      bnbIn: bnb('0.25'),
+      bnb: { kind: 'in', amount: bnb('0.25') },
       pull: pullWei(bnb('0.37')),
       capLeft: bnb('0.25'),
       showsLock: false,
@@ -112,5 +112,32 @@ describe('after the clock', () => {
     expect(
       endedToneOf({ kind: 'floorBlocked', cause: 'belowFloor', graceEnd: 0, graceLeft: 0 }),
     ).toBe('hold')
+  })
+})
+
+describe('you box after a refund', () => {
+  const game = gameOf('refunding-min-missed')
+  const refunded = { ...playerOf('fan-blue', game), contribution: bnb('0'), refundable: bnb('0') }
+
+  it('shows the returned amount from the event, or just that it was refunded', () => {
+    expect(youBoxOf(refunded, 'refunding', bnb('0.25'))?.bnb).toEqual({
+      kind: 'returned',
+      amount: bnb('0.25'),
+    })
+    expect(youBoxOf(refunded, 'refunding')?.bnb).toEqual({ kind: 'refunded' })
+  })
+
+  it('keeps BNB in for a wallet that still has its contribution', () => {
+    expect(youBoxOf(playerOf('fan-blue', game), 'refunding')?.bnb).toEqual({
+      kind: 'in',
+      amount: bnb('0.25'),
+    })
+  })
+})
+
+describe('phone headline after the clock', () => {
+  it('fits a short final line', () => {
+    expect(pageHeadline(gameOf('ended-can-launch')).short).toMatch(/^Final: Blue holds \d+\.\d%$/)
+    expect(pageHeadline(gameOf('live-mid')).short).toBeUndefined()
   })
 })

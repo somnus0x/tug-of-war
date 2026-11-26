@@ -69,7 +69,7 @@ export const EndedSlot = ({
         <b className="ended__title">{view.title}</b>
         <span className="ended__body">{view.body}</span>
       </div>
-      {view.action?.kind === 'launch' ? (
+      {view.action?.kind === 'launch' || view.action?.kind === 'vault' ? (
         <p className="ended__coin">
           <Coin scale={2} />
           <span>{ENDED_COPY.oneCoin(game.config.name, game.config.symbol)}</span>

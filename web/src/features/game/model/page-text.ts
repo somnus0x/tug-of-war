@@ -17,7 +17,11 @@ import { BPS_DENOMINATOR, bps } from '@/lib/units'
 import { leadOf } from './derive-live'
 import { headlineOf } from './headline'
 
-export type PageHeadline = { readonly title: string; readonly detail: string | null }
+export type PageHeadline = {
+  readonly title: string
+  readonly detail: string | null
+  readonly short?: string
+}
 
 export type CaptainsIn = 'none' | 'blue' | 'red' | 'both'
 
@@ -60,6 +64,10 @@ const finalHeadline = (game: Game): PageHeadline => {
       lead === 'tie'
         ? GAME_COPY.finalLevel(share)
         : GAME_COPY.finalHolds(GAME_COPY.team[lead], share),
+    short:
+      lead === 'tie'
+        ? GAME_COPY.finalLevel(share)
+        : GAME_COPY.finalHoldsShort(GAME_COPY.team[lead], share),
     detail: GAME_COPY.finalSplit(formatPull(game.pullByTeam.blue), formatPull(game.pullByTeam.red)),
   }
 }
