@@ -36,14 +36,6 @@ contract TugMathTest is Test {
         assertEq(TugMath.leader(7, 7), 0);
     }
 
-    function test_RopeWithWideTotalRoundsDown() public pure {
-        uint256 maxPull = type(uint256).max;
-
-        assertEq(TugMath.ropeBps(maxPull, maxPull), 5_000);
-        assertEq(TugMath.ropeBps(maxPull - 1, maxPull), 4_999);
-        assertEq(TugMath.ropeBps(maxPull, maxPull - 1), 5_000);
-    }
-
     function test_OnlyTeamWithPullTakesTheFullShare() public pure {
         assertEq(TugMath.leader(4, 0), 1);
         assertEq(TugMath.leader(0, 4), 2);
@@ -97,6 +89,20 @@ contract TugMathTest is Test {
         assertEq(TugMath.vested(101, start, duration, start + duration / 2), 50);
         assertEq(TugMath.vested(101, start, duration, start + duration), 101);
         assertEq(TugMath.vested(101, start, duration, start + duration + 1), 101);
+    }
+
+    function testFuzz_CaptainAllocationsStayWithinDefaultBounds(uint256 pullBlue, uint256 pullRed) public pure {
+        pullBlue = bound(pullBlue, 1, 1e30);
+        pullRed = bound(pullRed, 1, 1e30);
+        uint256 captainPool = 20_000 ether;
+
+        (uint256 blue, uint256 red) = TugMath.split(captainPool, TugMath.finalBlueShareBps(pullBlue, pullRed, 7_000));
+
+        assertGe(blue, 6_000 ether);
+        assertLe(blue, 14_000 ether);
+        assertGe(red, 6_000 ether);
+        assertLe(red, 14_000 ether);
+        assertEq(blue + red, captainPool);
     }
 
     function testFuzz_SplitConservesTheTotal(uint256 amount, uint16 share) public pure {

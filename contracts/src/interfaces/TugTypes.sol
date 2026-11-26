@@ -109,7 +109,7 @@ struct TugConfig {
 /// @param raisedByTeam BNB raised by each team, in wei.
 /// @param pullByTeam Weighted contribution per team, in BNB wei.
 /// @param playersByTeam Number of players on each team.
-/// @param ropeBps Blue's current share of total pull, in basis points.
+/// @param ropeBps Blue's current share of total pull, in basis points. Rounds down. Use pullByTeam to decide the leader.
 /// @param autoLaunchRequestId Current Trigger Service request ID. Zero can be a valid ID.
 /// @param triggerBudget Unspent Trigger Service budget in BNB wei.
 /// @param triggerFunder Address eligible to withdraw the unused budget. Zero before scheduling.
