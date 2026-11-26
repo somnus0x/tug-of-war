@@ -1,11 +1,13 @@
+import type { CaptainTxName } from '../fixtures/captain-world'
+import type { PlainVaultTxName } from '../fixtures/vault-effects'
 import type { FixtureWorld } from '../fixtures/world'
 import type { Gate, SourceScope } from '../types'
 import type { ActionParams } from './actions'
 import type { ActionOutcomes } from './outcome'
-import type { VaultTxName } from './vault-actions'
 import type { LauncherActionName, TxActionName } from '@/lib/actions'
 import type { Address } from 'viem'
 
+import { CAPTAIN_STEPS } from '../fixtures/captain-world'
 import { applyEffect } from '../fixtures/effects'
 import { VAULT_STEPS } from '../fixtures/vault-effects'
 import { vaultWorldOf } from '../fixtures/vault-world'
@@ -76,7 +78,7 @@ const launcherStep =
   })
 
 const vaultStep =
-  <Name extends VaultTxName>(name: Name) =>
+  <Name extends PlainVaultTxName>(name: Name) =>
   (params: ActionParams[Name], place: StepPlace): FixtureStep<Name> => ({
     args: VAULT_ENTRIES[name].args(params),
     failsOnDemand: name !== 'approve',
@@ -90,6 +92,28 @@ const vaultStep =
         vaults: vaultWorldOf(place.world),
         context: { launcher: place.launcher, account, scope: place.scope },
         params,
+      }
+      return { gate: step.gate(input), apply: () => step.apply(input) }
+    },
+  })
+
+const captainStep =
+  <Name extends CaptainTxName>(
+    name: Name,
+    args: (params: ActionParams[Name]) => readonly unknown[],
+  ) =>
+  (params: ActionParams[Name], place: StepPlace): FixtureStep<Name> => ({
+    args: args(params),
+    failsOnDemand: true,
+    check: () => {
+      const { account } = place
+      if (account === undefined) {
+        return { gate: NO_WALLET, apply: noWallet }
+      }
+      const step = CAPTAIN_STEPS[name]
+      const input = {
+        vaults: vaultWorldOf(place.world),
+        context: { launcher: place.launcher, account, scope: place.scope },
       }
       return { gate: step.gate(input), apply: () => step.apply(input) }
     },
@@ -110,12 +134,12 @@ const STEPS: StepBuilders = {
   launch: launcherStep('launch'),
   refund: launcherStep('refund'),
   claim: launcherStep('claim'),
-  claimCaptain: launcherStep('claimCaptain'),
+  claimCaptain: captainStep('claimCaptain', (params) => buildCall('claimCaptain', params).args),
   withdrawTriggerBudget: launcherStep('withdrawTriggerBudget'),
   stake: vaultStep('stake'),
   unstake: vaultStep('unstake'),
   claimRewards: vaultStep('claimRewards'),
-  claimVaultCaptain: vaultStep('claimVaultCaptain'),
+  claimVaultCaptain: captainStep('claimVaultCaptain', VAULT_ENTRIES.claimVaultCaptain.args),
   approve: vaultStep('approve'),
 }
 

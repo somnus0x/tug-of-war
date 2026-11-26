@@ -1,3 +1,4 @@
+import type { CaptainRead } from './captain-types'
 import type { SourceScope, TeamPair } from './types'
 import type { Team } from '@/lib/team'
 import type { BnbWei, TokenWei } from '@/lib/units'
@@ -31,4 +32,9 @@ export type VaultSource = {
     account: Address,
     scope: SourceScope,
   ) => Promise<Staker>
+  readonly readCaptain: (
+    target: VaultTarget,
+    account: Address,
+    scope: SourceScope,
+  ) => Promise<CaptainRead>
 }

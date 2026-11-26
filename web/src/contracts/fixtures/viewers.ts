@@ -24,6 +24,7 @@ export const VIEWERS = [
   'staker-rewards',
   'staker-quiet',
   'fan-refunded',
+  'captain-blue-new',
 ] as const
 
 export type ViewerName = (typeof VIEWERS)[number]
@@ -51,6 +52,7 @@ const VIEWER_ADDRESSES: Record<ViewerName, Address | undefined> = {
   'staker-rewards': FIXTURE_ADDRESSES.stakerRewards,
   'staker-quiet': FIXTURE_ADDRESSES.stakerQuiet,
   'fan-refunded': FIXTURE_ADDRESSES.fanRefunded,
+  'captain-blue-new': FIXTURE_ADDRESSES.captainBlue,
 }
 
 export const viewerAddress = (name: ViewerName): Address | undefined => VIEWER_ADDRESSES[name]

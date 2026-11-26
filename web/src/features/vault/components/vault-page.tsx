@@ -45,6 +45,7 @@ export const VaultPage = ({ launcher }: VaultPageProps) => {
       account={data.account}
       player={data.player}
       staker={data.staker}
+      captain={data.captain}
       vault={data.vault}
       canClaim={data.canClaim}
       isVaultError={data.isVaultError}

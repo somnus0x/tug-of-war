@@ -1,14 +1,16 @@
 import type { PickedTeam } from '../tx/actions'
 import type { Player, SourceScope, TeamPair } from '../types'
 import type { Staker, Vault } from '../vault-types'
+import type { CaptainDeltas } from './captain-moments'
 import type { FixtureWorld } from './world'
 import type { Team } from '@/lib/team'
 import type { Address } from 'viem'
 
 import { bnbWei, tokenWei } from '@/lib/units'
 
+import { captainLedger } from './captain-moments'
 import { resolveFixture } from './catalog'
-import { FIXTURE_CAPTAIN_ACCRUED, basePools, rewardRates, stakerSeed } from './vault-seeds'
+import { basePools, rewardRates, stakerSeed } from './vault-seeds'
 import { resolveViewer } from './viewers'
 
 export type StakerOverlay = {
@@ -21,7 +23,7 @@ export type StakerOverlay = {
 
 export type VaultState = {
   readonly pool: TeamPair<bigint>
-  readonly captainClaimed: TeamPair<boolean>
+  readonly captainClaims: Readonly<Record<string, CaptainDeltas>>
   readonly stakers: Readonly<Record<string, StakerOverlay>>
 }
 
@@ -35,7 +37,7 @@ export const EMPTY_STAKER_OVERLAY: StakerOverlay = {
 
 export const EMPTY_VAULT_STATE: VaultState = {
   pool: { blue: 0n, red: 0n },
-  captainClaimed: { blue: false, red: false },
+  captainClaims: {},
   stakers: {},
 }
 
@@ -47,6 +49,7 @@ export type StakerContext = {
 
 export type VaultWorld = {
   readonly world: FixtureWorld
+  readonly anchor: number
   readonly state: (launcher: Address, scope: SourceScope) => VaultState
   readonly commit: (launcher: Address, scope: SourceScope, state: VaultState) => void
   readonly vault: (launcher: Address, scope: SourceScope) => Vault
@@ -97,6 +100,7 @@ const createVaultWorld = (world: FixtureWorld): VaultWorld => {
   const vault = (launcher: Address, scope: SourceScope): Vault => {
     const { game } = world.game(launcher, scope)
     const state = stateOf(launcher, scope)
+    const ledger = captainLedger(scope, state.captainClaims)
     const seed = stakerSeed(resolveViewer(scope.viewer, false))
     const base = basePools(resolveFixture(scope.fixture))
     const seedSide = seed.team ?? world.player(launcher, undefined, scope).player.team
@@ -114,20 +118,15 @@ const createVaultWorld = (world: FixtureWorld): VaultWorld => {
     return {
       teamStaked: { blue: tokenWei(pool.blue), red: tokenWei(pool.red) },
       rewardPer1000NewTokensPerBnb: { blue: bnbWei(rates.blue), red: bnbWei(rates.red) },
-      captainAccrued: {
-        blue: bnbWei(FIXTURE_CAPTAIN_ACCRUED.blue),
-        red: bnbWei(FIXTURE_CAPTAIN_ACCRUED.red),
-      },
-      captainClaimed: {
-        blue: bnbWei(state.captainClaimed.blue ? FIXTURE_CAPTAIN_ACCRUED.blue : 0n),
-        red: bnbWei(state.captainClaimed.red ? FIXTURE_CAPTAIN_ACCRUED.red : 0n),
-      },
+      captainAccrued: { blue: bnbWei(ledger.taxAccrued.blue), red: bnbWei(ledger.taxAccrued.red) },
+      captainClaimed: { blue: bnbWei(ledger.taxClaimed.blue), red: bnbWei(ledger.taxClaimed.red) },
       undistributed: bnbWei(0n),
     }
   }
 
   return {
     world,
+    anchor: world.now(),
     state: stateOf,
     commit: (launcher, scope, state) => {
       states.set(world.overlayKey(launcher, scope), state)

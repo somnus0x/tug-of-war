@@ -42,11 +42,6 @@ const BASE_POOLS: Partial<Record<FixtureName, TeamPair<bigint>>> = {
 
 export const basePools = (fixture: FixtureName): TeamPair<bigint> => BASE_POOLS[fixture] ?? NO_POOLS
 
-export const FIXTURE_CAPTAIN_ACCRUED: TeamPair<bigint> = {
-  blue: parseEther('0.042'),
-  red: parseEther('0.028'),
-}
-
 const ONE_BNB = 10n ** 18n
 
 const NEW_STAKE = 1000n * COIN

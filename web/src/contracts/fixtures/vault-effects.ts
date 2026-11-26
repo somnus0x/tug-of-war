@@ -4,9 +4,8 @@ import type { VaultTxName } from '../tx/vault-actions'
 import type { Gate } from '../types'
 import type { StakerContext, StakerOverlay, VaultState, VaultWorld } from './vault-world'
 
-import { bnbWei, tokenWei } from '@/lib/units'
+import { tokenWei } from '@/lib/units'
 
-import { FIXTURE_CAPTAIN_ACCRUED } from './vault-seeds'
 import { addToPool, stakerKey, stakerOverlayOf } from './vault-world'
 
 export type VaultStepInput<Name extends VaultTxName> = {
@@ -20,17 +19,16 @@ type VaultStep<Name extends VaultTxName> = {
   readonly apply: (input: VaultStepInput<Name>) => ActionOutcomes[Name]
 }
 
-type VaultSteps = { readonly [Name in VaultTxName]: VaultStep<Name> }
+export type PlainVaultTxName = Exclude<VaultTxName, 'claimVaultCaptain'>
+
+type VaultSteps = { readonly [Name in PlainVaultTxName]: VaultStep<Name> }
 
 const OK: Gate = { ok: true }
 
 const fail = (reason: string): Gate => ({ ok: false, reason })
 
-const stateOf = <Name extends VaultTxName>(input: VaultStepInput<Name>): VaultState =>
-  input.vaults.state(input.context.launcher, input.context.scope)
-
-const save = <Name extends VaultTxName>(
-  input: VaultStepInput<Name>,
+export const saveVault = (
+  input: { readonly vaults: VaultWorld; readonly context: StakerContext },
   change: (
     state: VaultState,
     current: StakerOverlay,
@@ -39,7 +37,7 @@ const save = <Name extends VaultTxName>(
     readonly staker: StakerOverlay
   },
 ): void => {
-  const state = stateOf(input)
+  const state = input.vaults.state(input.context.launcher, input.context.scope)
   const next = change(state, stakerOverlayOf(state, input.context.account))
   input.vaults.commit(input.context.launcher, input.context.scope, {
     ...next.state,
@@ -54,7 +52,7 @@ const moveStake = <Name extends VaultTxName>(
   allowanceAfter: (current: bigint) => bigint,
 ): void => {
   const before = input.vaults.staker(input.context)
-  save(input, (state, current) => ({
+  saveVault(input, (state, current) => ({
     state: { ...state, pool: addToPool(state.pool, team, delta) },
     staker: {
       ...current,
@@ -64,12 +62,6 @@ const moveStake = <Name extends VaultTxName>(
       allowance: allowanceAfter(before.allowance),
     },
   }))
-}
-
-const captainSide = <Name extends VaultTxName>(input: VaultStepInput<Name>): PickedTeam | null => {
-  const { launcher, account, scope } = input.context
-  const team = input.vaults.captainTeam(launcher, account, scope)
-  return team === 'none' ? null : team
 }
 
 export const VAULT_STEPS: VaultSteps = {
@@ -107,29 +99,17 @@ export const VAULT_STEPS: VaultSteps = {
       input.vaults.staker(input.context).pendingRewards === 0n ? fail('NothingToClaim') : OK,
     apply: (input) => {
       const amount = input.vaults.staker(input.context).pendingRewards
-      save(input, (state, current) => ({ state, staker: { ...current, rewardsClaimed: true } }))
-      return { amount }
-    },
-  },
-  claimVaultCaptain: {
-    gate: (input) => {
-      const side = captainSide(input)
-      if (side === null) return fail('NotCaptain')
-      return stateOf(input).captainClaimed[side] ? fail('NothingToClaim') : OK
-    },
-    apply: (input) => {
-      const side = captainSide(input) ?? 'blue'
-      save(input, (state, current) => ({
-        state: { ...state, captainClaimed: { ...state.captainClaimed, [side]: true } },
-        staker: current,
+      saveVault(input, (state, current) => ({
+        state,
+        staker: { ...current, rewardsClaimed: true },
       }))
-      return { amount: bnbWei(FIXTURE_CAPTAIN_ACCRUED[side]) }
+      return { amount }
     },
   },
   approve: {
     gate: () => OK,
     apply: (input) => {
-      save(input, (state, current) => ({
+      saveVault(input, (state, current) => ({
         state,
         staker: { ...current, allowance: input.params.amount },
       }))

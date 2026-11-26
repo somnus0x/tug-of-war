@@ -9,4 +9,6 @@ export const vaultKeys = {
     ['vault', chainId, launcher, ...scopeKey(scope)] as const,
   staker: (chainId: number, launcher: Address, account: Address | undefined, scope: SourceScope) =>
     ['staker', chainId, launcher, account ?? NO_ACCOUNT, ...scopeKey(scope)] as const,
+  captain: (chainId: number, launcher: Address, account: Address | undefined, scope: SourceScope) =>
+    ['captain', chainId, launcher, account ?? NO_ACCOUNT, ...scopeKey(scope)] as const,
 }

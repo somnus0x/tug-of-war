@@ -92,4 +92,30 @@ export const VAULT_COPY = {
     splitNone:
       'No one has staked yet, so the stakers’ part of the tax is held until someone stakes.',
   },
+  captain: {
+    coinsHeading: 'Captain coins',
+    allocation: 'Allocation',
+    vested: 'Vested',
+    claimed: 'Claimed',
+    bar: (vested: string, allocation: string, claimed: string, symbol: string) =>
+      `${vested} of ${allocation} ${symbol} vested, ${claimed} claimed`,
+    vestEnd: (date: string) => `Fully vested on ${date}.`,
+    vestDone: 'Fully vested.',
+    nothingYet: 'Vesting. Nothing to claim yet.',
+    allClaimed: 'Every vested captain coin is claimed.',
+    noAllocation: 'This game gives its captains no coins.',
+    noTeamAllocation: (team: string) =>
+      `The final rope gave ${team} no part of the captain coins, so this captain has none to vest.`,
+    claimCoins: (amount: string, symbol: string) => `Claim ${amount} ${symbol}`,
+    shareHeading: 'Captain tax share',
+    shareLine: (share: string, team: string, teamShare: string) =>
+      `Captains share ${share} of vault revenue. ${team}’s part is fixed at ${teamShare} by the final rope.`,
+    accrued: 'Accrued',
+    claimable: 'Claimable',
+    claimBnb: (amount: string) => `Claim ${amount} BNB`,
+    noShareYet: 'No BNB to claim yet. It builds up as people trade.',
+    noShareGame: 'This game gives its captains no share of vault revenue.',
+    noShareTeam: (team: string) =>
+      `The final rope fixed ${team}’s part at zero, so this captain earns no tax share.`,
+  },
 } as const

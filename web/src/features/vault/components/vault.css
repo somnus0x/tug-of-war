@@ -370,6 +370,23 @@
   overflow-wrap: anywhere;
 }
 
+.vault-vest {
+  display: block;
+  width: calc(100% - 2 * var(--outline));
+  height: 18px;
+  margin: var(--outline);
+  background: var(--ink-0);
+  box-shadow: 0 0 0 var(--outline) var(--ink-2);
+}
+
+.vault-vest__vested {
+  fill: var(--gold);
+}
+
+.vault-vest__claimed {
+  fill: var(--rope-d);
+}
+
 @media (min-width: 760px) {
   .vault__cards {
     grid-template-columns: repeat(3, minmax(0, 1fr));

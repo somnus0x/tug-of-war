@@ -10,16 +10,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TEAM_RED } from '@/lib/team'
 import { tokenWei } from '@/lib/units'
 
-import { tugVaultAbi } from '../abis'
+import { tugLauncherAbi, tugVaultAbi } from '../abis'
 import { vaultWorldOf } from '../fixtures/vault-world'
 import { viewerAddress } from '../fixtures/viewers'
 import { createFixtureWorld } from '../fixtures/world'
+import { ACTIONS } from './actions'
 import { fillTradeUrl } from './explorer'
 import { fixtureStep } from './fixture-step'
 import { decodeOutcome } from './outcome'
 import { invalidationKeys } from './refresh'
 import { resolveCall } from './tx-calls'
 import { runFixtureTx } from './tx-runner'
+import { VAULT_ENTRIES } from './vault-actions'
 
 const LAUNCHER: Address = '0x0000000000000000000000000000000000000001'
 const VAULT: Address = '0x8e6c4a2b0d9f7e5c3a1b2d4f6e8a0c9b7d5e3f1a'
@@ -206,5 +208,39 @@ describe('trade link', () => {
     expect(fillTradeUrl('https://example.test/coin/{token}', TOKEN)).toBe(
       `https://example.test/coin/${TOKEN}`,
     )
+  })
+})
+
+describe('the two captain claims', () => {
+  it('cannot be confused: contract, function, event and refresh differ', () => {
+    const place = { launcher: LAUNCHER, target: VAULT }
+    const coins = resolveCall('claimCaptain', {}, place)
+    const share = resolveCall('claimVaultCaptain', {}, place)
+    expect(coins).toMatchObject({ address: LAUNCHER, functionName: 'claimCaptain' })
+    expect(coins.abi).toBe(tugLauncherAbi)
+    expect(share).toMatchObject({ address: VAULT, functionName: 'claimCaptain' })
+    expect(share.abi).toBe(tugVaultAbi)
+    expect(ACTIONS.claimCaptain.event).toBe('CaptainVested')
+    expect(VAULT_ENTRIES.claimVaultCaptain.event).toBe('CaptainClaimed')
+    expect(groupsOf('claimCaptain')).toEqual(['captain', 'staker', 'gates', 'balance'])
+    expect(groupsOf('claimVaultCaptain')).toEqual(['vault', 'captain', 'gates', 'balance'])
+  })
+
+  it('decodes each claim only from its own contract event', () => {
+    const [first, ...rest] = encodeEventTopics({
+      abi: tugLauncherAbi,
+      eventName: 'CaptainVested',
+      args: { captain: ME },
+    })
+    if (typeof first !== 'string') throw new Error('no topic')
+    const topics = rest.filter((topic): topic is `0x${string}` => typeof topic === 'string')
+    const vested = logOf(
+      LAUNCHER,
+      [first, ...topics],
+      encodeAbiParameters([{ type: 'uint256' }], [5n * COIN]),
+    )
+    const context = { launcher: LAUNCHER, target: VAULT, account: ME, logs: [vested] }
+    expect(decodeOutcome('claimCaptain', context)).toEqual({ amount: 5n * COIN })
+    expect(decodeOutcome('claimVaultCaptain', context)).toBeNull()
   })
 })

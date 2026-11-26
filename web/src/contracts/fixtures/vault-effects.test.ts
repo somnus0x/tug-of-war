@@ -1,6 +1,6 @@
 import type { ActionParams } from '../tx/actions'
-import type { VaultTxName } from '../tx/vault-actions'
 import type { SourceScope } from '../types'
+import type { PlainVaultTxName } from './vault-effects'
 import type { ViewerName } from './viewers'
 import type { Address } from 'viem'
 
@@ -24,7 +24,7 @@ const setup = (viewer: ViewerName) => {
   const account = viewerAddress(viewer)
   if (account === undefined) throw new Error('viewer needs a wallet')
   const context = { launcher: LAUNCHER, account, scope }
-  const step = <Name extends VaultTxName>(name: Name, params: ActionParams[Name]) => {
+  const step = <Name extends PlainVaultTxName>(name: Name, params: ActionParams[Name]) => {
     const input = { vaults, context, params }
     const entry = VAULT_STEPS[name]
     return { gate: entry.gate(input), apply: () => entry.apply(input) }
@@ -121,19 +121,5 @@ describe('vault mock effects', () => {
     expect(staker.step('claimRewards', {}).apply()).toEqual({ amount: pending })
     expect(staker.staker().pendingRewards).toBe(0n)
     expect(staker.step('claimRewards', {}).gate).toEqual({ ok: false, reason: 'NothingToClaim' })
-  })
-
-  it('lets only a captain claim the captain share, once', () => {
-    expect(setup('fan-blue').step('claimVaultCaptain', {}).gate).toEqual({
-      ok: false,
-      reason: 'NotCaptain',
-    })
-    const captain = setup('captain-blue')
-    expect(captain.step('claimVaultCaptain', {}).gate).toEqual({ ok: true })
-    captain.step('claimVaultCaptain', {}).apply()
-    expect(captain.step('claimVaultCaptain', {}).gate).toEqual({
-      ok: false,
-      reason: 'NothingToClaim',
-    })
   })
 })

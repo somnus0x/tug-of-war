@@ -1,4 +1,5 @@
 import type { WalletRead } from '../model/wallet-read'
+import type { CaptainRead } from '@/contracts/captain-types'
 import type { Game, Player, Rules } from '@/contracts/types'
 import type { Staker, Vault } from '@/contracts/vault-types'
 import type { Address } from 'viem'
@@ -11,6 +12,8 @@ import { PixelBox } from '@/ui/pixel-box'
 import { Spinner } from '@/ui/spinner'
 
 import { viewerKindOf } from '../model/vault-cards'
+import { CaptainCoinsCard } from './captain-coins-card'
+import { CaptainShareCard } from './captain-share-card'
 import { CoinStrip } from './coin-strip'
 import { PoolsCard } from './pools-card'
 import { RewardsCard } from './rewards-card'
@@ -25,6 +28,7 @@ type VaultBoardProps = {
   account: Address | undefined
   player: WalletRead<Player>
   staker: WalletRead<Staker>
+  captain: WalletRead<CaptainRead>
   vault: Vault | null
   canClaim: boolean | null
   isVaultError: boolean
@@ -38,6 +42,7 @@ export const VaultBoard = ({
   account,
   player,
   staker,
+  captain,
   vault,
   canClaim,
   isVaultError,
@@ -78,6 +83,8 @@ export const VaultBoard = ({
         ) : (
           <PoolsCard game={game} vault={vault} />
         )}
+        <CaptainCoinsCard game={game} captain={captain} />
+        <CaptainShareCard game={game} captain={captain} />
       </div>
     </div>
   )

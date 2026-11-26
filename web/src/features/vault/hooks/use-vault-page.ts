@@ -7,7 +7,7 @@ import {
   useRules,
   useViewerAccount,
 } from '@/contracts/queries/use-game-queries'
-import { useStaker, useVault } from '@/contracts/queries/use-vault-queries'
+import { useCaptain, useStaker, useVault } from '@/contracts/queries/use-vault-queries'
 import { useWallet } from '@/features/wallet/use-wallet'
 
 import { walletReadOf } from '../model/wallet-read'
@@ -26,6 +26,7 @@ export const useVaultPage = (launcher: Address) => {
   }
   const vault = useVault(place)
   const staker = useStaker(place, account)
+  const captain = useCaptain(place, account)
   const { gates } = useGates(launcher, account, null)
   return {
     account,
@@ -35,6 +36,7 @@ export const useVaultPage = (launcher: Address) => {
     player: walletReadOf(account, player.data?.player, player.isError),
     vault: vault.data ?? null,
     staker: walletReadOf(account, staker.data, staker.isError),
+    captain: walletReadOf(account, captain.data, captain.isError),
     canClaim: gates?.claim === null || gates?.claim === undefined ? null : gates.claim.ok,
     isError: game.isError || rules.isError,
     isVaultError: vault.isError,

@@ -53,6 +53,27 @@ export const stakerQueryOptions = (
   })
 }
 
+export const captainQueryOptions = (
+  place: VaultPlace,
+  account: Address | undefined,
+  scope: SourceScope,
+) => {
+  const { launcher, vault } = place
+  return queryOptions({
+    queryKey: vaultKeys.captain(CHAIN_ID, launcher, account, scope),
+    queryFn:
+      vault === undefined || account === undefined
+        ? skipToken
+        : () => vaultSource.readCaptain({ launcher, vault }, account, scope),
+    ...live(place.phase),
+  })
+}
+
+export const useCaptain = (place: VaultPlace, account: Address | undefined) => {
+  const scope = useSourceScope()
+  return useQuery(captainQueryOptions(place, account, scope))
+}
+
 export const useVault = (place: VaultPlace) => {
   const scope = useSourceScope()
   return useQuery(vaultQueryOptions(place, scope))
