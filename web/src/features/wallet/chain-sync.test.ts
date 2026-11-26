@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { syncChain } from './chain-sync'
 
@@ -74,5 +74,43 @@ describe('syncChain', () => {
     }
     await expect(syncChain(TARGET, store.deps)).resolves.toBe(false)
     expect(store.announced).toEqual([])
+  })
+})
+
+const silentStore = () => {
+  const store = fakeStore(56, undefined)
+  store.deps.walletChainId = () => new Promise<number | undefined>(() => undefined)
+  store.deps.timeoutMs = 10_000
+  return store
+}
+
+describe('syncChain with a wallet that never answers', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('agrees when the store reaches the chain later', async () => {
+    vi.useFakeTimers()
+    const store = silentStore()
+    const agreed = syncChain(TARGET, store.deps)
+    await vi.advanceTimersByTimeAsync(3000)
+    store.set(TARGET)
+    await expect(agreed).resolves.toBe(true)
+    expect(store.listening()).toBe(0)
+  })
+
+  it('fails at the deadline when nothing changes', async () => {
+    vi.useFakeTimers()
+    const store = silentStore()
+    let settled: boolean | undefined
+    const watchResult = async (): Promise<void> => {
+      settled = await syncChain(TARGET, store.deps)
+    }
+    void watchResult()
+    await vi.advanceTimersByTimeAsync(9999)
+    expect(settled).toBeUndefined()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(settled).toBe(false)
+    expect(store.listening()).toBe(0)
   })
 })
