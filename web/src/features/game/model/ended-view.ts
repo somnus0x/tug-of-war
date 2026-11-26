@@ -1,4 +1,5 @@
 import type { EndedPanel } from './ended-panel'
+import type { LaunchedClaim } from './launched-claim'
 import type { Game, Rules } from '@/contracts/types'
 import type { BnbWei } from '@/lib/units'
 
@@ -12,7 +13,7 @@ export type EndedAction =
   | { readonly kind: 'launch' }
   | { readonly kind: 'refund'; readonly amount: BnbWei }
   | { readonly kind: 'connect' }
-  | { readonly kind: 'vault' }
+  | { readonly kind: 'vault'; readonly claim: boolean; readonly primary: boolean }
 
 export type EndedView = {
   readonly title: string
@@ -44,11 +45,40 @@ export const endedToneOf = (panel: EndedPanel): EndedTone => {
   }
 }
 
+const CLAIM_LINES: Record<LaunchedClaim, (symbol: string) => string | null> = {
+  visitor: () => ENDED_COPY.connectToSee,
+  unknown: () => null,
+  claim: () => ENDED_COPY.claimNext,
+  checking: () => ENDED_COPY.coinsChecked,
+  claimed: () => ENDED_COPY.coinsClaimed,
+  none: (symbol) => ENDED_COPY.noCoins(symbol),
+}
+
+export const launchedView = (
+  game: Game,
+  rules: Rules,
+  raised: BnbWei,
+  claim: LaunchedClaim,
+): EndedView => {
+  const pool = ENDED_COPY.pool(formatBnb(raised), poolCoinsOf(rules), game.config.symbol)
+  const line = CLAIM_LINES[claim](game.config.symbol)
+  return {
+    title: ENDED_COPY.live(game.config.name),
+    body: line === null ? pool : `${pool} ${line}`,
+    action: {
+      kind: 'vault',
+      claim: claim === 'claim',
+      primary: claim === 'claim' || claim === 'claimed',
+    },
+  }
+}
+
 export const endedViewOf = (
   panel: EndedPanel,
   game: Game,
   rules: Rules,
   isLaunching: boolean,
+  claim: LaunchedClaim = 'unknown',
 ): EndedView | null => {
   switch (panel.kind) {
     case 'canLaunch':
@@ -76,11 +106,7 @@ export const endedViewOf = (
         action: null,
       }
     case 'launched':
-      return {
-        title: ENDED_COPY.live(game.config.name),
-        body: ENDED_COPY.pool(formatBnb(panel.raised), poolCoinsOf(rules), game.config.symbol),
-        action: { kind: 'vault' },
-      }
+      return launchedView(game, rules, panel.raised, claim)
     case 'refundAvailable':
       return {
         title: refundTitle(panel.reason),

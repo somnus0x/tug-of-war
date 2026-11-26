@@ -4,7 +4,7 @@ import type { Address } from 'viem'
 
 import { EMPTY_GATES } from '@/contracts/gate-plan'
 import { useGameLogs } from '@/contracts/queries/use-game-logs'
-import { useGates, useRefetchAtDeadline } from '@/contracts/queries/use-game-queries'
+import { useGates, usePlayer, useRefetchAtDeadline } from '@/contracts/queries/use-game-queries'
 import { ENDED_COPY } from '@/copy/ended'
 import { Coin } from '@/scene/coin'
 import { PixelBox } from '@/ui/pixel-box'
@@ -15,6 +15,7 @@ import { graceEndOf } from '../model/derive-screen'
 import { deriveEndedPanel } from '../model/ended-panel'
 import { endedToneOf, endedViewOf } from '../model/ended-view'
 import { autoLaunchStatusOf, refundedAmountOf } from '../model/game-events'
+import { launchedClaimFromReads } from '../model/launched-claim'
 import { deriveRoles } from '../model/roles'
 import { EndedAction } from './ended-action'
 import { WithdrawLine } from './withdraw-line'
@@ -42,7 +43,9 @@ export const EndedSlot = ({
   isCompact,
   actions,
 }: EndedSlotProps) => {
-  const gates = useGates(launcher, account, null).gates
+  const gateAnswer = useGates(launcher, account, null)
+  const gates = gateAnswer.gates
+  const playerQuery = usePlayer(launcher, account)
   const logs = useGameLogs(launcher, game).state?.logs ?? NO_LOGS
   const chainNow = useChainNow(game.deadline)
   const { launch, refund } = actions
@@ -61,7 +64,20 @@ export const EndedSlot = ({
   if (state === null) {
     return null
   }
-  const view = endedViewOf(state.panel, game, rules, launch.state !== 'idle')
+  const claim = launchedClaimFromReads({
+    account,
+    player: {
+      data: playerQuery.data?.player ?? null,
+      isSuccess: playerQuery.isSuccess,
+      isFetchedAfterMount: playerQuery.isFetchedAfterMount,
+    },
+    gates: {
+      account: gateAnswer.account,
+      claim: gates?.claim ?? null,
+      isFresh: gateAnswer.isFresh,
+    },
+  })
+  const view = endedViewOf(state.panel, game, rules, launch.state !== 'idle', claim)
   if (view === null) {
     return null
   }

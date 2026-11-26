@@ -84,7 +84,7 @@ export const TX_COPY = {
     } satisfies TxMessage,
     launched: (input: { name: string; raised: string }): TxMessage => ({
       title: `${input.name} is live`,
-      body: `The pool holds ${input.raised} BNB. Claim your coins next.`,
+      body: `The pool holds ${input.raised} BNB.`,
     }),
     alreadyLaunched: ALREADY_LAUNCHED,
     refunded: (input: { amount: string }): TxMessage => ({

@@ -51,12 +51,12 @@ export const EndedAction = ({
     return (
       <div className="ended__links">
         <Link
-          className={linkClass('primary')}
+          className={linkClass(action.primary ? 'primary' : 'tile')}
           to="/g/$launcher/vault"
           params={{ launcher }}
           search={true}
         >
-          {ENDED_COPY.claimCoins}
+          {action.claim ? ENDED_COPY.claimCoins : ENDED_COPY.openVault}
         </Link>
         {trade === null ? null : (
           <a className={linkClass('tile')} href={trade}>

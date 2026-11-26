@@ -13,8 +13,15 @@ export const ENDED_COPY = {
   seeding: (raised: string) => `Creating the coin and seeding the pool with ${raised} BNB.`,
   live: (name: string) => `${name} is live`,
   pool: (raised: string, coins: string, symbol: string) =>
-    `The pool holds ${raised} BNB and ${coins} ${symbol}. Claim your coins next.`,
+    `The pool holds ${raised} BNB and ${coins} ${symbol}.`,
+  claimNext: 'Claim your coins next.',
+  connectToSee: 'Connect a wallet to see its coins.',
+  coinsChecked: 'Your coins are being checked.',
+  coinsClaimed: 'Your coins are claimed. Stake them in the vault.',
+  noCoins: (symbol: string) =>
+    `This wallet did not pull in this game, so it has no coins to claim. Anyone who holds ${symbol} can stake.`,
   claimCoins: 'Claim my coins',
+  openVault: 'Open the vault',
   trade: 'Trade on Flap',
   minMissed: 'Minimum raise missed',
   minMissedBody: (raised: string, minRaise: string) =>
