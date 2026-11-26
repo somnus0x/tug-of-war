@@ -2,6 +2,7 @@ import type { PreparedCreate } from './config'
 import type { CreateStage } from './create-button'
 import type { FieldName } from './form-values'
 import type { ReasonProblem } from './reason-field'
+import type { CreateLimits } from '@/contracts/create-types'
 import type { TxMessage } from '@/copy/tx'
 
 export type FieldProblem = { readonly field: FieldName; readonly text: string }
@@ -63,3 +64,14 @@ export const checkFailed = (state: FlowState, problem: TxMessage): FlowState => 
 
 export const keyedFor = <T>(keyed: Keyed<T> | null, liveKey: string | null): T | null =>
   keyed !== null && keyed.key === liveKey ? keyed.value : null
+
+const bigintText = (_key: string, value: unknown): unknown =>
+  typeof value === 'bigint' ? value.toString() : value
+
+export const limitsKeyOf = (limits: CreateLimits): string => JSON.stringify(limits, bigintText)
+
+export const judgedKey = (configKey: string, limits: CreateLimits): string =>
+  `${configKey}|${limitsKeyOf(limits)}`
+
+export const recheckDue = (judgedLive: string | null, checked: string | null): boolean =>
+  judgedLive !== null && judgedLive !== checked

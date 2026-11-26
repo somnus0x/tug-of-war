@@ -28,7 +28,9 @@ import {
   checkPassed,
   checkRejected,
   checkStarted,
+  judgedKey,
   keyedFor,
+  recheckDue,
   withProblem,
   withStage,
 } from '../model/flow-state'
@@ -110,12 +112,14 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
     return form === null || salt === null ? null : buildConfig(form, setup, salt.salt)
   }, [check.parsed, salt, setup])
   const liveKey = liveConfig === null ? null : configKey(liveConfig)
+  const judgedLive = liveKey === null ? null : judgedKey(liveKey, limits)
 
   const checkConfig = useCallback(
     async (run: number, form: CompleteForm, found: SaltFound, fresh: CreateLimits) => {
       const config = buildConfig(form, setup, found.salt)
       const key = configKey(config)
-      checkedKey.current = key
+      const judged = judgedKey(key, fresh)
+      checkedKey.current = judged
       setFlow(checkStarted)
       try {
         const result = await calls.validateConfig(config)
@@ -123,7 +127,7 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
           return null
         }
         if (!result.ok) {
-          setFlow((state) => checkRejected(state, key, reasonProblem(result.reason, fresh)))
+          setFlow((state) => checkRejected(state, judged, reasonProblem(result.reason, fresh)))
           if (result.reason === 'InvalidSalt') {
             setSalt(null)
           }
@@ -150,7 +154,7 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
 
   useEffect(() => {
     const form = check.parsed === null ? null : withMeta(check.parsed, null)
-    const isStale = !busy && liveKey !== checkedKey.current
+    const isStale = !busy && recheckDue(judgedLive, checkedKey.current)
     const timer = setTimeout(() => {
       if (form !== null && salt !== null && isStale) {
         runRef.current += 1
@@ -160,7 +164,7 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
     return () => {
       clearTimeout(timer)
     }
-  }, [check.parsed, salt, busy, liveKey, checkConfig, limits])
+  }, [check.parsed, salt, busy, judgedLive, checkConfig, limits])
 
   const upload = (file: File, description: string) => {
     abortRef.current?.abort()
@@ -253,7 +257,7 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
     salt,
     prepared: current,
     problem: flow.problem,
-    fieldProblem: keyedFor(flow.fieldProblem, liveKey),
+    fieldProblem: keyedFor(flow.fieldProblem, judgedLive),
     uploadFailed:
       failedFile !== null && failedFile === input.file && input.values.cid.trim() === '',
     submit,
@@ -267,9 +271,13 @@ export const useCreateFlow = (input: FlowInput): CreateFlow => {
       if (!reasonAppliesTo(attemptKey, liveKey)) {
         return
       }
-      checkedKey.current = attemptKey
+      const judged = judgedKey(attemptKey, fresh ?? limits)
+      checkedKey.current = judged
       const mapped = reasonProblem(reason, fresh ?? limits)
-      setFlow((state) => checkRejected(withStage(state, IDLE_STAGE), attemptKey, mapped))
+      setFlow((state) => checkRejected(withStage(state, IDLE_STAGE), judged, mapped))
+      if (fresh !== null) {
+        void input.refetchLimits()
+      }
       if (reason === 'InvalidSalt') {
         setSalt(null)
       }

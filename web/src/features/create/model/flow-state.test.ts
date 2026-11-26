@@ -7,7 +7,16 @@ import { describe, expect, it } from 'vitest'
 import { MOCK_DEFAULT_CONFIG } from '@/contracts/fixtures/create-fixture'
 import { bnbWei } from '@/lib/units'
 
-import { INITIAL_FLOW, checkPassed, checkRejected, checkStarted, keyedFor } from './flow-state'
+import { hasBlockingErrors } from './create-button'
+import {
+  INITIAL_FLOW,
+  checkPassed,
+  checkRejected,
+  checkStarted,
+  judgedKey,
+  keyedFor,
+  recheckDue,
+} from './flow-state'
 import { cidAfterFileChange } from './form-values'
 import { reasonProblem } from './reason-field'
 
@@ -57,6 +66,43 @@ describe('flow state', () => {
   it('hides keyed values once the inputs move on', () => {
     expect(keyedFor({ key: 'a', value: 1 }, 'b')).toBeNull()
     expect(keyedFor({ key: 'a', value: 1 }, null)).toBeNull()
+  })
+})
+
+const at = (floor: string): CreateLimits => ({
+  ...LIMITS,
+  minRaiseFloor: bnbWei(parseEther(floor)),
+})
+
+describe('factory field error under changing limits', () => {
+  const CONFIG_KEY = 'minRaise=3'
+
+  it('lifts the block when the floor falls and lets a retry pass', () => {
+    const rejected = checkRejected(
+      checkStarted(INITIAL_FLOW),
+      judgedKey(CONFIG_KEY, at('3.5')),
+      reasonProblem('MinRaiseBelowCreationFloor', at('3.5')),
+    )
+    const live = judgedKey(CONFIG_KEY, at('2.5'))
+    const visible = keyedFor(rejected.fieldProblem, live)
+    expect(visible).toBeNull()
+    expect(hasBlockingErrors({}, visible)).toBe(false)
+    expect(recheckDue(live, judgedKey(CONFIG_KEY, at('3.5')))).toBe(true)
+    const passed = checkPassed(checkStarted(rejected), CONFIG_KEY, READY)
+    expect(passed.fieldProblem).toBeNull()
+    expect(passed.stage).toEqual({ kind: 'ready' })
+  })
+
+  it('keeps the block while the floor stays where it was', () => {
+    const judged = judgedKey(CONFIG_KEY, at('3.5'))
+    const rejected = checkRejected(
+      INITIAL_FLOW,
+      judged,
+      reasonProblem('MinRaiseBelowCreationFloor', at('3.5')),
+    )
+    const live = judgedKey(CONFIG_KEY, at('3.5'))
+    expect(hasBlockingErrors({}, keyedFor(rejected.fieldProblem, live))).toBe(true)
+    expect(recheckDue(live, judged)).toBe(false)
   })
 })
 
