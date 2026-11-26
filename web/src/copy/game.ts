@@ -39,6 +39,10 @@ export const GAME_COPY = {
   acceptClosed: 'The accept window has closed',
   clockSyncing: 'Syncing…',
   overtimeUsed: (used: string, max: string) => `${used} of ${max} used`,
+  tryPull: {
+    heading: 'Try a pull',
+    button: (amount: string, team: string) => `Pull ${amount} BNB for ${team}`,
+  },
   viewer: {
     heading: 'You',
     team: 'Team',

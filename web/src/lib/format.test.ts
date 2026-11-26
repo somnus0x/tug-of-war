@@ -12,6 +12,7 @@ import {
   formatWeight,
   parseBnb,
   shortAddress,
+  formatDateTime,
 } from './format'
 import { bnbWei, bps, pullWei, tokenWei } from './units'
 
@@ -238,5 +239,11 @@ describe('formatCount', () => {
   it('shows zero for negative or fractional input', () => {
     expect(formatCount(-1)).toBe('0')
     expect(formatCount(1.5)).toBe('0')
+  })
+})
+
+describe('formatDateTime', () => {
+  it('shows day, month and 24-hour time', () => {
+    expect(formatDateTime(1_800_000_000, 'UTC')).toBe('15 Jan, 08:00')
   })
 })

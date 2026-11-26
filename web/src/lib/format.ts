@@ -124,3 +124,13 @@ export const parseBnb = (text: string): BnbWei | null => {
   }
   return bnbWei(BigInt(whole) * ONE_BNB + BigInt(fraction.padEnd(BNB_DECIMALS, '0')))
 }
+
+export const formatDateTime = (seconds: number, timeZone?: string): string =>
+  new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    ...(timeZone === undefined ? {} : { timeZone }),
+  }).format(new Date(wholeSeconds(seconds) * 1000))

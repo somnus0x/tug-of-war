@@ -3,6 +3,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import { Link, Outlet, createRootRouteWithContext } from '@tanstack/react-router'
 
 import { SHELL_COPY } from '@/copy/shell'
+import { TxToastStack } from '@/features/tx/tx-toast-stack'
 import { NetworkBanner } from '@/features/wallet/network-banner'
 import { NetworkName } from '@/features/wallet/network-name'
 import { WalletButton } from '@/features/wallet/wallet-button'
@@ -27,6 +28,7 @@ const RootLayout = () => (
     <main className="shell-main">
       <Outlet />
     </main>
+    <TxToastStack />
   </>
 )
 

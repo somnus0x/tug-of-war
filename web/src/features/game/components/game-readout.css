@@ -30,3 +30,9 @@
   font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
 }
+
+.game-readout__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

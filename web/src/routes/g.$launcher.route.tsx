@@ -10,6 +10,7 @@ const gameSearchSchema = z.object({
   b: z.coerce.number().int().positive().optional().catch(undefined),
   fx: z.string().optional().catch(undefined),
   as: z.string().optional().catch(undefined),
+  tx: z.enum(['reject', 'revert', 'slow']).optional().catch(undefined),
 })
 
 const GameLayout = () => {
@@ -19,7 +20,7 @@ const GameLayout = () => {
 
 export const Route = createFileRoute('/g/$launcher')({
   validateSearch: gameSearchSchema,
-  search: { middlewares: [retainSearchParams(['fx', 'as'])] },
+  search: { middlewares: [retainSearchParams(['fx', 'as', 'tx'])] },
   loaderDeps: ({ search }) => ({ fx: search.fx, as: search.as }),
   loader: ({ context, params, location }) =>
     loadGameRoute(context.queryClient, params.launcher, location.searchStr),

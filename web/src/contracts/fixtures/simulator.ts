@@ -168,6 +168,14 @@ export const canClaimCaptain = (state: SimulatorState): Gate => {
   return OK
 }
 
+export const canWithdrawTriggerBudget = (state: SimulatorState): Gate => {
+  const { game, account } = state
+  if (!sameAddress(account, game.triggerFunder)) return fail('NotTriggerFunder')
+  if (game.phase !== 'refunding' && game.phase !== 'launched') return fail('TriggerBudgetLocked')
+  if (game.triggerBudget === 0n) return fail('NothingToClaim')
+  return OK
+}
+
 export const simulateGates = (
   state: SimulatorState,
   draft: { readonly team: Team; readonly amount: BnbWei } | null,

@@ -78,7 +78,7 @@ const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
   }
 }
 
-const entitlements = (
+export const entitlements = (
   game: Game,
   rules: Rules,
   team: 'blue' | 'red',
