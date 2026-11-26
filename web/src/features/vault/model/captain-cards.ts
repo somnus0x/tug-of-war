@@ -7,12 +7,10 @@ import type { TokenWei } from '@/lib/units'
 
 import { GAME_COPY } from '@/copy/game'
 import { VAULT_COPY } from '@/copy/vault'
-import { formatCoinsFull, formatDateTime, formatShare, formatShareExact } from '@/lib/format'
+import { formatDateTime, formatShare, formatShareExact } from '@/lib/format'
 import { BPS_DENOMINATOR } from '@/lib/units'
 
-import { coins, pendingBnb, teamShareBps } from './vault-cards'
-
-const COIN = 10n ** 18n
+import { claimableCoins, coins, pendingBnb, teamShareBps } from './vault-cards'
 
 export type VestBar = {
   readonly vestedBps: number
@@ -41,9 +39,6 @@ export const vestLineOf = (vestEnd: number, now: number | null): string | null =
     ? VAULT_COPY.captain.vestDone
     : VAULT_COPY.captain.vestEnd(formatDateTime(vestEnd))
 }
-
-export const claimableCoins = (amount: TokenWei): string =>
-  amount >= COIN ? coins(amount) : formatCoinsFull(amount)
 
 export const captainCoinsOf = (
   read: WalletRead<CaptainRead>,

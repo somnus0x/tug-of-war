@@ -1,7 +1,7 @@
 import type { Game } from '@/contracts/types'
 import type { Staker } from '@/contracts/vault-types'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { VAULT_COPY } from '@/copy/vault'
 import { useActionWith } from '@/features/tx/use-action'
@@ -26,7 +26,7 @@ export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBox
   const symbol = game.config.symbol
   const draft = useCoinDraft(staker.staked, 'frozen')
   const [isOpen, setOpen] = useState(false)
-  const [sentAll, setSentAll] = useState(false)
+  const sentAll = useRef(false)
   const amount = entryAmount(draft.entry)
   const unstake = useActionWith(
     'unstake',
@@ -34,7 +34,7 @@ export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBox
     {
       onSuccess: () => {
         setOpen(false)
-        if (sentAll) {
+        if (sentAll.current) {
           onUnstakedAll()
         }
       },
@@ -68,7 +68,7 @@ export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBox
           if (amount === null || !confirm.canSend) {
             return
           }
-          setSentAll(confirm.isAll)
+          sentAll.current = confirm.isAll
           unstake.run({ amount })
         }}
         secondaryLabel={VAULT_COPY.unstake.keep}
@@ -83,7 +83,7 @@ export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBox
           symbol={symbol}
           draft={draft}
           maxText={formatCoinsFull(staker.staked)}
-          problem={entryProblem(draft.entry, 'staked')}
+          problem={isBusy ? null : entryProblem(draft.entry, 'staked')}
           isBusy={isBusy}
         />
         <p>{VAULT_COPY.unstake.body(pendingBnb(staker.pendingRewards))}</p>

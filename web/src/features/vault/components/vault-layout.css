@@ -152,38 +152,34 @@
   text-overflow: ellipsis;
 }
 
-@media (max-width: 759px) {
-  .vault__cards,
-  .vault__lower {
-    display: contents;
-  }
-
-  .vault-slot--1 {
-    order: 1;
-  }
-
-  .vault-slot--2 {
-    order: 2;
-  }
-
-  .vault-slot--3 {
-    order: 3;
-  }
-
-  .vault-slot--4 {
-    order: 4;
-  }
-
-  .vault-slot--5 {
-    order: 5;
-  }
-
-  .vault-slot--6 {
-    order: 6;
-  }
+.vault__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
 }
 
 @media (min-width: 760px) {
+  .vault__grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .vault-slot--top {
+    grid-column: span 2;
+  }
+
+  .vault-slot--lower-1 {
+    grid-column: span 6;
+  }
+
+  .vault-slot--lower-2 {
+    grid-column: span 3;
+  }
+
+  .vault-slot--lower-3 {
+    grid-column: span 2;
+  }
+
   .vault__head {
     grid-template-columns: minmax(0, 1fr) minmax(0, 470px);
   }

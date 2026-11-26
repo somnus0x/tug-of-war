@@ -13,7 +13,7 @@ import { viewerAddress } from '@/contracts/fixtures/viewers'
 import { createFixtureWorld } from '@/contracts/fixtures/world'
 import { bnbWei, tokenWei } from '@/lib/units'
 
-import { DESK_ORDER, cardActionsOf, orderClassOf, phoneCardOrder } from './card-order'
+import { DESK_ORDER, cardActionsOf, slotClassOf, phoneCardOrder } from './card-order'
 import { walletReadOf } from './wallet-read'
 
 const LAUNCHER: Address = '0x0000000000000000000000000000000000000001'
@@ -84,8 +84,10 @@ describe('phoneCardOrder', () => {
     expect(order.indexOf('captainShare')).toBeLessThan(order.indexOf('pools'))
   })
 
-  it('names a slot class by position', () => {
-    expect(orderClassOf(['rewards', 'coins'], 'coins')).toBe('vault-slot vault-slot--2')
+  it('sizes the desk slots by row', () => {
+    expect(slotClassOf('coins', 3)).toBe('vault-slot vault-slot--top')
+    expect(slotClassOf('pools', 1)).toBe('vault-slot vault-slot--lower-1')
+    expect(slotClassOf('captainShare', 3)).toBe('vault-slot vault-slot--lower-3')
   })
 
   it('counts a wallet whose whole balance is staked as able to act on the stake card', () => {

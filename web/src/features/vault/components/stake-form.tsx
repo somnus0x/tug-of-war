@@ -27,7 +27,7 @@ type StakeFormProps = {
 
 export const StakeForm = ({ place, game, staker, lock, emptyNote }: StakeFormProps) => {
   const symbol = game.config.symbol
-  const draft = useCoinDraft(staker.tokenBalance)
+  const draft = useCoinDraft(staker.tokenBalance, 'frozen')
   const [picked, setPicked] = useState<PickedTeam | null>(null)
   const team = stakeTeamOf(lock, picked)
   const amount = entryAmount(draft.entry)
@@ -54,7 +54,7 @@ export const StakeForm = ({ place, game, staker, lock, emptyNote }: StakeFormPro
         symbol={symbol}
         draft={draft}
         maxText={formatCoinsFull(staker.tokenBalance)}
-        problem={problem}
+        problem={flow.isBusy ? null : problem}
         isBusy={flow.isBusy}
       />
       <div className="vault-stake-button">

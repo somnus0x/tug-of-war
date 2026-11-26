@@ -44,6 +44,8 @@ export const VAULT_COPY = {
     total: 'Total',
     claim: (amount: string, symbol: string) => `Claim ${amount} ${symbol}`,
     claimedTotal: 'Claimed · base + bonus',
+    checking: 'Checking whether this wallet can claim…',
+    blocked: 'The claim cannot go through right now. Try again shortly.',
     didNotPull: 'This wallet did not pull in this game, so it has no coins to claim.',
     visitor: 'Connect a wallet to see the coins it can claim.',
   },
@@ -83,6 +85,8 @@ export const VAULT_COPY = {
   entry: {
     empty: 'Enter an amount.',
     invalid: 'Use a number like 1500.',
+    moved: (amount: string, symbol: string) =>
+      `The amount available is now ${amount} ${symbol}. Press Max to use all of it.`,
     comma: 'Commas only group thousands, like 1,500. Use a dot for decimals, like 1500.5.',
     zero: 'Enter an amount above zero.',
     overBalance: 'That is more than this wallet holds.',

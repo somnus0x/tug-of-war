@@ -13,8 +13,16 @@ import { Banner } from '@/ui/banner'
 import { PixelBox } from '@/ui/pixel-box'
 import { Spinner } from '@/ui/spinner'
 
+import { usePhoneLayout } from '../hooks/use-phone-layout'
 import { captainCoinsOf, captainShareOf } from '../model/captain-cards'
-import { cardActionsOf, orderClassOf, phoneCardOrder } from '../model/card-order'
+import {
+  DESK_ORDER,
+  LOWER_CARDS,
+  cardActionsOf,
+  phoneCardOrder,
+  slotClassOf,
+} from '../model/card-order'
+import { routedGame } from '../model/routed-game'
 import { viewerKindOf } from '../model/vault-cards'
 import { CaptainCoinsCard } from './captain-coins-card'
 import { CaptainShareCard } from './captain-share-card'
@@ -41,7 +49,7 @@ type VaultBoardProps = {
 
 export const VaultBoard = ({
   launcher,
-  game,
+  game: chainGame,
   rules,
   chain,
   account,
@@ -52,11 +60,42 @@ export const VaultBoard = ({
   canClaim,
   isVaultError,
 }: VaultBoardProps) => {
+  const game = routedGame(chainGame, launcher)
   const kind = viewerKindOf(player, staker)
   const order = phoneCardOrder(cardActionsOf({ player, staker, captain, canClaim }))
-  const slot = (card: VaultCard, content: ReactNode) => (
-    <div className={orderClassOf(order, card)}>{content}</div>
-  )
+  const isPhone = usePhoneLayout()
+  const cards: Readonly<Record<VaultCard, ReactNode | null>> = {
+    coins: <YourCoinsCard launcher={launcher} game={game} player={player} canClaim={canClaim} />,
+    stake: (
+      <StakeCard
+        game={game}
+        place={account === undefined ? null : { launcher, account, chain }}
+        player={player}
+        staker={staker}
+      />
+    ),
+    rewards: <RewardsCard game={game} rules={rules} staker={staker} />,
+    pools:
+      vault === null ? (
+        <PixelBox heading={VAULT_COPY.pools.heading}>
+          <p className="vault-note" aria-busy="true">
+            <Spinner />
+            {VAULT_COPY.loading}
+          </p>
+        </PixelBox>
+      ) : (
+        <PoolsCard game={game} vault={vault} />
+      ),
+    captainCoins:
+      captainCoinsOf(captain, game, null) === null ? null : (
+        <CaptainCoinsCard game={game} captain={captain} />
+      ),
+    captainShare:
+      captainShareOf(captain, game) === null ? null : (
+        <CaptainShareCard game={game} captain={captain} />
+      ),
+  }
+  const lowerCount = LOWER_CARDS.filter((card) => cards[card] !== null).length
   return (
     <div className="vault">
       <div className="vault__top">
@@ -80,42 +119,15 @@ export const VaultBoard = ({
         <CoinStrip game={game} rules={rules} />
         <FinalRopePanel game={game} />
       </div>
-      <div className="vault__cards">
-        {slot(
-          'coins',
-          <YourCoinsCard launcher={launcher} game={game} player={player} canClaim={canClaim} />,
-        )}
-        {slot(
-          'stake',
-          <StakeCard
-            game={game}
-            place={account === undefined ? null : { launcher, account, chain }}
-            player={player}
-            staker={staker}
-          />,
-        )}
-        {slot('rewards', <RewardsCard game={game} rules={rules} staker={staker} />)}
-      </div>
-      <div className="vault__lower">
-        {slot(
-          'pools',
-          vault === null ? (
-            <PixelBox heading={VAULT_COPY.pools.heading}>
-              <p className="vault-note" aria-busy="true">
-                <Spinner />
-                {VAULT_COPY.loading}
-              </p>
-            </PixelBox>
-          ) : (
-            <PoolsCard game={game} vault={vault} />
-          ),
-        )}
-        {captainCoinsOf(captain, game, null) === null
-          ? null
-          : slot('captainCoins', <CaptainCoinsCard game={game} captain={captain} />)}
-        {captainShareOf(captain, game) === null
-          ? null
-          : slot('captainShare', <CaptainShareCard game={game} captain={captain} />)}
+      <div className="vault__grid">
+        {(isPhone ? order : DESK_ORDER).map((card) => {
+          const content = cards[card]
+          return content === null ? null : (
+            <div key={card} className={slotClassOf(card, lowerCount)}>
+              {content}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

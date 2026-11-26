@@ -11,12 +11,13 @@ import { vaultWorldOf } from '@/contracts/fixtures/vault-world'
 import { viewerAddress } from '@/contracts/fixtures/viewers'
 import { createFixtureWorld } from '@/contracts/fixtures/world'
 import { VAULT_COPY } from '@/copy/vault'
-import { tokenWei } from '@/lib/units'
+import { bnbWei, tokenWei } from '@/lib/units'
 
 import { poolsOf } from './pools-text'
 import {
   emptyStakeNote,
   keepTeamLine,
+  pendingBnb,
   rewardsOf,
   stakeLabelOf,
   stakeLockOf,
@@ -105,10 +106,16 @@ describe('vault cards for each viewer', () => {
     expect(coins.rows.map((row) => row.label)).toEqual(['Base coins', 'Bonus coins', 'Total'])
     expect(coins.rows[0]).toMatchObject({ note: 'for 0.25 of 5.00 BNB', value: '17,500 ROPE' })
     expect(coins.claimLabel).toMatch(/^Claim [\d,]+ ROPE$/)
-    for (const canClaim of [false, null]) {
-      const shown = yourCoinsOf({ game: view.game, player: view.player, canClaim })
-      expect(shown.kind === 'entitled' && shown.claimLabel).toBeNull()
-    }
+    expect(coins.canClaim).toBe(true)
+    expect(coins.claimNote).toBeNull()
+    const checking = yourCoinsOf({ game: view.game, player: view.player, canClaim: null })
+    expect(checking).toMatchObject({
+      claimLabel: coins.claimLabel,
+      canClaim: false,
+      claimNote: VAULT_COPY.coins.checking,
+    })
+    const blocked = yourCoinsOf({ game: view.game, player: view.player, canClaim: false })
+    expect(blocked).toMatchObject({ canClaim: false, claimNote: VAULT_COPY.coins.blocked })
   })
 
   it('locks a claimed player to the team it pulled for, with nothing staked yet', () => {
@@ -193,5 +200,19 @@ describe('vault cards for each viewer', () => {
     expect(
       emptyStakeNote({ kind: 'loading' }, { kind: 'locked', team: 'red' }, tokenWei(10n)),
     ).toBe('Staked on Red. Unstaking stops your rewards.')
+  })
+
+  it('never rounds a dust amount down to zero in a claim', () => {
+    expect(pendingBnb(bnbWei(30_000_000_000n))).toBe('0.00000003')
+    expect(pendingBnb(bnbWei(0n))).toBe('0.00')
+    expect(pendingBnb(bnbWei(38_100_000_000_000_000n))).toBe('0.0381')
+    const view = viewOf('fan-blue')
+    const player = ready(view.player)
+    const dust = yourCoinsOf({
+      game: view.game,
+      player: { kind: 'ready', value: { ...player, claimable: tokenWei(10n ** 17n) } },
+      canClaim: true,
+    })
+    expect(dust.kind === 'entitled' && dust.claimLabel).toBe('Claim 0.1 ROPE')
   })
 })

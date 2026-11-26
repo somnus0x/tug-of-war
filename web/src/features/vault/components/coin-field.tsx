@@ -66,6 +66,9 @@ export const CoinField = ({ label, symbol, draft, maxText, problem, isBusy }: Co
           {problem}
         </p>
       )}
+      {problem === null && draft.hasMoved && !isBusy ? (
+        <p className="vault-note">{VAULT_COPY.entry.moved(maxText, symbol)}</p>
+      ) : null}
     </div>
   )
 }

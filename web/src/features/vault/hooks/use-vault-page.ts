@@ -39,6 +39,6 @@ export const useVaultPage = (launcher: Address) => {
     captain: walletReadOf(account, captain.data, captain.isError),
     canClaim: gates?.claim === null || gates?.claim === undefined ? null : gates.claim.ok,
     isError: game.isError || rules.isError,
-    isVaultError: vault.isError,
+    isVaultError: vault.isError || captain.isError,
   }
 }

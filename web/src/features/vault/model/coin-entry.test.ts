@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest'
 import { VAULT_COPY } from '@/copy/vault'
 import { tokenWei } from '@/lib/units'
 
-import { entryAmount, entryProblem, entryText, readCoinEntry } from './coin-entry'
+import {
+  entryAmount,
+  entryProblem,
+  entryText,
+  limitMoved,
+  readCoinEntry,
+  syncFixed,
+} from './coin-entry'
 
 const COIN = 10n ** 18n
 const BALANCE = tokenWei(1234n * COIN + 987_654_321_987_654_321n)
@@ -91,5 +98,28 @@ describe('a frozen amount', () => {
       kind: 'amount',
       amount: FROZEN,
     })
+  })
+})
+
+describe('syncFixed', () => {
+  const SHOWN = tokenWei(5000n * COIN)
+  const GROWN = tokenWei(9000n * COIN)
+
+  it('captures the first balance shown and keeps it when the balance grows', () => {
+    expect(syncFixed(true, null, null, SHOWN)).toBe(SHOWN)
+    expect(syncFixed(true, null, SHOWN, GROWN)).toBe(SHOWN)
+    expect(readCoinEntry(null, GROWN, SHOWN)).toEqual({ kind: 'amount', amount: SHOWN })
+    expect(limitMoved(null, SHOWN, GROWN)).toBe(true)
+    expect(limitMoved(null, SHOWN, SHOWN)).toBe(false)
+  })
+
+  it('takes the balance once it arrives after an empty wallet', () => {
+    expect(syncFixed(true, null, tokenWei(0n), SHOWN)).toBe(SHOWN)
+    expect(syncFixed(true, null, null, tokenWei(0n))).toBeNull()
+  })
+
+  it('stays live outside the frozen mode and leaves typed text alone', () => {
+    expect(syncFixed(false, null, SHOWN, GROWN)).toBeNull()
+    expect(syncFixed(true, '12', SHOWN, GROWN)).toBe(SHOWN)
   })
 })

@@ -66,3 +66,18 @@ export const entryProblem = (entry: CoinEntry, limit: CoinLimit): string | null 
 
 export const entryAmount = (entry: CoinEntry): TokenWei | null =>
   entry.kind === 'amount' ? entry.amount : null
+
+export const syncFixed = (
+  isFrozen: boolean,
+  text: string | null,
+  fixed: TokenWei | null,
+  limit: TokenWei,
+): TokenWei | null => {
+  if (!isFrozen) return null
+  if (text !== null) return fixed
+  if (fixed === null || fixed === 0n) return limit > 0n ? limit : fixed
+  return fixed
+}
+
+export const limitMoved = (text: string | null, fixed: TokenWei | null, limit: TokenWei): boolean =>
+  text === null && fixed !== null && limit > 0n && fixed !== limit

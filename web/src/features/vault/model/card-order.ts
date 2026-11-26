@@ -23,8 +23,12 @@ export const phoneCardOrder = (actions: CardActions): readonly VaultCard[] => [
   ...DESK_ORDER.filter((card) => actions[card] !== true),
 ]
 
-export const orderClassOf = (order: readonly VaultCard[], card: VaultCard): string =>
-  `vault-slot vault-slot--${order.indexOf(card) + 1}`
+export const LOWER_CARDS: readonly VaultCard[] = ['pools', 'captainCoins', 'captainShare']
+
+export const slotClassOf = (card: VaultCard, lowerCount: number): string =>
+  LOWER_CARDS.includes(card)
+    ? `vault-slot vault-slot--lower-${Math.min(3, Math.max(1, lowerCount))}`
+    : 'vault-slot vault-slot--top'
 
 export type CardActionInput = {
   readonly player: WalletRead<Player>

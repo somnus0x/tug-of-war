@@ -8,7 +8,14 @@ import type { Address } from 'viem'
 
 import { GAME_COPY } from '@/copy/game'
 import { VAULT_COPY } from '@/copy/vault'
-import { formatBnb, formatCoins, formatShare, formatShareExact } from '@/lib/format'
+import {
+  formatBnb,
+  formatBnbExact,
+  formatCoins,
+  formatCoinsFull,
+  formatShare,
+  formatShareExact,
+} from '@/lib/format'
 import { TOKEN_DECIMALS } from '@/lib/launch'
 import { BPS_DENOMINATOR, bps, tokenWei } from '@/lib/units'
 
@@ -18,7 +25,15 @@ export const TEAMS: readonly PickedTeam[] = ['blue', 'red']
 
 export const coins = (amount: TokenWei): string => formatCoins(amount, TOKEN_DECIMALS)
 
-export const pendingBnb = (amount: BnbWei): string => formatBnb(amount, { precise: true })
+export const pendingBnb = (amount: BnbWei): string => {
+  const text = formatBnb(amount, { precise: true })
+  return amount > 0n && /^0\.0+$/.test(text) ? formatBnbExact(amount) : text
+}
+
+const COIN = 10n ** 18n
+
+export const claimableCoins = (amount: TokenWei): string =>
+  amount >= COIN ? coins(amount) : formatCoinsFull(amount)
 
 export const viewerKindOf = (
   player: WalletRead<Player>,
@@ -75,6 +90,8 @@ export type YourCoins =
       readonly team: PickedTeam
       readonly rows: readonly CoinRow[]
       readonly claimLabel: string | null
+      readonly canClaim: boolean
+      readonly claimNote: string | null
       readonly folded: CoinRow | null
     }
 
@@ -95,7 +112,7 @@ export const yourCoinsOf = ({ game, player: read, canClaim }: YourCoinsInput): Y
   const symbol = game.config.symbol
   const amount = (value: TokenWei) => VAULT_COPY.amount(coins(value), symbol)
   const total = tokenWei(player.baseEntitlement + player.bonusEntitlement)
-  const mayClaim = player.claimable > 0n && canClaim === true
+  const hasClaim = player.claimable > 0n
   return {
     kind: 'entitled',
     team: player.team,
@@ -117,7 +134,14 @@ export const yourCoinsOf = ({ game, player: read, canClaim }: YourCoinsInput): Y
       },
       { key: 'total', label: VAULT_COPY.coins.total, note: null, value: amount(total) },
     ],
-    claimLabel: mayClaim ? VAULT_COPY.coins.claim(coins(player.claimable), symbol) : null,
+    claimLabel: hasClaim ? VAULT_COPY.coins.claim(claimableCoins(player.claimable), symbol) : null,
+    canClaim: hasClaim && canClaim === true,
+    claimNote:
+      !hasClaim || canClaim === true
+        ? null
+        : canClaim === null
+          ? VAULT_COPY.coins.checking
+          : VAULT_COPY.coins.blocked,
     folded:
       player.claimed > 0n && player.claimable === 0n
         ? { key: 'total', label: VAULT_COPY.coins.claimedTotal, note: null, value: amount(total) }
