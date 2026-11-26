@@ -59,7 +59,7 @@ export const EndedAction = ({
           {action.claim ? ENDED_COPY.claimCoins : ENDED_COPY.openVault}
         </Link>
         {trade === null ? null : (
-          <a className={linkClass('tile')} href={trade}>
+          <a className={linkClass('tile')} href={trade} target="_blank" rel="noopener noreferrer">
             {ENDED_COPY.trade}
           </a>
         )}

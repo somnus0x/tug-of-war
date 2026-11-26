@@ -30,7 +30,7 @@ export const Toast = ({ kind, title, body, link, dismissLabel, onDismiss }: Toas
       <p className="toast__title">{title}</p>
       {body === undefined ? null : <p className="toast__body">{body}</p>}
       {link === undefined ? null : (
-        <a className="toast__link" href={link.href}>
+        <a className="toast__link" href={link.href} target="_blank" rel="noopener noreferrer">
           {link.label}
         </a>
       )}

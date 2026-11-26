@@ -70,7 +70,12 @@ export const CreateResult = ({ result, onAnother }: CreateResultProps) => {
             <Link to="/" className={linkClass('primary')}>
               {RESULT.home}
             </Link>
-            <a className={linkClass('ghost')} href={explorerTxUrl(result.hash)} rel="noreferrer">
+            <a
+              className={linkClass('ghost')}
+              href={explorerTxUrl(result.hash)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {RESULT.explorer}
             </a>
             {another}

@@ -53,11 +53,16 @@ export const CoinStrip = ({ game, rules }: CoinStripProps) => {
         </dl>
         <div className="vault-coin__links">
           <CopyButton text={strip.token} />
-          <a className={LINK_CLASS} href={explorerAddressUrl(strip.token)}>
+          <a
+            className={LINK_CLASS}
+            href={explorerAddressUrl(strip.token)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {VAULT_COPY.coin.explorer}
           </a>
           {tradeUrl === null ? null : (
-            <a className={LINK_CLASS} href={tradeUrl}>
+            <a className={LINK_CLASS} href={tradeUrl} target="_blank" rel="noopener noreferrer">
               {VAULT_COPY.coin.trade}
             </a>
           )}
