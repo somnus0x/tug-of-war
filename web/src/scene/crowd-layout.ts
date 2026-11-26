@@ -37,6 +37,7 @@ export type CrowdLayout = {
 export type CrowdInput = {
   crew: Crew
   unknownWallets: { blue: number; red: number }
+  teamBnb: { blue: bigint; red: bigint }
   walletCap: bigint
   mode: SceneMode
 }
@@ -108,15 +109,16 @@ const standHeads = (known: number, unknown: number, k: number): StandHead[] =>
 
 const sumBnb = (fans: readonly Fan[]): bigint => fans.reduce((total, fan) => total + fan.bnb, 0n)
 
-type SidePick = { side: Side; rope: Fan[]; stand: Fan[]; unknown: number }
+type SidePick = { side: Side; rope: Fan[]; stand: Fan[]; unknown: number; teamBnb: bigint }
 
 const sideLayout = (
-  { side, rope, stand, unknown }: SidePick,
+  { side, rope, stand, unknown, teamBnb }: SidePick,
   k: number,
   walletCap: bigint,
 ): SideLayout => {
   const inStand = stand.length + unknown
   const wallets = rope.length + inStand
+  const ropeBnb = sumBnb(rope)
   return {
     side,
     rope,
@@ -127,19 +129,26 @@ const sideLayout = (
     label: {
       wallets,
       inStand,
-      standBnb: sumBnb(stand),
+      standBnb: teamBnb > ropeBnb ? teamBnb - ropeBnb : 0n,
       allAtRope: wallets > 0 && inStand === 0,
       empty: wallets === 0,
     },
   }
 }
 
-export const layoutCrowd = ({ crew, unknownWallets, walletCap, mode }: CrowdInput): CrowdLayout => {
+export const layoutCrowd = ({
+  crew,
+  unknownWallets,
+  teamBnb,
+  walletCap,
+  mode,
+}: CrowdInput): CrowdLayout => {
   const geometry = GEOMETRY[mode]
   const pick = (side: Side): SidePick => ({
     side,
     ...pickRope(crew[side], geometry.ropeSlots),
     unknown: Math.max(0, Math.floor(unknownWallets[side])),
+    teamBnb: teamBnb[side],
   })
   const blue = pick('blue')
   const red = pick('red')

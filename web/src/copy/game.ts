@@ -1,3 +1,8 @@
+import { formatCount } from '@/lib/format'
+
+const wallets = (count: number): string =>
+  `${formatCount(count)} ${count === 1 ? 'wallet' : 'wallets'}`
+
 export const GAME_COPY = {
   heading: 'Game',
   team: {
@@ -39,6 +44,46 @@ export const GAME_COPY = {
   acceptClosed: 'The accept window has closed',
   clockSyncing: 'Syncing…',
   overtimeUsed: (used: string, max: string) => `${used} of ${max} used`,
+  hud: {
+    coin: (name: string, symbol: string) => `${name} · ${symbol}`,
+    overtime: 'Overtime',
+    lamps: (used: string, max: string) => `${used} of ${max}`,
+    minRaise: 'Min raise',
+    raiseProgress: (raised: string, minimum: string) => `${raised} of ${minimum} BNB minimum`,
+    minMet: 'Minimum met',
+  },
+  clockFace: {
+    captains: 'Captains have',
+    running: 'Time left',
+    final: 'Final minute',
+    overtime: 'Overtime',
+    lastOvertime: 'Last overtime',
+    closing: 'Time is up',
+    ended: 'Clock ended',
+  },
+  clockBlank: '-:--',
+  pullSplit: (blue: string, red: string) => `Blue ${blue} pull · Red ${red} pull`,
+  captainIn: (team: string, other: string) => `${team}’s captain is in. Waiting for ${other}.`,
+  capNote: (cap: string, floor: string, keeper: string, floorShare: string) =>
+    `Bonus split is capped at ${cap} / ${floor} · ${keeper} keeps at least ${floorShare} of the bonus coins.`,
+  totals: {
+    bnb: (amount: string) => `${amount} BNB`,
+    pull: (amount: string) => `${amount} pull`,
+    wallets,
+    captain: (address: string) => `Captain ${address}`,
+    crew: 'crew',
+    heading: 'Team totals',
+  },
+  sceneLabel: (headline: string, blue: string, red: string) => `${headline}. ${blue} ${red}`,
+  sceneSide: (team: string, count: number, bnb: string) =>
+    `${team}: ${wallets(count)}, ${bnb} BNB.`,
+  announce: {
+    lead: (team: string) => `${team} takes the lead.`,
+    level: 'The pull is level.',
+    extended: (span: string) => `The clock was extended by ${span}.`,
+    ended: 'Time is up.',
+  },
+  status: 'Game status',
   tryPull: {
     heading: 'Try a pull',
     button: (amount: string, team: string) => `Pull ${amount} BNB for ${team}`,

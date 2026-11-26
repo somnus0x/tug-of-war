@@ -107,6 +107,7 @@ const unknownOnly = (blue: number, red: number) =>
   layoutCrowd({
     crew: { blue: [], red: [] },
     unknownWallets: { blue, red },
+    teamBnb: { blue: 0n, red: 0n },
     walletCap: CAP,
     mode: 'desktop',
   })
@@ -131,6 +132,7 @@ describe('layoutCrowd', () => {
     const crowd = layoutCrowd({
       crew: { blue, red: [] },
       unknownWallets: { blue: 2, red: 0 },
+      teamBnb: { blue: ONE, red: 0n },
       walletCap: CAP,
       mode: 'desktop',
     })
@@ -139,10 +141,23 @@ describe('layoutCrowd', () => {
     expect(crowd.blue.label).toEqual({
       wallets: 10,
       inStand: 5,
-      standBnb: (ONE / 10n) * 3n,
+      standBnb: ONE / 2n,
       allAtRope: false,
       empty: false,
     })
     expect(crowd.red.label.empty).toBe(true)
+  })
+
+  it('counts stand BNB from the team total, never below zero', () => {
+    const layout = (teamBnb: bigint) =>
+      layoutCrowd({
+        crew: { blue: [fan(1, ONE / 2n)], red: [] },
+        unknownWallets: { blue: 7, red: 0 },
+        teamBnb: { blue: teamBnb, red: 0n },
+        walletCap: CAP,
+        mode: 'desktop',
+      }).blue.label.standBnb
+    expect(layout(ONE * 2n)).toBe((ONE * 3n) / 2n)
+    expect(layout(ONE / 4n)).toBe(0n)
   })
 })

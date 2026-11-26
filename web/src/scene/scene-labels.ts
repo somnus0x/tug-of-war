@@ -2,7 +2,7 @@ import type { CrowdLayout, SideLabel, Tier } from './crowd-layout'
 import type { SideLabelText } from './stand-labels'
 import type { SceneMode, SceneText, Side } from './types'
 
-import { formatBnb, formatBnbStep, formatShareExact } from '@/lib/format'
+import { formatBnb, formatBnbExact, formatShareExact } from '@/lib/format'
 import { bnbWei, bps } from '@/lib/units'
 
 export type SceneLabels = {
@@ -45,7 +45,7 @@ const TIERS: readonly Tier[] = [0, 1, 2, 3]
 const sizeLabels = (walletCap: bigint, mode: SceneMode, text: SceneText): SizeLabel[] =>
   TIERS.map((tier) => {
     const quarter = TIER_QUARTERS[tier] ?? 4n
-    const amount = formatBnbStep(bnbWei(walletCap > 0n ? (walletCap * quarter) / 4n : 0n))
+    const amount = formatBnbExact(bnbWei(walletCap > 0n ? (walletCap * quarter) / 4n : 0n))
     return { tier, label: mode === 'desktop' && tier === 0 ? text.upTo(amount) : amount }
   })
 

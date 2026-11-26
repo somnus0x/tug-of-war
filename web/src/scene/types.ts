@@ -24,6 +24,7 @@ export type SceneProps = {
   walletCap: bigint
   crew: Crew
   unknownWallets: { blue: number; red: number }
+  teamBnb: { blue: bigint; red: bigint }
   lead: 'blue' | 'red' | 'tie'
   overtimeStamp: null | string
   reducedMotion: boolean

@@ -37,12 +37,29 @@ const base: Omit<SceneProps, 'mode'> = {
   walletCap: WALLET_CAP,
   crew: { blue: [], red: [] },
   unknownWallets: { blue: 0, red: 0 },
+  teamBnb: { blue: 0n, red: 0n },
   lead: 'tie',
   overtimeStamp: null,
   reducedMotion: false,
 }
 
-export const SCENE_CASES: readonly SceneCase[] = [
+const STAND_AVERAGE = 150n * MILLI
+
+const teamTotal = (fans: readonly Fan[], unknown: number): bigint =>
+  fans.reduce((total, item) => total + item.bnb, 0n) + BigInt(unknown) * STAND_AVERAGE
+
+const withTotals = (item: SceneCase): SceneCase => ({
+  ...item,
+  props: {
+    ...item.props,
+    teamBnb: {
+      blue: teamTotal(item.props.crew.blue, item.props.unknownWallets.blue),
+      red: teamTotal(item.props.crew.red, item.props.unknownWallets.red),
+    },
+  },
+})
+
+const CASES: readonly SceneCase[] = [
   {
     id: 'centred',
     title: GALLERY_COPY.sceneCentred,
@@ -138,3 +155,5 @@ export const SCENE_CASES: readonly SceneCase[] = [
     },
   },
 ]
+
+export const SCENE_CASES: readonly SceneCase[] = CASES.map(withTotals)

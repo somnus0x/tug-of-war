@@ -12,7 +12,7 @@ import { buildGame } from './builder'
 import { fixtureInput, resolveFixture } from './catalog'
 import { AUTO_LAUNCH_QUOTE, FIXTURE_RULES } from './constants'
 import { EMPTY_OVERLAY, overlayGame, overlayPlayer, playerOverlayOf } from './overlay'
-import { resolveViewer, viewerRead } from './viewers'
+import { captainRead, resolveViewer, viewerRead } from './viewers'
 
 export type FixtureWorldOptions = { readonly nowSeconds?: () => number }
 
@@ -67,7 +67,10 @@ export const createFixtureWorld = (options: FixtureWorldOptions = {}): FixtureWo
     at?: number,
   ): PlayerRead => {
     const snapshot = game(launcher, scope, at)
-    const base = viewerRead(resolveViewer(scope.viewer, true), snapshot.game, FIXTURE_RULES)
+    const captain =
+      account === undefined ? null : captainRead(snapshot.game, FIXTURE_RULES, account)
+    const base =
+      captain ?? viewerRead(resolveViewer(scope.viewer, true), snapshot.game, FIXTURE_RULES)
     const overlay = playerOverlayOf(overlayOf(launcher, scope), account)
     return overlayPlayer(base, overlay, snapshot.game, FIXTURE_RULES)
   }

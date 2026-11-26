@@ -1,9 +1,11 @@
 import type { ContributeDraft, SourceScope } from '../types'
 import type { Address } from 'viem'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouterState } from '@tanstack/react-router'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+
+import { env } from '@/app/env'
 
 import { scopeFromSearch } from '../scope'
 import { FIXTURES_ON, gameSource } from '../source'
@@ -68,4 +70,19 @@ export const useGates = (
   const phase = useGame(launcher).data?.game.phase
   const debounced = useDebouncedDraft(draft)
   return useQuery(gatesQueryOptions(launcher, account, debounced, scope, phase))
+}
+
+export const useRefetchAtDeadline = (launcher: Address, deadline: number, isReached: boolean) => {
+  const queryClient = useQueryClient()
+  const fired = useRef<string | null>(null)
+  useEffect(() => {
+    const key = `${launcher.toLowerCase()}:${String(deadline)}`
+    if (!isReached || fired.current === key) {
+      return
+    }
+    fired.current = key
+    for (const name of ['game', 'gates'] as const) {
+      void queryClient.invalidateQueries({ queryKey: [name, env.VITE_CHAIN_ID, launcher] })
+    }
+  }, [queryClient, launcher, deadline, isReached])
 }

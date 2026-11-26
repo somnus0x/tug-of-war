@@ -1,0 +1,124 @@
+.game-loading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 16px;
+}
+
+.game {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 1280px;
+  min-width: 0;
+  margin: 0 auto;
+}
+
+.game__stage {
+  position: relative;
+  min-width: 0;
+}
+
+.game__plate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin: var(--outline);
+  padding: 8px 12px;
+  background: var(--ink-1);
+  box-shadow:
+    0 calc(-1 * var(--outline)) 0 0 var(--ink-2),
+    0 var(--outline) 0 0 var(--ink-2),
+    calc(-1 * var(--outline)) 0 0 0 var(--ink-2),
+    var(--outline) 0 0 0 var(--ink-2);
+}
+
+.game__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.game__column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.game__column--rules {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 1200px) {
+  .game__columns {
+    grid-template-columns: 448px minmax(0, 1fr) 410px;
+  }
+
+  .game__column--rules {
+    grid-column: auto;
+  }
+}
+
+.game__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.game__totals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.game--phone {
+  gap: 8px;
+  min-height: calc(100dvh - 160px);
+}
+
+.game--with-bar {
+  padding-bottom: calc(var(--bottom-bar-height) + var(--gutter));
+}
+
+.game__bar {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+  padding-right: max(12px, env(safe-area-inset-right));
+  padding-left: max(12px, env(safe-area-inset-left));
+  background: var(--ink-1);
+  box-shadow: 0 calc(-1 * var(--outline)) 0 0 var(--ink-2);
+}
+
+.game__bar .pixel-box {
+  margin: 0;
+  padding: 6px 8px;
+}
+
+.game__bar .game-readout__actions {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.game__bar .tile-button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: var(--touch-target);
+}
+
+.game-announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,13 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { GameReadout } from '@/features/game/components/game-readout'
+import { GamePage } from '@/features/game/components/game-page'
 import { isGameAddress } from '@/features/game/load-game'
 
-const GamePage = () => {
+const GameRoute = () => {
   const { launcher } = Route.useParams()
-  return isGameAddress(launcher) ? <GameReadout launcher={launcher} /> : null
+  return isGameAddress(launcher) ? <GamePage launcher={launcher} /> : null
 }
 
 export const Route = createFileRoute('/g/$launcher/')({
-  component: GamePage,
+  component: GameRoute,
 })

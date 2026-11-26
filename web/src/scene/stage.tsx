@@ -34,6 +34,7 @@ export const Stage = memo(
     walletCap,
     crew,
     unknownWallets,
+    teamBnb,
     text,
     label,
   }: StageProps) => {
@@ -41,8 +42,8 @@ export const Stage = memo(
     const marker = markerX(ropeBps, geometry)
     const pulling = stage === 'live'
     const crowd = useMemo(
-      () => layoutCrowd({ crew, unknownWallets, walletCap, mode }),
-      [crew, unknownWallets, walletCap, mode],
+      () => layoutCrowd({ crew, unknownWallets, teamBnb, walletCap, mode }),
+      [crew, unknownWallets, teamBnb, walletCap, mode],
     )
     const posts = useMemo(
       () => capPostOffsets(maxBonusShareBps, geometry),
