@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
   formatAgo,
   formatBnb,
+  formatBnbStep,
   formatClock,
   formatCoins,
   formatCount,
   formatPull,
   formatShare,
+  formatShareExact,
   formatSpan,
   formatWeight,
   parseBnb,
@@ -18,6 +20,16 @@ import { bnbWei, bps, pullWei, tokenWei } from './units'
 
 const wei = (value: string): ReturnType<typeof bnbWei> => bnbWei(BigInt(value))
 const pull = (value: string): ReturnType<typeof pullWei> => pullWei(BigInt(value))
+
+describe('formatBnbStep', () => {
+  it('shows up to three decimals without trailing zeros', () => {
+    expect(formatBnbStep(wei('125000000000000000'))).toBe('0.125')
+    expect(formatBnbStep(wei('250000000000000000'))).toBe('0.25')
+    expect(formatBnbStep(wei('500000000000000000'))).toBe('0.5')
+    expect(formatBnbStep(wei('1000000000000000000'))).toBe('1')
+    expect(formatBnbStep(wei('1234500000000000000'))).toBe('1.234')
+  })
+})
 
 describe('formatBnb', () => {
   it('shows two decimals', () => {
@@ -69,6 +81,17 @@ describe('formatPull', () => {
     expect(formatPull(pull('5000000000000000'))).toBe('0.01')
     expect(formatPull(pull('0'))).toBe('0.00')
     expect(formatPull(pull('1'))).toBe('0.00')
+  })
+})
+
+describe('formatShareExact', () => {
+  it('shows the exact share without trailing zeros', () => {
+    expect(formatShareExact(bps(7000))).toBe('70%')
+    expect(formatShareExact(bps(6250))).toBe('62.5%')
+    expect(formatShareExact(bps(6667))).toBe('66.67%')
+    expect(formatShareExact(bps(6005))).toBe('60.05%')
+    expect(formatShareExact(bps(0))).toBe('0%')
+    expect(formatShareExact(bps(10_000))).toBe('100%')
   })
 })
 

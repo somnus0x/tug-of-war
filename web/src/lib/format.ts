@@ -53,9 +53,20 @@ export const formatBnb = (wei: BnbWei, options: FormatBnbOptions = {}): string =
   return fixedDown(wei, wei < limit ? 4 : 2)
 }
 
+export const formatBnbStep = (wei: BnbWei): string => fixedDown(wei, 3).replace(/\.?0+$/, '')
+
 export const formatPull = (pull: PullWei): string => fixedHalfUp(pull, 2)
 
 export const formatShare = (value: Bps, decimals = 1): string => `${bpsHalfUp(value, 2, decimals)}%`
+
+export const formatShareExact = (value: Bps): string => {
+  const whole = Math.floor(value / 100)
+  const rest = value % 100
+  if (rest === 0) {
+    return `${whole}%`
+  }
+  return `${whole}.${String(rest).padStart(2, '0').replace(/0$/, '')}%`
+}
 
 export const formatWeight = (value: Bps): string => `${bpsHalfUp(value, 4, 2)}x`
 

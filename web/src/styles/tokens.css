@@ -21,6 +21,36 @@
   --scrim: #0c0d18c7;
   --scrim-check: #0c0d1880;
 
+  --sky-0: #150e2a;
+  --sky-1: #1b1234;
+  --sky-2: #22173f;
+  --sky-3: #2b1b4b;
+  --sky-4: #372057;
+  --sky-5: #462562;
+  --sky-6: #5a2b6b;
+  --sky-7: #733370;
+  --sky-8: #8c3c70;
+  --star: #4a3c7a;
+  --skyline-far: #2a1c49;
+  --skyline-near: #1b1232;
+  --window-warm: #e9b04c;
+  --window-pink: #ff8fb0;
+  --light-string: #0d0918;
+  --deck: #2a2047;
+  --deck-edge: #9b92c8;
+  --deck-plank: #352a58;
+  --stand-back: #1e1638;
+  --stand-step: #3d3166;
+  --stand-step-hi: #5a4c8f;
+  --stand-rail: #4a3d7a;
+  --scaffold: #30265a;
+  --scaffold-brace: #271e4b;
+  --stair-tread: #6a5ca3;
+  --stair-riser: #2b2250;
+  --scene-legend: #120c22e6;
+  --scene-shadow: #0c081899;
+  --scene-white: #ffffff;
+
   --focus: var(--lime);
 
   --font-heading:

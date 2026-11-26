@@ -44,4 +44,12 @@ export const GALLERY_COPY = {
     'The clock has ended and the minimum raise is met. Launching sends the pool to the trading venue.',
   modalPrimary: 'Launch the coin',
   modalSecondary: 'Not now',
+  scene: 'Grandstand scene at rest',
+  sceneCentred: 'Rope centred, small crews',
+  sceneBlueAhead: 'Blue clearly ahead',
+  sceneRedCap: 'Red at the cap',
+  sceneLevel: 'Level rope, clock ended',
+  sceneWaiting: 'Both crews empty, waiting',
+  sceneThousand: '1,000 wallets per side',
+  sceneOwnFigure: 'Your own figure on the rope',
 } as const
