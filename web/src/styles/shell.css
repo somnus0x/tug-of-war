@@ -7,7 +7,7 @@
   padding: 12px 16px;
   padding-top: max(12px, env(safe-area-inset-top));
   background: var(--ink-1);
-  border-bottom: 3px solid var(--ink-2);
+  border-bottom: var(--outline) solid var(--ink-2);
 }
 
 .shell-brand {
@@ -16,11 +16,6 @@
   min-width: 0;
   color: var(--cream);
   text-decoration: none;
-}
-
-.shell-brand:focus-visible {
-  outline: 2px solid var(--lime);
-  outline-offset: 2px;
 }
 
 .shell-brand__name {
@@ -33,7 +28,7 @@
 
 .shell-brand__tagline {
   color: var(--mute);
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .shell-wallet {

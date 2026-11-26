@@ -1,0 +1,55 @@
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  min-height: var(--touch-target);
+  margin: var(--outline) 0;
+  padding: 6px 12px;
+  background: var(--ink-2);
+  color: var(--cream);
+  font-size: var(--text-body);
+  box-shadow:
+    0 calc(-1 * var(--outline)) 0 0 var(--ink-0),
+    0 var(--outline) 0 0 var(--ink-0);
+}
+
+.banner--warn {
+  background: var(--gold);
+  color: var(--ink-0);
+}
+
+.banner__icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--cream);
+  color: var(--ink-0);
+}
+
+.banner--warn .banner__icon {
+  background: var(--ink-0);
+  color: var(--gold);
+}
+
+.banner__text {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.banner__action {
+  flex: none;
+  margin-left: auto;
+}
+
+.banner__action .tile-button--ghost:not(.is-busy, .is-disabled) {
+  background: var(--ink-0);
+  color: var(--cream);
+}
+
+.banner__action .tile-button {
+  font-size: var(--text-label);
+}

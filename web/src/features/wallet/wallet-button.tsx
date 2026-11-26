@@ -2,6 +2,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 import { WALLET_COPY } from '@/copy/wallet'
 import { formatBnb, shortAddress } from '@/lib/format'
+import { TileButton } from '@/ui/tile-button'
 
 import { useWallet } from './use-wallet'
 
@@ -19,21 +20,18 @@ export const WalletButton = () => {
       {({ mounted, openConnectModal, openAccountModal }) => {
         if (!mounted) {
           return (
-            <span className="wallet-button wallet-button--pending" aria-hidden="true">
-              {WALLET_COPY.connect}
+            <span className="wallet-placeholder" aria-hidden="true">
+              <TileButton variant="primary" state="disabled">
+                {WALLET_COPY.connect}
+              </TileButton>
             </span>
           )
         }
         if (wallet.status === 'wrongNetwork') {
           return (
-            <button
-              type="button"
-              className="wallet-button wallet-button--warn"
-              onClick={switchNetwork}
-              disabled={wallet.switching}
-            >
+            <TileButton state={wallet.switching ? 'wallet' : 'idle'} onClick={switchNetwork}>
               {wallet.switching ? WALLET_COPY.switching : WALLET_COPY.switchNetwork}
-            </button>
+            </TileButton>
           )
         }
         if (wallet.status === 'connected' && wallet.address !== undefined) {
@@ -41,25 +39,20 @@ export const WalletButton = () => {
           const balance =
             wallet.balance === undefined ? '' : WALLET_COPY.balance(formatBnb(wallet.balance))
           return (
-            <button
-              type="button"
-              className="wallet-button wallet-button--account"
+            <TileButton
+              variant="ghost"
               onClick={openAccountModal}
-              aria-label={WALLET_COPY.accountLabel(address, balance)}
+              ariaLabel={WALLET_COPY.accountLabel(address, balance)}
             >
-              <span className="wallet-button__address">{address}</span>
-              {balance === '' ? null : <span className="wallet-button__balance">{balance}</span>}
-            </button>
+              <span className="wallet-account__address">{address}</span>
+              {balance === '' ? null : <span className="wallet-account__balance">{balance}</span>}
+            </TileButton>
           )
         }
         return (
-          <button
-            type="button"
-            className="wallet-button wallet-button--connect"
-            onClick={openConnectModal}
-          >
+          <TileButton variant="primary" onClick={openConnectModal}>
             {WALLET_COPY.connect}
-          </button>
+          </TileButton>
         )
       }}
     </ConnectButton.Custom>

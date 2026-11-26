@@ -15,7 +15,7 @@ body {
   background: var(--ink-0);
   color: var(--cream);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.5;
 }
 
@@ -43,4 +43,9 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: var(--focus-offset);
 }

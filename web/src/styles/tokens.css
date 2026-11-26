@@ -13,11 +13,48 @@
   --lime: #c6ff3d;
   --gold: #ffc83d;
   --rope-d: #c99412;
+  --bevel: #262a45;
+  --shade: #0c0d1859;
+  --glint: #ffffff59;
+  --shadow-ink: #0c0d1899;
+  --shadow-black: #0000008c;
+  --scrim: #0c0d18c7;
+  --scrim-check: #0c0d1880;
+
+  --focus: var(--lime);
 
   --font-heading:
-    'Pixelify Sans', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+    'Pixelify Sans Variable', 'Pixelify Sans', ui-monospace, 'SFMono-Regular', Menlo, Consolas,
+    'Liberation Mono', monospace;
   --font-digits:
     'VT323', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
   --font-body:
     'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --text-body: 13px;
+  --text-small: 12px;
+  --text-label: 14px;
+  --text-tile: 16px;
+  --text-primary: 26px;
+  --text-primary-large: 32px;
+  --text-title: 36px;
+
+  --outline: 3px;
+  --ring: 6px;
+  --ring-outer: 9px;
+  --bevel-size: 3px;
+  --tile-bevel: 4px;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+  --shadow-offset: 6px;
+  --toast-shadow-offset: 10px;
+  --toast-shadow-spread: 4px;
+  --modal-shadow-offset: 14px;
+  --modal-shadow-spread: 6px;
+  --checker: 4px;
+
+  --touch-target: 44px;
+  --primary-height: 54px;
+  --bottom-bar-height: 0px;
+  --gutter: 16px;
 }

@@ -13,6 +13,7 @@ import { walletTheme } from '@/app/wallet-theme'
 import { entryLinkTarget } from '@/lib/entry-link'
 
 import '@rainbow-me/rainbowkit/styles.css'
+import '@/styles/fonts.css'
 import '@/styles/tokens.css'
 import '@/styles/base.css'
 import '@/styles/shell.css'

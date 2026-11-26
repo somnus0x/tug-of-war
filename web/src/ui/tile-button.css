@@ -1,0 +1,130 @@
+.tile-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: var(--touch-target);
+  margin: var(--outline);
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 0;
+  background: var(--cream);
+  color: var(--ink-0);
+  font-family: var(--font-heading);
+  font-size: var(--text-tile);
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+  text-align: center;
+  cursor: pointer;
+  box-shadow:
+    inset calc(-1 * var(--tile-bevel)) calc(-1 * var(--tile-bevel)) 0 var(--shade),
+    inset var(--tile-bevel) var(--tile-bevel) 0 var(--glint),
+    0 calc(-1 * var(--outline)) 0 0 var(--ink-0),
+    0 var(--outline) 0 0 var(--ink-0),
+    calc(-1 * var(--outline)) 0 0 0 var(--ink-0),
+    var(--outline) 0 0 0 var(--ink-0);
+}
+
+.tile-button:focus-visible {
+  outline: var(--focus-width) solid var(--focus);
+  outline-offset: calc(var(--outline) + var(--focus-offset));
+}
+
+.tile-button__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tile-button--primary {
+  background: var(--lime);
+  font-family: var(--font-digits);
+  font-size: var(--text-primary);
+  letter-spacing: 0.03em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.tile-button--ghost {
+  background: var(--ink-2);
+  color: var(--cream);
+}
+
+.tile-button--blue,
+.tile-button--red {
+  justify-content: flex-start;
+  background: var(--ink-2);
+  color: var(--cream);
+}
+
+.tile-button--full {
+  display: flex;
+  width: calc(100% - 2 * var(--outline));
+}
+
+.tile-button--primary.tile-button--full {
+  min-height: var(--primary-height);
+  font-size: var(--text-primary-large);
+}
+
+.tile-button.is-selected::after {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-left: auto;
+  background: var(--ink-0);
+  box-shadow: inset var(--bevel-size) var(--bevel-size) 0 var(--cream);
+}
+
+.tile-button--ghost.is-selected {
+  background: var(--cream);
+  color: var(--ink-0);
+}
+
+.tile-button--blue.is-selected {
+  background: var(--blue);
+  color: var(--ink-0);
+}
+
+.tile-button--red.is-selected {
+  background: var(--red);
+  color: var(--ink-0);
+}
+
+.tile-button.is-selected .team-mark,
+.tile-button--primary .team-mark,
+.tile-button--tile:not(.tile-button--blue, .tile-button--red) .team-mark,
+.tile-button--ghost.is-selected .team-mark {
+  color: inherit;
+}
+
+.tile-button.is-busy {
+  background: var(--gold);
+  color: var(--ink-0);
+  cursor: progress;
+}
+
+.tile-button.is-disabled {
+  background-color: var(--ink-2);
+  background-image:
+    linear-gradient(45deg, var(--shade) 25%, transparent 25%, transparent 75%, var(--shade) 75%),
+    linear-gradient(45deg, var(--shade) 25%, transparent 25%, transparent 75%, var(--shade) 75%);
+  background-position:
+    0 0,
+    calc(var(--checker) / 2) calc(var(--checker) / 2);
+  background-size: var(--checker) var(--checker);
+  color: var(--mute);
+  cursor: not-allowed;
+  box-shadow:
+    0 calc(-1 * var(--outline)) 0 0 var(--ink-0),
+    0 var(--outline) 0 0 var(--ink-0),
+    calc(-1 * var(--outline)) 0 0 0 var(--ink-0),
+    var(--outline) 0 0 0 var(--ink-0);
+}
+
+.tile-button.is-disabled .team-mark {
+  color: inherit;
+}

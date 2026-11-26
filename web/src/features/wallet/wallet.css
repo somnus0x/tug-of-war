@@ -1,58 +1,17 @@
-.wallet-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 44px;
-  margin: 3px;
-  padding: 6px 14px;
-  border: 0;
-  border-radius: 0;
-  box-shadow:
-    0 0 0 3px var(--ink-0),
-    inset 0 3px 0 color-mix(in srgb, var(--cream) 35%, transparent);
-  font-family: var(--font-digits);
-  font-size: 22px;
-  line-height: 1;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.wallet-button:focus-visible {
-  outline: 2px solid var(--lime);
-  outline-offset: 5px;
-}
-
-.wallet-button:disabled {
-  cursor: progress;
-  background: var(--ink-2);
-  color: var(--mute);
-}
-
-.wallet-button--connect {
-  background: var(--lime);
-  color: var(--ink-0);
-}
-
-.wallet-button--warn {
-  background: var(--gold);
-  color: var(--ink-0);
-}
-
-.wallet-button--account {
-  background: var(--ink-1);
-  color: var(--cream);
-  box-shadow:
-    0 0 0 3px var(--ink-2),
-    inset 0 3px 0 var(--ink-2);
-}
-
-.wallet-button--pending {
+.wallet-placeholder {
   visibility: hidden;
 }
 
-.wallet-button__balance {
+.wallet-account__address {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+
+.wallet-account__balance {
   color: var(--lime);
+  font-family: var(--font-digits);
+  font-size: 20px;
 }
 
 .network-name {
@@ -70,20 +29,4 @@
   color: var(--ink-0);
   text-transform: uppercase;
   font-size: 11px;
-}
-
-.network-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 16px;
-  background: var(--ink-1);
-  border-block: 3px solid var(--gold);
-}
-
-.network-banner__text {
-  flex: 1 1 220px;
-  min-width: 0;
 }

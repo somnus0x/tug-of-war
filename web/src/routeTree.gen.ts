@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as GalleryRouteImport } from './routes/gallery'
 import { Route as GLauncherRouteRouteImport } from './routes/g.$launcher.route'
 import { Route as GLauncherIndexRouteImport } from './routes/g.$launcher.index'
 import { Route as GLauncherVaultRouteImport } from './routes/g.$launcher.vault'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GLauncherRouteRoute = GLauncherRouteRouteImport.update({
@@ -44,6 +50,7 @@ const GLauncherVaultRoute = GLauncherVaultRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/gallery': typeof GalleryRoute
   '/g/$launcher': typeof GLauncherRouteRouteWithChildren
   '/g/$launcher/vault': typeof GLauncherVaultRoute
   '/g/$launcher/': typeof GLauncherIndexRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/gallery': typeof GalleryRoute
   '/g/$launcher/vault': typeof GLauncherVaultRoute
   '/g/$launcher': typeof GLauncherIndexRoute
 }
@@ -58,6 +66,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/create': typeof CreateRoute
+  '/gallery': typeof GalleryRoute
   '/g/$launcher': typeof GLauncherRouteRouteWithChildren
   '/g/$launcher/vault': typeof GLauncherVaultRoute
   '/g/$launcher/': typeof GLauncherIndexRoute
@@ -65,13 +74,19 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/create' | '/g/$launcher' | '/g/$launcher/vault' | '/g/$launcher/'
+    | '/'
+    | '/create'
+    | '/gallery'
+    | '/g/$launcher'
+    | '/g/$launcher/vault'
+    | '/g/$launcher/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/create' | '/g/$launcher/vault' | '/g/$launcher'
+  to: '/' | '/create' | '/gallery' | '/g/$launcher/vault' | '/g/$launcher'
   id:
     | '__root__'
     | '/'
     | '/create'
+    | '/gallery'
     | '/g/$launcher'
     | '/g/$launcher/vault'
     | '/g/$launcher/'
@@ -80,6 +95,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CreateRoute: typeof CreateRoute
+  GalleryRoute: typeof GalleryRoute
   GLauncherRouteRoute: typeof GLauncherRouteRouteWithChildren
 }
 
@@ -97,6 +113,13 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/g/$launcher': {
@@ -140,6 +163,7 @@ const GLauncherRouteRouteWithChildren = GLauncherRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CreateRoute: CreateRoute,
+  GalleryRoute: GalleryRoute,
   GLauncherRouteRoute: GLauncherRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
