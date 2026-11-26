@@ -79,6 +79,12 @@ The app opens at <http://localhost:5173/tug-of-war/> and reads the live testnet 
 - [contracts/docs/frontend-api.md](contracts/docs/frontend-api.md): contract calls per screen
 - [web/README.md](web/README.md): settings, mock mode, screens, code layout
 
+## Team
+
+- [@evilpeach](https://github.com/evilpeach)
+- [@songwongtp](https://github.com/songwongtp)
+- [@somnus0x](https://github.com/somnus0x)
+
 ## Built with
 
 Flap · BNB Smart Chain · Foundry · OpenZeppelin · Solady · Vite · React · wagmi/viem
