@@ -1,0 +1,671 @@
+[
+  {
+    "type": "function",
+    "name": "defaultConfig",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct TugConfig",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "meta",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "salt",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "duration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "minRaise",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "walletCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "captainBlue",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "captainRed",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "vaultFactory",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "maxBonusShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainMinDeposit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "acceptWindow",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "captainAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainVestDuration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "captainShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "encodeConfig",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct TugConfig",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "meta",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "salt",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "duration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "minRaise",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "walletCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "captainBlue",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "captainRed",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "vaultFactory",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "maxBonusShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainMinDeposit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "acceptWindow",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "captainAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainVestDuration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "captainShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "stateMutability": "pure"
+  },
+  {
+    "type": "function",
+    "name": "gameAt",
+    "inputs": [
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "launcher",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gamesCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gamesOf",
+    "inputs": [
+      {
+        "name": "captain",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "games",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isLauncher",
+    "inputs": [
+      {
+        "name": "launcher",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "limits",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "configLimits",
+        "type": "tuple",
+        "internalType": "struct Limits",
+        "components": [
+          {
+            "name": "duration",
+            "type": "tuple",
+            "internalType": "struct DurationRange",
+            "components": [
+              {
+                "name": "min",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "max",
+                "type": "uint64",
+                "internalType": "uint64"
+              }
+            ]
+          },
+          {
+            "name": "acceptWindow",
+            "type": "tuple",
+            "internalType": "struct DurationRange",
+            "components": [
+              {
+                "name": "min",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "max",
+                "type": "uint64",
+                "internalType": "uint64"
+              }
+            ]
+          },
+          {
+            "name": "captainVestDuration",
+            "type": "tuple",
+            "internalType": "struct DurationRange",
+            "components": [
+              {
+                "name": "min",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "max",
+                "type": "uint64",
+                "internalType": "uint64"
+              }
+            ]
+          },
+          {
+            "name": "maxBonusShareBps",
+            "type": "tuple",
+            "internalType": "struct BpsRange",
+            "components": [
+              {
+                "name": "min",
+                "type": "uint16",
+                "internalType": "uint16"
+              },
+              {
+                "name": "max",
+                "type": "uint16",
+                "internalType": "uint16"
+              }
+            ]
+          },
+          {
+            "name": "captainAllocBps",
+            "type": "tuple",
+            "internalType": "struct BpsRange",
+            "components": [
+              {
+                "name": "min",
+                "type": "uint16",
+                "internalType": "uint16"
+              },
+              {
+                "name": "max",
+                "type": "uint16",
+                "internalType": "uint16"
+              }
+            ]
+          },
+          {
+            "name": "captainShareBps",
+            "type": "tuple",
+            "internalType": "struct BpsRange",
+            "components": [
+              {
+                "name": "min",
+                "type": "uint16",
+                "internalType": "uint16"
+              },
+              {
+                "name": "max",
+                "type": "uint16",
+                "internalType": "uint16"
+              }
+            ]
+          },
+          {
+            "name": "minRaiseFloor",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "creationFloorAvailable",
+            "type": "bool",
+            "internalType": "bool"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pairedVaultFactory",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "portal",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "predictToken",
+    "inputs": [
+      {
+        "name": "salt",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "tokenImplementation",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "validateConfig",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct TugConfig",
+        "components": [
+          {
+            "name": "name",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "meta",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "salt",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          },
+          {
+            "name": "duration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "minRaise",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "walletCap",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "captainBlue",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "captainRed",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "vaultFactory",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "maxBonusShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainMinDeposit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "acceptWindow",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "captainAllocBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "captainVestDuration",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "captainShareBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ok",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "reason",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "event",
+    "name": "TugLauncherCreated",
+    "inputs": [
+      {
+        "name": "launcher",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "creator",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "captainBlue",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "captainRed",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "salt",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AcceptWindowOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CaptainAllocOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CaptainDepositExceedsWalletCap",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CaptainShareOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CaptainVestDurationOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CreationFloorUnavailable",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DurationOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidCaptains",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidSalt",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidVaultFactory",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidWalletCap",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MaxBonusShareOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinRaiseBelowCreationFloor",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NonCanonicalConfig",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroMinRaise",
+    "inputs": []
+  }
+]
