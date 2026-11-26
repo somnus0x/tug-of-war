@@ -125,7 +125,14 @@ export const yourCoinsOf = ({ game, player: read, canClaim }: YourCoinsInput): Y
   }
 }
 
-export const emptyStakeNote = (player: WalletRead<Player>, lock: StakeLock): string => {
+export const emptyStakeNote = (
+  player: WalletRead<Player>,
+  lock: StakeLock,
+  staked: TokenWei,
+): string => {
+  if (staked > 0n && lock.kind === 'locked') {
+    return VAULT_COPY.stake.allStaked(GAME_COPY.team[lock.team])
+  }
   if (player.kind !== 'ready' || player.value.claimable === 0n) {
     return VAULT_COPY.stake.nothingToStake
   }

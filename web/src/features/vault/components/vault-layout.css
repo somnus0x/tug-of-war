@@ -140,8 +140,11 @@
 }
 
 .vault-stake-button .tile-button {
-  font-size: var(--text-tile);
   white-space: nowrap;
+}
+
+.vault .modal__body .vault-field {
+  margin-bottom: 14px;
 }
 
 .vault-stake-button .tile-button__label {

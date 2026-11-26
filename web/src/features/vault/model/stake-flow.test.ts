@@ -10,6 +10,7 @@ import {
   IDLE_FLOW,
   firstStep,
   intentOf,
+  stakeButtonText,
   stakeFailureText,
   stakeFlowReducer,
   stakeNoteOf,
@@ -142,5 +143,13 @@ describe('stakeFailureText', () => {
     expect(stakeFailureText({ title: 'Stake did not go through' }).body).toBe(
       'Your coins are still in your wallet.',
     )
+  })
+})
+
+describe('stakeButtonText', () => {
+  it('shortens only the wallet prompt so it fits on one line', () => {
+    expect(stakeButtonText('Confirm in your wallet…')).toBe('Confirm in wallet…')
+    expect(stakeButtonText('Approving…')).toBe('Approving…')
+    expect(stakeButtonText(undefined)).toBeUndefined()
   })
 })

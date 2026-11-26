@@ -65,6 +65,8 @@ export const VAULT_COPY = {
     approvedRetry: 'The approval went through. Staking needs one more confirmation.',
     keepTeam: (team: string) => `You stay on ${team} if you stake again.`,
     nothingToStake: 'There are no coins in this wallet to stake.',
+    allStaked: (team: string) => `Staked on ${team}. Unstaking stops your rewards.`,
+    confirmShort: 'Confirm in wallet…',
     claimFirst: (team: string) => `Claim your coins first, then stake them on ${team}’s side.`,
     failedTitle: 'Stake did not go through',
     failedBody: 'Your coins are still in your wallet.',

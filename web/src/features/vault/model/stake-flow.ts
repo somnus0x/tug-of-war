@@ -4,6 +4,7 @@ import type { TokenWei } from '@/lib/units'
 import type { Address } from 'viem'
 
 import { NOT_TAKEN } from '@/copy/error-rows'
+import { TX_COPY } from '@/copy/tx'
 import { VAULT_COPY } from '@/copy/vault'
 
 export type StakePlace = {
@@ -108,3 +109,6 @@ export const stakeFailureText = (message: TxMessage): TxMessage => {
     body: reason === '' ? VAULT_COPY.stake.failedBody : `${VAULT_COPY.stake.failedBody} ${reason}`,
   }
 }
+
+export const stakeButtonText = (label: string | undefined): string | undefined =>
+  label === TX_COPY.wallet ? VAULT_COPY.stake.confirmShort : label

@@ -11,6 +11,7 @@ import { vaultWorldOf } from '@/contracts/fixtures/vault-world'
 import { viewerAddress } from '@/contracts/fixtures/viewers'
 import { createFixtureWorld } from '@/contracts/fixtures/world'
 import { VAULT_COPY } from '@/copy/vault'
+import { tokenWei } from '@/lib/units'
 
 import { poolsOf } from './pools-text'
 import {
@@ -170,17 +171,27 @@ describe('vault cards for each viewer', () => {
   it('points a wallet that has not claimed at the claim before staking', () => {
     const fan = viewOf('fan-blue')
     const lock = stakeLockOf(ready(fan.staker).team, ready(fan.player).team)
-    expect(emptyStakeNote(fan.player, lock)).toBe(
+    expect(emptyStakeNote(fan.player, lock, tokenWei(0n))).toBe(
       'Claim your coins first, then stake them on Blue’s side.',
     )
     const empty = viewOf('fan-new')
-    expect(emptyStakeNote(empty.player, { kind: 'free' })).toBe(VAULT_COPY.stake.nothingToStake)
-    expect(emptyStakeNote({ kind: 'loading' }, lock)).toBe(VAULT_COPY.stake.nothingToStake)
+    expect(emptyStakeNote(empty.player, { kind: 'free' }, tokenWei(0n))).toBe(
+      VAULT_COPY.stake.nothingToStake,
+    )
+    expect(emptyStakeNote({ kind: 'loading' }, lock, tokenWei(0n))).toBe(
+      VAULT_COPY.stake.nothingToStake,
+    )
   })
 
   it('folds the coins card to one row once claimed', () => {
     const view = viewOf('fan-blue')
     const open = yourCoinsOf({ game: view.game, player: view.player, canClaim: true })
     expect(open.kind === 'entitled' && open.folded).toBeNull()
+  })
+
+  it('says a wallet with every coin staked is staked, not empty', () => {
+    expect(
+      emptyStakeNote({ kind: 'loading' }, { kind: 'locked', team: 'red' }, tokenWei(10n)),
+    ).toBe('Staked on Red. Unstaking stops your rewards.')
   })
 })

@@ -15,6 +15,7 @@ import {
   firstStep,
   intentOf,
   stakeFlowReducer,
+  stakeButtonText,
   stakeFailureText,
   stakeNoteOf,
   stakeToChain,
@@ -107,7 +108,7 @@ export const useStakeFlow = (input: StakeFlowInput): StakeFlowView => {
   const isStale = active === null && (flow.kind === 'approving' || flow.kind === 'staking')
   return {
     state: active?.state ?? null,
-    label: active?.label ?? stake.label,
+    label: stakeButtonText(active?.label ?? stake.label),
     note: stakeNoteOf(isStale ? IDLE_FLOW : flow, step),
     step,
     isBusy: active !== null,
