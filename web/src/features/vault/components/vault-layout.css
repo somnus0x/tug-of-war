@@ -79,6 +79,47 @@
   font-weight: 600;
 }
 
+@media (min-width: 1200px) {
+  .vault-coin {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'head facts'
+      'address facts'
+      'links links';
+    column-gap: 20px;
+    align-items: center;
+  }
+
+  .vault-coin__head {
+    grid-area: head;
+  }
+
+  .vault-coin__address {
+    grid-area: address;
+  }
+
+  .vault-coin__links {
+    grid-area: links;
+  }
+
+  .vault-coin__facts {
+    display: grid;
+    grid-area: facts;
+    gap: 4px;
+    align-self: stretch;
+    align-content: center;
+  }
+
+  .vault-coin__facts > div {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background: var(--ink-0);
+  }
+}
+
 .vault-rope {
   display: grid;
   gap: 8px;
@@ -162,6 +203,16 @@
 @media (min-width: 760px) {
   .vault__grid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .vault-slot {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .vault-slot > .pixel-box {
+    flex: 1 0 auto;
   }
 
   .vault-slot--top {
