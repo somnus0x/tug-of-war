@@ -11,17 +11,24 @@ export type CoinDraft = {
   readonly isAll: boolean
   readonly setText: (text: string) => void
   readonly fillAll: () => void
+  readonly setFocused: (isFocused: boolean) => void
 }
 
-export const useCoinDraft = (limit: TokenWei): CoinDraft => {
+export type DraftMode = 'live' | 'frozen'
+
+export const useCoinDraft = (limit: TokenWei, mode: DraftMode = 'live'): CoinDraft => {
   const [text, setText] = useState<string | null>(null)
+  const [fixed, setFixed] = useState<TokenWei | null>(null)
+  const [isFocused, setFocused] = useState(false)
   return {
-    text: entryText(text, limit),
-    entry: readCoinEntry(text, limit),
-    isAll: text === null,
+    text: entryText(text, fixed ?? limit, isFocused),
+    entry: readCoinEntry(text, limit, fixed),
+    isAll: text === null && (fixed === null || fixed === limit),
     setText,
     fillAll: () => {
       setText(null)
+      setFixed(mode === 'frozen' ? limit : null)
     },
+    setFocused,
   }
 }

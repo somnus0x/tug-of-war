@@ -75,7 +75,7 @@ export type YourCoins =
       readonly team: PickedTeam
       readonly rows: readonly CoinRow[]
       readonly claimLabel: string | null
-      readonly claimedLine: string | null
+      readonly folded: CoinRow | null
     }
 
 export type YourCoinsInput = {
@@ -118,9 +118,21 @@ export const yourCoinsOf = ({ game, player: read, canClaim }: YourCoinsInput): Y
       { key: 'total', label: VAULT_COPY.coins.total, note: null, value: amount(total) },
     ],
     claimLabel: mayClaim ? VAULT_COPY.coins.claim(coins(player.claimable), symbol) : null,
-    claimedLine:
-      player.claimed > 0n ? VAULT_COPY.coins.claimed(coins(player.claimed), symbol) : null,
+    folded:
+      player.claimed > 0n && player.claimable === 0n
+        ? { key: 'total', label: VAULT_COPY.coins.claimedTotal, note: null, value: amount(total) }
+        : null,
   }
+}
+
+export const emptyStakeNote = (player: WalletRead<Player>, lock: StakeLock): string => {
+  if (player.kind !== 'ready' || player.value.claimable === 0n) {
+    return VAULT_COPY.stake.nothingToStake
+  }
+  const team = lock.kind === 'locked' ? lock.team : player.value.team
+  return team === 'none'
+    ? VAULT_COPY.stake.nothingToStake
+    : VAULT_COPY.stake.claimFirst(GAME_COPY.team[team])
 }
 
 export type StakeLock =

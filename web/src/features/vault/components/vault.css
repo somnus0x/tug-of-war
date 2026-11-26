@@ -112,17 +112,6 @@
   overflow-wrap: anywhere;
 }
 
-.vault-coin__rope {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
-  font-size: var(--text-body);
-}
-
-.vault-coin__rope span {
-  color: var(--mute);
-}
-
 .vault-coin__links {
   display: flex;
   flex-wrap: wrap;
@@ -256,7 +245,7 @@
   background: transparent;
   color: var(--cream);
   font-family: var(--font-digits);
-  font-size: var(--text-tile);
+  font-size: var(--text-primary);
   line-height: 1;
 }
 

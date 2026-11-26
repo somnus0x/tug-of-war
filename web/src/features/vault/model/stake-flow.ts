@@ -1,7 +1,9 @@
 import type { PickedTeam } from '@/contracts/tx/actions'
+import type { TxMessage } from '@/copy/tx'
 import type { TokenWei } from '@/lib/units'
 import type { Address } from 'viem'
 
+import { NOT_TAKEN } from '@/copy/error-rows'
 import { VAULT_COPY } from '@/copy/vault'
 
 export type StakePlace = {
@@ -92,5 +94,17 @@ export const stakeNoteOf = (flow: StakeFlow, step: StakeStep): string | null => 
       return step === 'stake' ? VAULT_COPY.stake.approvedRetry : null
     default:
       return null
+  }
+}
+
+const sentence = (text: string): string => (/[.!?…]$/.test(text) ? text : `${text}.`)
+
+export const stakeFailureText = (message: TxMessage): TxMessage => {
+  const parts = message.title.endsWith('did not go through') ? [] : [sentence(message.title)]
+  const body = (message.body ?? '').replace(NOT_TAKEN, '').trim()
+  const reason = [...parts, ...(body === '' ? [] : [sentence(body)])].join(' ')
+  return {
+    title: VAULT_COPY.stake.failedTitle,
+    body: reason === '' ? VAULT_COPY.stake.failedBody : `${VAULT_COPY.stake.failedBody} ${reason}`,
   }
 }

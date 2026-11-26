@@ -10,7 +10,7 @@ import { VAULT_COPY } from '@/copy/vault'
 import { PixelBox } from '@/ui/pixel-box'
 import { TeamMark } from '@/ui/team-mark'
 
-import { coins, keepTeamLine, stakeLockOf } from '../model/vault-cards'
+import { coins, emptyStakeNote, keepTeamLine, stakeLockOf } from '../model/vault-cards'
 import { readyValue } from '../model/wallet-read'
 import { CoinRows } from './coin-rows'
 import { StakeForm } from './stake-form'
@@ -74,7 +74,13 @@ export const StakeCard = ({ game, place, player, staker: read }: StakeCardProps)
           </p>
         ) : null}
         {afterUnstake === null ? null : <p className="vault-note">{afterUnstake}</p>}
-        <StakeForm place={place} game={game} staker={staker} lock={lock} />
+        <StakeForm
+          place={place}
+          game={game}
+          staker={staker}
+          lock={lock}
+          emptyNote={emptyStakeNote(player, lock)}
+        />
         <UnstakeBox
           game={game}
           staker={staker}

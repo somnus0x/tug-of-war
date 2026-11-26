@@ -40,6 +40,12 @@ export const CoinField = ({ label, symbol, draft, maxText, problem, isBusy }: Co
             onChange={(event) => {
               draft.setText(event.target.value)
             }}
+            onFocus={() => {
+              draft.setFocused(true)
+            }}
+            onBlur={() => {
+              draft.setFocused(false)
+            }}
           />
           <span className="vault-field__unit" aria-hidden="true">
             {symbol}

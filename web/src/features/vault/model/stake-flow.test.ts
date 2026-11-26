@@ -10,6 +10,7 @@ import {
   IDLE_FLOW,
   firstStep,
   intentOf,
+  stakeFailureText,
   stakeFlowReducer,
   stakeNoteOf,
   stakeToChain,
@@ -111,5 +112,35 @@ describe('stakeFlowReducer', () => {
     expect(run([approve, ev('approved'), ev('stakeFailed'), ev('abandoned')])).toEqual({
       kind: 'retry',
     })
+  })
+})
+
+describe('stakeFailureText', () => {
+  it('says the coins stayed and keeps the mapped reason', () => {
+    expect(stakeFailureText({ title: 'Transaction rejected', body: 'Nothing was sent.' })).toEqual({
+      title: 'Stake did not go through',
+      body: 'Your coins are still in your wallet. Transaction rejected. Nothing was sent.',
+    })
+    expect(stakeFailureText({ title: 'The transfer failed. Nothing changed. Try again.' })).toEqual(
+      {
+        title: 'Stake did not go through',
+        body: 'Your coins are still in your wallet. The transfer failed. Nothing changed. Try again.',
+      },
+    )
+  })
+
+  it('drops the generic title and the BNB line from a fallback message', () => {
+    expect(
+      stakeFailureText({
+        title: 'Stake did not go through',
+        body: 'ERC20InsufficientAllowance. Your BNB was not taken.',
+      }),
+    ).toEqual({
+      title: 'Stake did not go through',
+      body: 'Your coins are still in your wallet. ERC20InsufficientAllowance.',
+    })
+    expect(stakeFailureText({ title: 'Stake did not go through' }).body).toBe(
+      'Your coins are still in your wallet.',
+    )
   })
 })

@@ -1,0 +1,187 @@
+.vault__titles {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vault__game {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.vault__badge {
+  padding: 4px 10px;
+  background: var(--lime);
+  color: var(--ink-0);
+  font-family: var(--font-heading);
+  font-size: var(--text-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.vault__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
+
+.vault-coin__head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  min-width: 0;
+}
+
+.vault-coin-mark {
+  flex: none;
+}
+
+.vault-coin-mark__rim {
+  fill: var(--gold);
+}
+
+.vault-coin-mark__shade {
+  fill: var(--rope-d);
+}
+
+.vault-coin-mark__blue {
+  fill: var(--blue);
+}
+
+.vault-coin-mark__red {
+  fill: var(--red);
+}
+
+.vault-coin-mark__shine {
+  fill: var(--cream);
+}
+
+.vault-coin__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin: 0;
+}
+
+.vault-coin__facts dt {
+  color: var(--mute);
+  font-size: var(--text-small);
+}
+
+.vault-coin__facts dd {
+  margin: 0;
+  font-size: var(--text-tile);
+  font-weight: 600;
+}
+
+.vault-rope {
+  display: grid;
+  gap: 8px;
+}
+
+.vault-rope__bar {
+  display: block;
+  width: 100%;
+  height: 48px;
+}
+
+.vault-rope__blue {
+  fill: var(--blue);
+}
+
+.vault-rope__red {
+  fill: var(--red);
+}
+
+.vault-rope__line {
+  fill: var(--cream);
+}
+
+.vault-rope__marker {
+  fill: var(--lime);
+  stroke: var(--ink-0);
+  stroke-width: 3;
+}
+
+.vault-rope__rows {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.vault-rope__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  justify-content: space-between;
+  font-size: var(--text-small);
+}
+
+.vault-rope__row dt {
+  color: var(--mute);
+}
+
+.vault-rope__row dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.vault .modal__title {
+  overflow-wrap: anywhere;
+}
+
+.vault-slot {
+  min-width: 0;
+}
+
+.vault-stake-button .tile-button {
+  font-size: var(--text-tile);
+  white-space: nowrap;
+}
+
+.vault-stake-button .tile-button__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 759px) {
+  .vault__cards,
+  .vault__lower {
+    display: contents;
+  }
+
+  .vault-slot--1 {
+    order: 1;
+  }
+
+  .vault-slot--2 {
+    order: 2;
+  }
+
+  .vault-slot--3 {
+    order: 3;
+  }
+
+  .vault-slot--4 {
+    order: 4;
+  }
+
+  .vault-slot--5 {
+    order: 5;
+  }
+
+  .vault-slot--6 {
+    order: 6;
+  }
+}
+
+@media (min-width: 760px) {
+  .vault__head {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 470px);
+  }
+}

@@ -1,7 +1,9 @@
+import type { VaultCard } from '../model/card-order'
 import type { WalletRead } from '../model/wallet-read'
 import type { CaptainRead } from '@/contracts/captain-types'
 import type { Game, Player, Rules } from '@/contracts/types'
 import type { Staker, Vault } from '@/contracts/vault-types'
+import type { ReactNode } from 'react'
 import type { Address } from 'viem'
 
 import { Link } from '@tanstack/react-router'
@@ -11,10 +13,13 @@ import { Banner } from '@/ui/banner'
 import { PixelBox } from '@/ui/pixel-box'
 import { Spinner } from '@/ui/spinner'
 
+import { captainCoinsOf, captainShareOf } from '../model/captain-cards'
+import { cardActionsOf, orderClassOf, phoneCardOrder } from '../model/card-order'
 import { viewerKindOf } from '../model/vault-cards'
 import { CaptainCoinsCard } from './captain-coins-card'
 import { CaptainShareCard } from './captain-share-card'
 import { CoinStrip } from './coin-strip'
+import { FinalRopePanel } from './final-rope-panel'
 import { PoolsCard } from './pools-card'
 import { RewardsCard } from './rewards-card'
 import { StakeCard } from './stake-card'
@@ -48,10 +53,20 @@ export const VaultBoard = ({
   isVaultError,
 }: VaultBoardProps) => {
   const kind = viewerKindOf(player, staker)
+  const order = phoneCardOrder(cardActionsOf({ player, staker, captain, canClaim }))
+  const slot = (card: VaultCard, content: ReactNode) => (
+    <div className={orderClassOf(order, card)}>{content}</div>
+  )
   return (
     <div className="vault">
       <div className="vault__top">
-        <h1 className="vault__title">{VAULT_COPY.heading}</h1>
+        <div className="vault__titles">
+          <h1 className="vault__title">{VAULT_COPY.heading}</h1>
+          <p className="vault__game">
+            <span>{VAULT_COPY.coinLine(game.config.name, game.config.symbol)}</span>
+            <span className="vault__badge">{VAULT_COPY.launched}</span>
+          </p>
+        </div>
         <Link className="vault__back" to="/g/$launcher" params={{ launcher }} search={true}>
           {VAULT_COPY.backToGame}
         </Link>
@@ -61,30 +76,46 @@ export const VaultBoard = ({
         <Banner kind="info" text={VAULT_COPY.noCoins(game.config.symbol)} />
       ) : null}
       {isVaultError ? <Banner kind="warn" text={VAULT_COPY.loadFailed} /> : null}
-      <CoinStrip game={game} />
+      <div className="vault__head">
+        <CoinStrip game={game} rules={rules} />
+        <FinalRopePanel game={game} />
+      </div>
       <div className="vault__cards">
-        <YourCoinsCard launcher={launcher} game={game} player={player} canClaim={canClaim} />
-        <StakeCard
-          game={game}
-          place={account === undefined ? null : { launcher, account, chain }}
-          player={player}
-          staker={staker}
-        />
-        <RewardsCard game={game} rules={rules} staker={staker} />
+        {slot(
+          'coins',
+          <YourCoinsCard launcher={launcher} game={game} player={player} canClaim={canClaim} />,
+        )}
+        {slot(
+          'stake',
+          <StakeCard
+            game={game}
+            place={account === undefined ? null : { launcher, account, chain }}
+            player={player}
+            staker={staker}
+          />,
+        )}
+        {slot('rewards', <RewardsCard game={game} rules={rules} staker={staker} />)}
       </div>
       <div className="vault__lower">
-        {vault === null ? (
-          <PixelBox heading={VAULT_COPY.pools.heading}>
-            <p className="vault-note" aria-busy="true">
-              <Spinner />
-              {VAULT_COPY.loading}
-            </p>
-          </PixelBox>
-        ) : (
-          <PoolsCard game={game} vault={vault} />
+        {slot(
+          'pools',
+          vault === null ? (
+            <PixelBox heading={VAULT_COPY.pools.heading}>
+              <p className="vault-note" aria-busy="true">
+                <Spinner />
+                {VAULT_COPY.loading}
+              </p>
+            </PixelBox>
+          ) : (
+            <PoolsCard game={game} vault={vault} />
+          ),
         )}
-        <CaptainCoinsCard game={game} captain={captain} />
-        <CaptainShareCard game={game} captain={captain} />
+        {captainCoinsOf(captain, game, null) === null
+          ? null
+          : slot('captainCoins', <CaptainCoinsCard game={game} captain={captain} />)}
+        {captainShareOf(captain, game) === null
+          ? null
+          : slot('captainShare', <CaptainShareCard game={game} captain={captain} />)}
       </div>
     </div>
   )

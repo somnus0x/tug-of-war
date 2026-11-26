@@ -37,10 +37,7 @@ export const YourCoinsCard = ({ launcher, game, player, canClaim }: YourCoinsCar
         {view.kind === 'entitled' ? (
           <>
             <TeamMark team={view.team} label={GAME_COPY.team[view.team]} />
-            <CoinRows rows={view.rows} />
-            {view.claimedLine === null ? null : (
-              <p className="vault-note vault-note--done">{view.claimedLine}</p>
-            )}
+            <CoinRows rows={view.folded === null ? view.rows : [view.folded]} />
             {view.claimLabel === null ? null : (
               <TileButton variant="primary" fullWidth state={claim.state} onClick={claim.run}>
                 {claim.label ?? view.claimLabel}

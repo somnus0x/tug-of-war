@@ -14,6 +14,7 @@ import { VAULT_COPY } from '@/copy/vault'
 
 import { poolsOf } from './pools-text'
 import {
+  emptyStakeNote,
   keepTeamLine,
   rewardsOf,
   stakeLabelOf,
@@ -114,7 +115,10 @@ describe('vault cards for each viewer', () => {
     const staker = ready(view.staker)
     const player = ready(view.player)
     const coins = yourCoinsOf({ game: view.game, player: view.player, canClaim: false })
-    expect(coins.kind === 'entitled' && coins.claimedLine).toMatch(/^Claimed\. [\d,]+ ROPE/)
+    expect(coins.kind === 'entitled' && coins.folded).toMatchObject({
+      label: 'Claimed · base + bonus',
+      value: expect.stringMatching(/^[\d,]+ ROPE$/),
+    })
     expect(staker.staked).toBe(0n)
     expect(staker.tokenBalance).toBe(player.claimed)
     expect(stakeLockOf(staker.team, player.team)).toEqual({ kind: 'locked', team: 'blue' })
@@ -161,5 +165,22 @@ describe('vault cards for each viewer', () => {
     for (const side of pools.sides) {
       expect(side.rate).not.toContain(VAULT_COPY.pools.tiny)
     }
+  })
+
+  it('points a wallet that has not claimed at the claim before staking', () => {
+    const fan = viewOf('fan-blue')
+    const lock = stakeLockOf(ready(fan.staker).team, ready(fan.player).team)
+    expect(emptyStakeNote(fan.player, lock)).toBe(
+      'Claim your coins first, then stake them on Blue’s side.',
+    )
+    const empty = viewOf('fan-new')
+    expect(emptyStakeNote(empty.player, { kind: 'free' })).toBe(VAULT_COPY.stake.nothingToStake)
+    expect(emptyStakeNote({ kind: 'loading' }, lock)).toBe(VAULT_COPY.stake.nothingToStake)
+  })
+
+  it('folds the coins card to one row once claimed', () => {
+    const view = viewOf('fan-blue')
+    const open = yourCoinsOf({ game: view.game, player: view.player, canClaim: true })
+    expect(open.kind === 'entitled' && open.folded).toBeNull()
   })
 })

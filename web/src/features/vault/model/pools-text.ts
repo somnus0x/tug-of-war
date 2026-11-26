@@ -19,7 +19,7 @@ export type PoolSide = {
 export type PoolsView = { readonly sides: readonly PoolSide[]; readonly split: string }
 
 export const rateText = (rate: BnbWei): string => {
-  const text = formatBnb(rate)
+  const text = formatBnb(rate, { precise: true })
   return rate > 0n && /^0\.0+$/.test(text) ? VAULT_COPY.pools.tiny : text
 }
 

@@ -158,8 +158,14 @@ export const formatDateTime = (seconds: number, timeZone?: string): string =>
     ...(timeZone === undefined ? {} : { timeZone }),
   }).format(new Date(wholeSeconds(seconds) * 1000))
 
+const COIN_INPUT = /^(?:\d{1,3}(?:,\d{3})+|\d+)?(?:\.\d*)?$/
+
 export const parseCoins = (text: string): TokenWei | null => {
-  const wei = parseBnb(text)
+  const trimmed = text.trim()
+  if (trimmed === '' || trimmed === '.' || !COIN_INPUT.test(trimmed)) {
+    return null
+  }
+  const wei = parseBnb(trimmed.replaceAll(',', ''))
   return wei === null ? null : tokenWei(wei)
 }
 
@@ -168,6 +174,12 @@ export const formatCoinsExact = (amount: TokenWei): string =>
 
 export const formatCoinsDraft = (amount: TokenWei): string =>
   fixedDown(amount, 4).replace(/\.?0+$/, '')
+
+export const formatCoinsGrouped = (amount: TokenWei): string => {
+  const [whole = '0', fraction] = formatCoinsDraft(amount).split('.')
+  const grouped = whole.replace(THOUSANDS, ',')
+  return fraction === undefined ? grouped : `${grouped}.${fraction}`
+}
 
 export const formatCoinsFull = (amount: TokenWei): string => {
   const [whole = '0', fraction] = formatCoinsExact(amount).split('.')

@@ -10,6 +10,7 @@ import { useVaultPage } from '../hooks/use-vault-page'
 import { VaultBoard } from './vault-board'
 
 import './vault.css'
+import './vault-layout.css'
 
 type VaultPageProps = {
   launcher: Address

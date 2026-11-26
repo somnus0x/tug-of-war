@@ -1,6 +1,5 @@
 import type { Game } from '@/contracts/types'
 import type { Staker } from '@/contracts/vault-types'
-import type { TokenWei } from '@/lib/units'
 
 import { useState } from 'react'
 
@@ -25,8 +24,8 @@ type UnstakeBoxProps = {
 
 export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBoxProps) => {
   const symbol = game.config.symbol
-  const draft = useCoinDraft(staker.staked)
-  const [snapshot, setSnapshot] = useState<TokenWei | null>(null)
+  const draft = useCoinDraft(staker.staked, 'frozen')
+  const [isOpen, setOpen] = useState(false)
   const [sentAll, setSentAll] = useState(false)
   const amount = entryAmount(draft.entry)
   const unstake = useActionWith(
@@ -34,8 +33,7 @@ export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBox
     { launcher: game.launcher, target: game.vault },
     {
       onSuccess: () => {
-        setSnapshot(null)
-        draft.fillAll()
+        setOpen(false)
         if (sentAll) {
           onUnstakedAll()
         }
@@ -43,56 +41,54 @@ export const UnstakeBox = ({ game, staker, stayLine, onUnstakedAll }: UnstakeBox
     },
   )
   const isBusy = unstake.state !== 'idle'
-  const problem = entryProblem(draft.entry, 'staked')
-  const confirm = snapshot === null ? null : unstakeConfirmOf(snapshot, staker.staked, symbol)
-  if (staker.staked === 0n && !isBusy && confirm === null) {
+  const confirm = unstakeConfirmOf(amount, staker.staked, symbol)
+  if (staker.staked === 0n && !isBusy && !isOpen) {
     return null
   }
   return (
-    <div className="vault-form vault-form--unstake">
-      <CoinField
-        label={VAULT_COPY.unstake.amountLabel(symbol)}
-        symbol={symbol}
-        draft={draft}
-        maxText={formatCoinsFull(staker.staked)}
-        problem={problem}
-        isBusy={isBusy}
-      />
+    <>
       <TileButton
         variant="ghost"
         fullWidth
-        state={isBusy ? unstake.state : amount === null ? 'disabled' : 'idle'}
+        state={isBusy ? unstake.state : 'idle'}
         onClick={() => {
-          setSnapshot(amount)
+          draft.fillAll()
+          setOpen(true)
         }}
       >
         {isBusy ? (unstake.label ?? VAULT_COPY.unstake.button) : VAULT_COPY.unstake.button}
       </TileButton>
       <Modal
-        open={confirm !== null}
-        title={confirm?.title ?? ''}
+        open={isOpen}
+        title={confirm.title}
         primaryLabel={unstake.label ?? VAULT_COPY.unstake.button}
-        primaryState={isBusy ? unstake.state : confirm?.canSend === true ? 'idle' : 'disabled'}
+        primaryState={isBusy ? unstake.state : confirm.canSend ? 'idle' : 'disabled'}
+        primaryVariant="tile"
         onPrimary={() => {
-          if (snapshot === null || confirm === null || !confirm.canSend) {
+          if (amount === null || !confirm.canSend) {
             return
           }
           setSentAll(confirm.isAll)
-          unstake.run({ amount: snapshot })
+          unstake.run({ amount })
         }}
         secondaryLabel={VAULT_COPY.unstake.keep}
         onClose={() => {
           if (!isBusy) {
-            setSnapshot(null)
+            setOpen(false)
           }
         }}
       >
+        <CoinField
+          label={VAULT_COPY.unstake.amountLabel(symbol)}
+          symbol={symbol}
+          draft={draft}
+          maxText={formatCoinsFull(staker.staked)}
+          problem={entryProblem(draft.entry, 'staked')}
+          isBusy={isBusy}
+        />
         <p>{VAULT_COPY.unstake.body(pendingBnb(staker.pendingRewards))}</p>
-        {confirm?.isAll === true && stayLine !== null ? <p>{stayLine}</p> : null}
-        {confirm === null || confirm.problem === null || isBusy ? null : (
-          <p role="alert">{confirm.problem}</p>
-        )}
+        {confirm.isAll && stayLine !== null ? <p>{stayLine}</p> : null}
       </Modal>
-    </div>
+    </>
   )
 }

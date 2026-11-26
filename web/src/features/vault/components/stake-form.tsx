@@ -22,9 +22,10 @@ type StakeFormProps = {
   game: Game
   staker: Staker
   lock: StakeLock
+  emptyNote: string
 }
 
-export const StakeForm = ({ place, game, staker, lock }: StakeFormProps) => {
+export const StakeForm = ({ place, game, staker, lock, emptyNote }: StakeFormProps) => {
   const symbol = game.config.symbol
   const draft = useCoinDraft(staker.tokenBalance)
   const [picked, setPicked] = useState<PickedTeam | null>(null)
@@ -41,7 +42,7 @@ export const StakeForm = ({ place, game, staker, lock }: StakeFormProps) => {
   const problem = entryProblem(draft.entry, 'balance')
   const canRun = team !== null && amount !== null
   if (staker.tokenBalance === 0n && !flow.isBusy) {
-    return <p className="vault-note">{VAULT_COPY.stake.nothingToStake}</p>
+    return <p className="vault-note">{emptyNote}</p>
   }
   return (
     <div className="vault-form">
@@ -56,14 +57,16 @@ export const StakeForm = ({ place, game, staker, lock }: StakeFormProps) => {
         problem={problem}
         isBusy={flow.isBusy}
       />
-      <TileButton
-        variant="primary"
-        fullWidth
-        state={flow.state ?? (canRun ? 'idle' : 'disabled')}
-        onClick={flow.run}
-      >
-        {flow.label ?? stakeLabelOf(team, amount !== null)}
-      </TileButton>
+      <div className="vault-stake-button">
+        <TileButton
+          variant="primary"
+          fullWidth
+          state={flow.state ?? (canRun ? 'idle' : 'disabled')}
+          onClick={flow.run}
+        >
+          {flow.label ?? stakeLabelOf(team, amount !== null)}
+        </TileButton>
+      </div>
       <output className="vault-note vault-note--step">{flow.note ?? ''}</output>
     </div>
   )

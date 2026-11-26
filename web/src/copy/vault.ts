@@ -1,5 +1,7 @@
 export const VAULT_COPY = {
   heading: 'Vault',
+  launched: 'Launched',
+  coinLine: (name: string, symbol: string) => `${name} · ${symbol}`,
   loading: 'Reading the vault…',
   loadFailed: 'Could not read the vault. Check your connection and try again.',
   backToGame: 'Back to the game',
@@ -11,6 +13,15 @@ export const VAULT_COPY = {
     failed: 'Could not read this wallet. Trying again shortly.',
   },
   bnb: (amount: string) => `${amount} BNB`,
+  rope: {
+    heading: 'Final rope',
+    held: (team: string, share: string) => `${team} held ${share} of the pull`,
+    pulls: (blue: string, red: string) => `${blue} / ${red} pull`,
+    bonus: 'Bonus split',
+    crews: 'Crews',
+    split: (blue: string, red: string) => `Blue ${blue} · Red ${red}`,
+    picture: (blue: string, red: string) => `Final rope: Blue ${blue}, Red ${red}.`,
+  },
   coin: {
     label: 'One coin for both crews',
     addressLabel: 'Coin address',
@@ -21,6 +32,8 @@ export const VAULT_COPY = {
     trade: 'Trade on Flap',
     finalRope: 'Final rope',
     split: (blue: string, red: string) => `Blue ${blue} · Red ${red}`,
+    poolBnb: 'BNB in the pool at launch',
+    poolCoins: (symbol: string) => `${symbol} in the pool at launch`,
   },
   coins: {
     heading: 'Your coins',
@@ -30,8 +43,7 @@ export const VAULT_COPY = {
     bonusNote: (team: string, share: string) => `from ${team}’s ${share} of the bonus`,
     total: 'Total',
     claim: (amount: string, symbol: string) => `Claim ${amount} ${symbol}`,
-    claimed: (amount: string, symbol: string) =>
-      `Claimed. ${amount} ${symbol} went to this wallet.`,
+    claimedTotal: 'Claimed · base + bonus',
     didNotPull: 'This wallet did not pull in this game, so it has no coins to claim.',
     visitor: 'Connect a wallet to see the coins it can claim.',
   },
@@ -53,6 +65,9 @@ export const VAULT_COPY = {
     approvedRetry: 'The approval went through. Staking needs one more confirmation.',
     keepTeam: (team: string) => `You stay on ${team} if you stake again.`,
     nothingToStake: 'There are no coins in this wallet to stake.',
+    claimFirst: (team: string) => `Claim your coins first, then stake them on ${team}’s side.`,
+    failedTitle: 'Stake did not go through',
+    failedBody: 'Your coins are still in your wallet.',
   },
   unstake: {
     heading: 'Unstake',
@@ -62,11 +77,11 @@ export const VAULT_COPY = {
     body: (pending: string) =>
       `Unstaking stops your rewards. Your ${pending} BNB of unclaimed rewards stays claimable.`,
     keep: 'Keep staking',
-    changed: 'Your stake changed while this was open. Close it and check the amount.',
   },
   entry: {
     empty: 'Enter an amount.',
     invalid: 'Use a number like 1500.',
+    comma: 'Commas only group thousands, like 1,500. Use a dot for decimals, like 1500.5.',
     zero: 'Enter an amount above zero.',
     overBalance: 'That is more than this wallet holds.',
     overStaked: 'That is more than you have staked.',
@@ -86,7 +101,7 @@ export const VAULT_COPY = {
       `1,000 coins staked now would earn ${rate} BNB from each 1 BNB the vault receives.`,
     tiny: 'under 0.0001',
     split: (blue: string, red: string) =>
-      `The stakers’ part of the tax is split between the pools by the final rope, Blue ${blue} · Red ${red}.`,
+      `The stakers’ part of the tax is split between the pools by the final rope, Blue ${blue} · Red ${red}, whatever is staked in each.`,
     splitOne: (empty: string, full: string) =>
       `No one is staked on ${empty}, so the stakers’ part of the tax all goes to the ${full} pool for now.`,
     splitNone:

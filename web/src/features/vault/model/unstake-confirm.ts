@@ -7,19 +7,20 @@ export type UnstakeConfirm = {
   readonly title: string
   readonly canSend: boolean
   readonly isAll: boolean
-  readonly problem: string | null
 }
 
 export const unstakeConfirmOf = (
-  snapshot: TokenWei,
+  amount: TokenWei | null,
   staked: TokenWei,
   symbol: string,
 ): UnstakeConfirm => {
-  const canSend = snapshot > 0n && snapshot <= staked
+  const canSend = amount !== null && amount > 0n && amount <= staked
   return {
-    title: VAULT_COPY.unstake.title(formatCoinsFull(snapshot), symbol),
+    title:
+      amount === null
+        ? VAULT_COPY.unstake.heading
+        : VAULT_COPY.unstake.title(formatCoinsFull(amount), symbol),
     canSend,
-    isAll: canSend && snapshot === staked,
-    problem: canSend ? null : VAULT_COPY.unstake.changed,
+    isAll: canSend && amount === staked,
   }
 }

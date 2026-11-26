@@ -35,7 +35,7 @@ const vaultOf = (blue: bigint, red: bigint): Vault => ({
 describe('pool split line', () => {
   it('splits by the final rope when both pools hold coins', () => {
     expect(poolsOf(vaultOf(41_250n, 18_600n), game).split).toBe(
-      'The stakers’ part of the tax is split between the pools by the final rope, Blue 60.0% · Red 40.0%.',
+      'The stakers’ part of the tax is split between the pools by the final rope, Blue 60.0% · Red 40.0%, whatever is staked in each.',
     )
   })
 
@@ -46,7 +46,7 @@ describe('pool split line', () => {
     )
     expect(pools.sides.map((side) => side.isEmpty)).toEqual([false, true])
     expect(pools.sides[1]?.rate).toBe(
-      '1,000 coins staked now would earn 0.80 BNB from each 1 BNB the vault receives.',
+      '1,000 coins staked now would earn 0.8000 BNB from each 1 BNB the vault receives.',
     )
   })
 
@@ -66,6 +66,7 @@ describe('rateText', () => {
   it('never shows a positive rate as zero', () => {
     expect(rateText(bnbWei(parseEther('0.00001')))).toBe(VAULT_COPY.pools.tiny)
     expect(rateText(bnbWei(0n))).toBe('0.00')
-    expect(rateText(bnbWei(parseEther('0.0115')))).toBe('0.01')
+    expect(rateText(bnbWei(parseEther('0.0115')))).toBe('0.0115')
+    expect(rateText(bnbWei(parseEther('0.0258')))).toBe('0.0258')
   })
 })

@@ -72,6 +72,8 @@ export type ActionOptions = {
   readonly onSuccess?: () => void
   readonly onQuietInfo?: () => void
   readonly onFailure?: () => void
+  readonly onSuccessToast?: (id: number) => void
+  readonly failureText?: (message: TxMessage) => TxMessage
 }
 
 export type ActionPlace = {
@@ -116,7 +118,8 @@ export const useActionWith = <Name extends TxActionName>(
     },
     onSuccess: (outcome: ActionOutcomes[Name] | null, hash: Hash) => {
       clearSent()
-      txToasts.push(toastOf('ok', successMessage(action, outcome, context), hash))
+      const shown = txToasts.push(toastOf('ok', successMessage(action, outcome, context), hash))
+      options.onSuccessToast?.(shown)
       options.onSuccess?.()
     },
     onFailure: (error: TxErrorInfo, hash: Hash | undefined) => {
@@ -126,7 +129,8 @@ export const useActionWith = <Name extends TxActionName>(
         return
       }
       const kind = error.tone === 'info' ? 'info' : 'err'
-      txToasts.push(toastOf(kind, errorMessage(action, error, errorValues(context)), hash))
+      const message = errorMessage(action, error, errorValues(context))
+      txToasts.push(toastOf(kind, options.failureText?.(message) ?? message, hash))
       options.onFailure?.()
     },
   })

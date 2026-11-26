@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatCoinsDraft, formatCoinsExact, formatCoinsFull, parseCoins } from './format'
+import {
+  formatCoinsDraft,
+  formatCoinsExact,
+  formatCoinsFull,
+  formatCoinsGrouped,
+  parseCoins,
+} from './format'
 import { tokenWei } from './units'
 
 const COIN = 10n ** 18n
@@ -28,5 +34,29 @@ describe('coin amount formatters', () => {
     expect(formatCoinsFull(tokenWei(6000n * COIN))).toBe('6,000')
     expect(formatCoinsFull(tokenWei((9n * COIN) / 10n))).toBe('0.9')
     expect(formatCoinsFull(tokenWei(1_234_567n * COIN + COIN / 4n))).toBe('1,234,567.25')
+  })
+})
+
+describe('formatCoinsGrouped', () => {
+  it('groups the whole part and floors to four decimals', () => {
+    expect(formatCoinsGrouped(tokenWei(23_745n * COIN + 960_975_609_756_097_560n))).toBe(
+      '23,745.9609',
+    )
+    expect(formatCoinsGrouped(tokenWei(1_000_000n * COIN))).toBe('1,000,000')
+  })
+})
+
+describe('parseCoins', () => {
+  it('reads commas only as thousands separators', () => {
+    expect(parseCoins('1,234')).toBe(1234n * COIN)
+    expect(parseCoins('1,234,567.5')).toBe(1_234_567n * COIN + COIN / 2n)
+    expect(parseCoins('1234.5')).toBe(1234n * COIN + COIN / 2n)
+    expect(parseCoins('.5')).toBe(COIN / 2n)
+  })
+
+  it('rejects any other comma', () => {
+    for (const text of ['1,5', '12,34', '1,2345', ',123', '1,234,56', '1.234,5', '1,,234']) {
+      expect(parseCoins(text)).toBeNull()
+    }
   })
 })

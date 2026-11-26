@@ -1,4 +1,4 @@
-import type { TileState } from './tile-button-classes'
+import type { TileState, TileVariant } from './tile-button-classes'
 import type { KeyboardEvent, ReactNode, SyntheticEvent } from 'react'
 
 import { useEffect, useId, useRef } from 'react'
@@ -14,6 +14,7 @@ type ModalProps = {
   children: ReactNode
   primaryLabel: string
   primaryState?: TileState
+  primaryVariant?: TileVariant
   onPrimary: () => void
   secondaryLabel: string
   onClose: () => void
@@ -40,6 +41,7 @@ export const Modal = ({
   children,
   primaryLabel,
   primaryState = 'idle',
+  primaryVariant = 'primary',
   onPrimary,
   secondaryLabel,
   onClose,
@@ -90,7 +92,7 @@ export const Modal = ({
         <TileButton variant="ghost" onClick={onClose}>
           {secondaryLabel}
         </TileButton>
-        <TileButton variant="primary" state={primaryState} onClick={onPrimary}>
+        <TileButton variant={primaryVariant} state={primaryState} onClick={onPrimary}>
           {primaryLabel}
         </TileButton>
       </div>

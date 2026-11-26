@@ -7,6 +7,7 @@ import type { TileState } from '@/ui/tile-button-classes'
 import { useEffect, useReducer, useRef } from 'react'
 
 import { useRefreshStaker } from '@/contracts/queries/use-vault-queries'
+import { txToasts } from '@/features/tx/tx-toasts'
 import { useActionWith } from '@/features/tx/use-action'
 
 import {
@@ -14,6 +15,7 @@ import {
   firstStep,
   intentOf,
   stakeFlowReducer,
+  stakeFailureText,
   stakeNoteOf,
   stakeToChain,
 } from '../model/stake-flow'
@@ -48,10 +50,20 @@ export const useStakeFlow = (input: StakeFlowInput): StakeFlowView => {
     place,
     stake: null,
   })
+  const approvedToast = useRef<number | null>(null)
+  const clearApproved = (): void => {
+    if (approvedToast.current !== null) {
+      txToasts.dismiss(approvedToast.current)
+      approvedToast.current = null
+    }
+  }
   const approve = useActionWith(
     'approve',
     { launcher, target: game.token },
     {
+      onSuccessToast: (id) => {
+        approvedToast.current = id
+      },
       onSuccess: () => {
         const chained = stakeToChain(latest.current.flow, latest.current.place)
         dispatch({ type: 'approved' })
@@ -68,11 +80,14 @@ export const useStakeFlow = (input: StakeFlowInput): StakeFlowView => {
     'stake',
     { launcher, target: game.vault },
     {
+      failureText: stakeFailureText,
       onSuccess: () => {
+        clearApproved()
         dispatch({ type: 'staked' })
         onStaked()
       },
       onFailure: () => {
+        clearApproved()
         dispatch({ type: 'stakeFailed' })
         refreshStaker()
       },
