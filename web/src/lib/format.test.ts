@@ -3,11 +3,13 @@ import { describe, expect, it } from 'vitest'
 import {
   formatAgo,
   formatBnb,
+  formatBnbStep,
   formatClock,
   formatCoins,
   formatCount,
   formatPull,
   formatShare,
+  formatShareExact,
   formatSpan,
   formatWeight,
   parseBnb,
@@ -18,6 +20,16 @@ import { bnbWei, bps, pullWei, tokenWei } from './units'
 
 const wei = (value: string): ReturnType<typeof bnbWei> => bnbWei(BigInt(value))
 const pull = (value: string): ReturnType<typeof pullWei> => pullWei(BigInt(value))
+
+describe('formatBnbStep', () => {
+  it('shows up to three decimals without trailing zeros', () => {
+    expect(formatBnbStep(wei('125000000000000000'))).toBe('0.125')
+    expect(formatBnbStep(wei('250000000000000000'))).toBe('0.25')
+    expect(formatBnbStep(wei('500000000000000000'))).toBe('0.5')
+    expect(formatBnbStep(wei('1000000000000000000'))).toBe('1')
+    expect(formatBnbStep(wei('1234500000000000000'))).toBe('1.234')
+  })
+})
 
 describe('formatBnb', () => {
   it('shows two decimals', () => {
@@ -69,6 +81,17 @@ describe('formatPull', () => {
     expect(formatPull(pull('5000000000000000'))).toBe('0.01')
     expect(formatPull(pull('0'))).toBe('0.00')
     expect(formatPull(pull('1'))).toBe('0.00')
+  })
+})
+
+describe('formatShareExact', () => {
+  it('shows the exact share without trailing zeros', () => {
+    expect(formatShareExact(bps(7000))).toBe('70%')
+    expect(formatShareExact(bps(6250))).toBe('62.5%')
+    expect(formatShareExact(bps(6667))).toBe('66.67%')
+    expect(formatShareExact(bps(6005))).toBe('60.05%')
+    expect(formatShareExact(bps(0))).toBe('0%')
+    expect(formatShareExact(bps(10_000))).toBe('100%')
   })
 })
 
@@ -217,10 +240,37 @@ describe('parseBnb', () => {
     expect(parseBnb('1e3')).toBeNull()
     expect(parseBnb('abc')).toBeNull()
     expect(parseBnb('1.2.3')).toBeNull()
-    expect(parseBnb('1,5')).toBeNull()
-    expect(parseBnb('1,000')).toBeNull()
     expect(parseBnb('0.0000000000000000001')).toBeNull()
     expect(parseBnb('+1')).toBeNull()
+  })
+
+  it('takes one comma as the decimal separator', () => {
+    expect(parseBnb('0,5')).toBe(500_000_000_000_000_000n)
+    expect(parseBnb('1,000')).toBe(1_000_000_000_000_000_000n)
+    expect(parseBnb(',5')).toBe(500_000_000_000_000_000n)
+  })
+
+  it('trims outer spaces only', () => {
+    expect(parseBnb(' 0.5 ')).toBe(500_000_000_000_000_000n)
+    expect(parseBnb('0 5')).toBeNull()
+    expect(parseBnb('0. 5')).toBeNull()
+  })
+
+  it('rejects grouping, signs, exponents and extra separators', () => {
+    expect(parseBnb('1,000.5')).toBeNull()
+    expect(parseBnb('1.000,5')).toBeNull()
+    expect(parseBnb('1e3')).toBeNull()
+    expect(parseBnb('-1')).toBeNull()
+    expect(parseBnb('+1')).toBeNull()
+    expect(parseBnb('5.')).toBe(5_000_000_000_000_000_000n)
+    expect(parseBnb('.')).toBeNull()
+    expect(parseBnb('')).toBeNull()
+    expect(parseBnb(`0.${'1'.repeat(19)}`)).toBeNull()
+  })
+
+  it('reads a very long whole number exactly', () => {
+    const digits = '1234567890'.repeat(4)
+    expect(parseBnb(digits)).toBe(BigInt(digits) * 10n ** 18n)
   })
 
   it('round-trips through formatBnb', () => {

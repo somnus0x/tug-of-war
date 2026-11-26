@@ -4,6 +4,8 @@ import { GalleryBoxes } from './gallery-boxes'
 import { GalleryButtons } from './gallery-buttons'
 import { GalleryModal } from './gallery-modal'
 import { GalleryNotices } from './gallery-notices'
+import { GalleryReplay } from './gallery-replay'
+import { GalleryScene } from './gallery-scene'
 
 import './gallery.css'
 
@@ -15,5 +17,7 @@ export const GalleryPage = () => (
     <GalleryButtons />
     <GalleryNotices />
     <GalleryModal />
+    <GalleryReplay />
+    <GalleryScene />
   </div>
 )

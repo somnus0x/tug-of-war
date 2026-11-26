@@ -60,8 +60,12 @@ export const createChainClock = (options: ChainClockOptions = {}): ChainClock =>
   }
 
   const anchor = (blockTimestampSeconds: number): void => {
-    chainNowMs()
-    current = { chainMs: blockTimestampSeconds * 1000, at: now() }
+    const chainMs = blockTimestampSeconds * 1000
+    const shown = chainNowMs()
+    if (shown !== null && shown - chainMs > STALE_AFTER_MS) {
+      floorMs = Number.NEGATIVE_INFINITY
+    }
+    current = { chainMs, at: now() }
     tick()
   }
 

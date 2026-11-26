@@ -18,6 +18,17 @@ export type PlayerOverlay = {
   readonly claimed: boolean
 }
 
+export type OverlayPull = {
+  readonly account: Address
+  readonly team: 'blue' | 'red'
+  readonly amount: bigint
+  readonly pull: bigint
+  readonly weightBps: number
+  readonly captain: boolean
+  readonly at: number
+  readonly extensionsUsed: number | null
+}
+
 export type GameOverlay = {
   readonly raisedByTeam: TeamPair<bigint>
   readonly pullByTeam: TeamPair<bigint>
@@ -30,6 +41,7 @@ export type GameOverlay = {
   readonly autoLaunch: { readonly funder: Address; readonly budget: bigint } | null
   readonly budgetWithdrawn: boolean
   readonly players: Readonly<Record<string, PlayerOverlay>>
+  readonly pulls: readonly OverlayPull[]
 }
 
 export const EMPTY_PLAYER_OVERLAY: PlayerOverlay = {
@@ -53,6 +65,7 @@ export const EMPTY_OVERLAY: GameOverlay = {
   autoLaunch: null,
   budgetWithdrawn: false,
   players: {},
+  pulls: [],
 }
 
 const addPair = (a: TeamPair<bigint>, b: TeamPair<bigint>): TeamPair<bigint> => ({

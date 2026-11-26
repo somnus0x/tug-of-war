@@ -70,7 +70,8 @@ const contribute = (input: EffectInput<'contribute'>): EffectResult<'contribute'
     now,
   )
   const pull = pullWei(mulBps(params.amount, weight))
-  const preview = previewContribute(state, params.team, params.amount)
+  const extended =
+    previewContribute(state, params.team, params.amount)?.wouldTriggerOvertime === true
   const firstPull = player.team === 'none'
   const after = bump(game.pullByTeam, params.team, pull)
   const base = input.overlay
@@ -80,7 +81,20 @@ const contribute = (input: EffectInput<'contribute'>): EffectResult<'contribute'
       raisedByTeam: bump(base.raisedByTeam, params.team, params.amount),
       pullByTeam: bump(base.pullByTeam, params.team, pull),
       playersByTeam: firstPull ? count(base.playersByTeam, params.team) : base.playersByTeam,
-      extensions: base.extensions + (preview?.wouldTriggerOvertime === true ? 1 : 0),
+      extensions: base.extensions + (extended ? 1 : 0),
+      pulls: [
+        ...base.pulls,
+        {
+          account: state.account ?? FIXTURE_ADDRESSES.funder,
+          team: params.team,
+          amount: params.amount,
+          pull,
+          weightBps: weight,
+          captain: false,
+          at: now,
+          extensionsUsed: extended ? game.extensionsUsed + 1 : null,
+        },
+      ],
     },
     state.account,
     (current) => ({
@@ -120,6 +134,19 @@ const depositCaptain = (input: EffectInput<'depositCaptain'>): EffectResult<'dep
       pullByTeam: bump(base.pullByTeam, team, pull),
       playersByTeam: count(base.playersByTeam, team),
       startedAt: started ? now : base.startedAt,
+      pulls: [
+        ...base.pulls,
+        {
+          account: state.account ?? FIXTURE_ADDRESSES.funder,
+          team,
+          amount: params.amount,
+          pull,
+          weightBps: rules.startWeightBps,
+          captain: true,
+          at: now,
+          extensionsUsed: null,
+        },
+      ],
     },
     state.account,
     (current) => ({

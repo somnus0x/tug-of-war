@@ -1,14 +1,24 @@
 import type { PullFormInput } from './pull-form'
 import type { ViewerName } from '@/contracts/fixtures/viewers'
-import type { ContributePreview } from '@/contracts/types'
+import type { ContributeDraft, ContributePreview } from '@/contracts/types'
+import type { Address } from 'viem'
 
 import { describe, expect, it } from 'vitest'
 
-import { bps, pullWei } from '@/lib/units'
+import { bnbWei, bps, pullWei } from '@/lib/units'
 
-import { deriveLive } from './derive-live'
-import { LOAD, NO_GATES, RULES, bnb, failGate, gameOf, okGate, playerOf } from './fixture-games'
-import { derivePullForm } from './pull-form'
+import { LOAD, NO_GATES, bnb, failGate, gameOf, okGate, playerOf } from './fixture-games'
+import {
+  derivePullForm,
+  formDraftOf,
+  gateDraftOf,
+  matchingGates,
+  pullBoxStateOf,
+} from './pull-form'
+
+const ACCOUNT_A: Address = '0x00000000000000000000000000000000000000aa'
+const ACCOUNT_A_MIXED: Address = '0x00000000000000000000000000000000000000AA'
+const ACCOUNT_B: Address = '0x00000000000000000000000000000000000000bb'
 
 const PREVIEW: ContributePreview = {
   pull: pullWei(10n ** 17n),
@@ -24,7 +34,7 @@ const inputOf = (viewer: ViewerName = 'fan-new', balance = '1.25'): PullFormInpu
     balance: viewer === 'visitor' ? null : bnb(balance),
     gates: NO_GATES,
     draft: null,
-    live: deriveLive(game, RULES, LOAD),
+    secondsLeft: game.deadline - LOAD,
   }
 }
 
@@ -64,6 +74,13 @@ describe('derivePullForm presets', () => {
   it('uses the full cap for a visitor', () => {
     expect(derivePullForm(inputOf('visitor')).presets).toHaveLength(3)
   })
+
+  it('offers the most the wallet can add as the last preset', () => {
+    expect(derivePullForm(inputOf()).maxAmount).toBe(bnb('0.5'))
+    expect(derivePullForm(inputOf('fan-blue')).maxAmount).toBe(bnb('0.25'))
+    expect(derivePullForm(inputOf('fan-new', '0.2')).maxAmount).toBe(bnb('0.199'))
+    expect(derivePullForm(inputOf('fan-capped')).maxAmount).toBeNull()
+  })
 })
 
 describe('derivePullForm validation', () => {
@@ -87,13 +104,52 @@ describe('derivePullForm validation', () => {
   })
 
   it('reports the gate reason', () => {
-    const input = withDraft(inputOf('fan-blue'), '0.3')
-    const gated = { ...input, gates: { ...NO_GATES, contribute: failGate('WalletCapExceeded') } }
+    const input = withDraft(inputOf('fan-blue'), '0.1')
+    const gated = { ...input, gates: { ...NO_GATES, contribute: failGate('BuyInClosed') } }
     expect(derivePullForm(gated).validation).toEqual({
       kind: 'error',
       check: 'gate',
+      reason: 'BuyInClosed',
+    })
+  })
+
+  it('checks the remaining cap before the balance and the gate', () => {
+    const input = {
+      ...withDraft(inputOf('fan-blue', '0.2'), '0.26'),
+      gates: { ...NO_GATES, contribute: okGate },
+    }
+    expect(derivePullForm(input).validation).toEqual({
+      kind: 'error',
+      check: 'cap',
       reason: 'WalletCapExceeded',
     })
+    expect(derivePullForm(withDraft(inputOf('fan-blue'), '0.25')).validation.kind).toBe('checking')
+  })
+
+  it('rejects one wei over the remaining cap', () => {
+    const input = inputOf('fan-blue')
+    const over = { ...input, draft: { team: 'blue', amount: bnbWei(bnb('0.25') + 1n) } } as const
+    expect(derivePullForm(over).validation.kind).toBe('error')
+  })
+
+  it('waits for the balance before letting a connected wallet pull', () => {
+    const input = {
+      ...withDraft(inputOf(), '0.1'),
+      balance: 'loading',
+      gates: { ...NO_GATES, contribute: okGate, preview: PREVIEW },
+    } as const
+    expect(derivePullForm(input).validation).toEqual({ kind: 'readingWallet' })
+    expect(derivePullForm({ ...input, balance: 'failed' }).validation).toEqual({
+      kind: 'error',
+      check: 'walletUnread',
+      reason: 'WalletUnread',
+    })
+    expect(derivePullForm({ ...input, balance: 'loading' }).presets).toHaveLength(3)
+  })
+
+  it('checks a visitor against the wallet cap', () => {
+    expect(derivePullForm(withDraft(inputOf('visitor'), '0.51')).validation.kind).toBe('error')
+    expect(derivePullForm(withDraft(inputOf('visitor'), '0.5')).validation.kind).toBe('checking')
   })
 
   it('waits for the gate and the preview', () => {
@@ -120,9 +176,111 @@ describe('derivePullForm flags', () => {
     const input = inputOf()
     const game = input.game
     expect(derivePullForm(input).mayNotLand).toBe(false)
-    const late = { ...input, live: deriveLive(game, RULES, game.deadline - 3) }
-    expect(derivePullForm(late).mayNotLand).toBe(true)
-    const early = { ...input, live: deriveLive(game, RULES, game.deadline - 4) }
-    expect(derivePullForm(early).mayNotLand).toBe(false)
+    expect(derivePullForm({ ...input, secondsLeft: 3 }).mayNotLand).toBe(true)
+    expect(derivePullForm({ ...input, secondsLeft: 4 }).mayNotLand).toBe(false)
+    expect(derivePullForm({ ...input, secondsLeft: null }).mayNotLand).toBe(false)
+    expect(game.deadline).toBeGreaterThan(LOAD)
+  })
+
+  it('blocks a pull once the time left reaches zero or buy-in is over', () => {
+    const ready = {
+      ...withDraft(inputOf(), '0.1'),
+      gates: { ...NO_GATES, contribute: okGate, preview: PREVIEW },
+    }
+    const closed = { kind: 'error', check: 'clock', reason: 'BuyInClosed' }
+    expect(derivePullForm({ ...ready, secondsLeft: 1 }).validation.kind).toBe('ready')
+    expect(derivePullForm({ ...ready, secondsLeft: 0 }).validation).toEqual(closed)
+    expect(derivePullForm({ ...ready, secondsLeft: -2 }).validation).toEqual(closed)
+    const ended = { ...ready, game: { ...ready.game, phase: 'awaitingLaunch' } } as const
+    expect(derivePullForm(ended).validation).toEqual(closed)
+  })
+
+  it('waits while the chain time is unknown', () => {
+    const ready = {
+      ...withDraft(inputOf(), '0.1'),
+      gates: { ...NO_GATES, contribute: okGate, preview: PREVIEW },
+      secondsLeft: null,
+    }
+    expect(derivePullForm(ready).validation).toEqual({ kind: 'checking' })
+  })
+
+  it('reads the wallet before checking its cap', () => {
+    const input = { ...withDraft(inputOf('fan-blue'), '0.4'), balance: 'loading' } as const
+    expect(derivePullForm(input).validation).toEqual({ kind: 'readingWallet' })
+  })
+})
+
+describe('drafts and gates', () => {
+  const amount = { kind: 'amount', amount: bnb('0.1') } as const
+
+  it('keeps the amount without a team for local checks', () => {
+    expect(formDraftOf(null, amount)).toEqual({ team: 'none', amount: bnb('0.1') })
+    expect(formDraftOf('blue', { kind: 'empty' })).toBeNull()
+  })
+
+  it('asks the contract only with a team and an amount above zero', () => {
+    expect(gateDraftOf(formDraftOf('blue', amount))).toEqual({ team: 'blue', amount: bnb('0.1') })
+    expect(gateDraftOf(formDraftOf(null, amount))).toBeNull()
+    expect(gateDraftOf({ team: 'red', amount: bnb('0') })).toBeNull()
+  })
+
+  it('uses gate answers only for the draft on screen', () => {
+    const gates = { ...NO_GATES, contribute: okGate, preview: PREVIEW }
+    const draft = { team: 'blue', amount: bnb('0.1') } as const
+    const answer = (other: ContributeDraft | null, isFresh = true) => ({
+      account: ACCOUNT_A,
+      draft: other,
+      gates,
+      isFresh,
+    })
+    expect(matchingGates(draft, ACCOUNT_A, answer({ ...draft }))).toBe(gates)
+    expect(matchingGates(draft, ACCOUNT_A, answer({ team: 'blue', amount: bnb('0.2') }))).toBe(
+      NO_GATES,
+    )
+    expect(matchingGates(draft, ACCOUNT_A, answer({ team: 'red', amount: bnb('0.1') }))).toBe(
+      NO_GATES,
+    )
+    expect(matchingGates(draft, ACCOUNT_A, answer(null))).toBe(NO_GATES)
+    expect(matchingGates(draft, ACCOUNT_A, { ...answer(draft), gates: undefined })).toBe(NO_GATES)
+  })
+
+  it('ignores a cached answer until a fresh one arrives', () => {
+    const gates = { ...NO_GATES, contribute: okGate, preview: PREVIEW }
+    const draft = { team: 'blue', amount: bnb('0.1') } as const
+    expect(
+      matchingGates(draft, ACCOUNT_A, { account: ACCOUNT_A, draft, gates, isFresh: false }),
+    ).toBe(NO_GATES)
+  })
+
+  it('ignores an answer given for another wallet', () => {
+    const gates = { ...NO_GATES, contribute: okGate, preview: PREVIEW }
+    const draft = { team: 'red', amount: bnb('0.5') } as const
+    const answer = { account: ACCOUNT_A, draft, gates, isFresh: true }
+    expect(matchingGates(draft, ACCOUNT_B, answer)).toBe(NO_GATES)
+    expect(matchingGates(draft, undefined, answer)).toBe(NO_GATES)
+    expect(matchingGates(draft, ACCOUNT_A_MIXED, answer)).toBe(gates)
+  })
+})
+
+describe('pullBoxStateOf', () => {
+  const game = gameOf('live-mid')
+
+  it('is open during buy-in', () => {
+    expect(pullBoxStateOf('buyIn', 'running', playerOf('fan-new', game))).toBe('open')
+    expect(pullBoxStateOf('buyIn', 'final', null)).toBe('open')
+  })
+
+  it('closes when the clock reaches zero', () => {
+    expect(pullBoxStateOf('buyIn', 'closing', null)).toBe('closing')
+  })
+
+  it('closes for a wallet at its cap', () => {
+    expect(pullBoxStateOf('buyIn', 'running', playerOf('fan-capped', game))).toBe('capUsedUp')
+  })
+
+  it('closes outside buy-in', () => {
+    expect(pullBoxStateOf('awaitingLaunch', 'ended', null)).toBe('closed')
+    expect(pullBoxStateOf('awaitingCaptains', 'captains', null)).toBe('closed')
+    expect(pullBoxStateOf('refunding', 'ended', playerOf('fan-capped', game))).toBe('closed')
   })
 })

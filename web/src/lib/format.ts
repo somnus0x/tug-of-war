@@ -6,7 +6,7 @@ const BNB_DECIMALS = 18
 const ONE_BNB = 10n ** 18n
 const SMALL_BNB = 10n ** 16n
 const THOUSANDS = /\B(?=(?:\d{3})+$)/g
-const BNB_INPUT = /^(?:(\d+)(?:\.(\d*))?|\.(\d+))$/
+const BNB_INPUT = /^(?:(\d+)(?:[.,](\d*))?|[.,](\d+))$/
 
 const MINUTE = 60
 const HOUR = 3600
@@ -53,9 +53,25 @@ export const formatBnb = (wei: BnbWei, options: FormatBnbOptions = {}): string =
   return fixedDown(wei, wei < limit ? 4 : 2)
 }
 
+export const formatBnbStep = (wei: BnbWei): string => fixedDown(wei, 3).replace(/\.?0+$/, '')
+
+export const formatBnbExact = (wei: BnbWei): string =>
+  withDecimals(wei, BNB_DECIMALS).replace(/\.?0+$/, '')
+
 export const formatPull = (pull: PullWei): string => fixedHalfUp(pull, 2)
 
 export const formatShare = (value: Bps, decimals = 1): string => `${bpsHalfUp(value, 2, decimals)}%`
+
+export const formatSharePoints = (value: Bps): string => {
+  const whole = Math.floor(value / 100)
+  const rest = value % 100
+  if (rest === 0) {
+    return `${whole}`
+  }
+  return `${whole}.${String(rest).padStart(2, '0').replace(/0$/, '')}`
+}
+
+export const formatShareExact = (value: Bps): string => `${formatSharePoints(value)}%`
 
 export const formatWeight = (value: Bps): string => `${bpsHalfUp(value, 4, 2)}x`
 
@@ -87,6 +103,10 @@ export const formatSpan = (seconds: number): string => {
   }
   return plural(total, 'second')
 }
+
+export const formatSeconds = (seconds: number): string => plural(wholeSeconds(seconds), 'second')
+
+export const formatSecondsShort = (seconds: number): string => `${wholeSeconds(seconds)}s`
 
 export const formatAgo = (seconds: number): string => {
   const total = wholeSeconds(seconds)

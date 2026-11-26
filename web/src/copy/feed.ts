@@ -1,0 +1,15 @@
+export const FEED_COPY = {
+  heading: 'Pull log',
+  listLabel: 'Most recent pulls, newest first',
+  you: 'You',
+  forWord: 'for',
+  calc: (bnb: string, weight: string) => `${bnb} BNB × ${weight} =`,
+  added: (pull: string) => `+${pull} pull`,
+  leadChange: 'Lead change',
+  overtime: (seconds: string) => `+${seconds}s`,
+  emptyTitle: 'No pulls yet',
+  emptyBody: 'The first pulls count double.',
+  unavailable: 'Recent pulls are unavailable.',
+  behind: 'The pull log may be behind. Retrying…',
+  loading: 'Reading recent pulls…',
+} as const

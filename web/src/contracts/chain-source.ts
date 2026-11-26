@@ -3,17 +3,21 @@ import type { CallResult, PlannedCall } from './gate-results'
 import type { GameSource, GateRequest } from './types'
 import type { Address, ContractFunctionParameters } from 'viem'
 
-import { multicall3Abi } from 'viem'
+import { multicall3Abi, parseAbi } from 'viem'
 
 import { teamToId } from '@/lib/team'
 import { bnbWei } from '@/lib/units'
 
 import { tugLauncherAbi, tugLauncherFactoryAbi } from './abis'
 import { TUG_FACTORY_ADDRESS } from './addresses'
+import { chainLogClient } from './chain-log-client'
+import { createChainLogReader, sessionStartBlocks } from './chain-logs'
 import { publicClient } from './client'
 import { EMPTY_GATES, gatePlan } from './gate-plan'
 import { assembleGates } from './gate-results'
 import { mapGame, mapPlayer, mapRules, toSeconds } from './mappers'
+
+const blockNumberAbi = parseAbi(['function getBlockNumber() view returns (uint256)'])
 
 const ZERO_ACCOUNT: Address = '0x0000000000000000000000000000000000000000'
 
@@ -66,67 +70,73 @@ const planCalls = (request: GateRequest): PlannedCall[] => {
   return calls
 }
 
-export const createChainSource = (): GameSource => ({
-  isLauncher: async (launcher) => {
-    const [result] = await publicClient.multicall({
-      contracts: [
-        {
-          address: TUG_FACTORY_ADDRESS,
-          abi: tugLauncherFactoryAbi,
-          functionName: 'isLauncher',
-          args: [launcher],
-        },
-      ],
-      allowFailure: true,
-    })
-    return result.status === 'success' && result.result
-  },
-  readGame: async (launcher) => {
-    const [game, timestamp] = await publicClient.multicall({
-      contracts: [
-        { address: launcher, abi: tugLauncherAbi, functionName: 'getGame' },
-        {
-          address: multicall3Address(),
-          abi: multicall3Abi,
-          functionName: 'getCurrentBlockTimestamp',
-        },
-      ],
-      allowFailure: false,
-    })
-    return { game: mapGame(game), blockTimestamp: toSeconds(timestamp) }
-  },
-  readRules: async (launcher) => {
-    const [rules] = await publicClient.multicall({
-      contracts: [{ address: launcher, abi: tugLauncherAbi, functionName: 'getRules' }],
-      allowFailure: false,
-    })
-    return mapRules(rules)
-  },
-  readPlayer: async (launcher, account) => {
-    const [player, balance] = await publicClient.multicall({
-      contracts: [
-        { address: launcher, abi: tugLauncherAbi, functionName: 'getPlayer', args: [account] },
-        {
-          address: multicall3Address(),
-          abi: multicall3Abi,
-          functionName: 'getEthBalance',
-          args: [account],
-        },
-      ],
-      allowFailure: false,
-    })
-    return { player: mapPlayer(player), balance: bnbWei(balance) }
-  },
-  readGates: async (request) => {
-    const calls = planCalls(request)
-    if (calls.length === 0) {
-      return EMPTY_GATES
-    }
-    const results: readonly CallResult[] = await publicClient.multicall({
-      contracts: calls.map(({ call }) => call),
-      allowFailure: true,
-    })
-    return assembleGates(calls, results)
-  },
-  viewerAccount: (wallet) => wallet,
-})
+export const createChainSource = (): GameSource => {
+  const logs = createChainLogReader(chainLogClient, sessionStartBlocks, publicClient.chain.id)
+  return {
+    isLauncher: async (launcher) => {
+      const [result] = await publicClient.multicall({
+        contracts: [
+          {
+            address: TUG_FACTORY_ADDRESS,
+            abi: tugLauncherFactoryAbi,
+            functionName: 'isLauncher',
+            args: [launcher],
+          },
+        ],
+        allowFailure: true,
+      })
+      return result.status === 'success' && result.result
+    },
+    readGame: async (launcher) => {
+      const [game, timestamp, blockNumber] = await publicClient.multicall({
+        contracts: [
+          { address: launcher, abi: tugLauncherAbi, functionName: 'getGame' },
+          {
+            address: multicall3Address(),
+            abi: multicall3Abi,
+            functionName: 'getCurrentBlockTimestamp',
+          },
+          { address: multicall3Address(), abi: blockNumberAbi, functionName: 'getBlockNumber' },
+        ],
+        allowFailure: false,
+      })
+      return { game: mapGame(game), blockTimestamp: toSeconds(timestamp), blockNumber }
+    },
+    readRules: async (launcher) => {
+      const [rules] = await publicClient.multicall({
+        contracts: [{ address: launcher, abi: tugLauncherAbi, functionName: 'getRules' }],
+        allowFailure: false,
+      })
+      return mapRules(rules)
+    },
+    readPlayer: async (launcher, account) => {
+      const [player, balance] = await publicClient.multicall({
+        contracts: [
+          { address: launcher, abi: tugLauncherAbi, functionName: 'getPlayer', args: [account] },
+          {
+            address: multicall3Address(),
+            abi: multicall3Abi,
+            functionName: 'getEthBalance',
+            args: [account],
+          },
+        ],
+        allowFailure: false,
+      })
+      return { player: mapPlayer(player), balance: bnbWei(balance) }
+    },
+    readGates: async (request) => {
+      const calls = planCalls(request)
+      if (calls.length === 0) {
+        return EMPTY_GATES
+      }
+      const results: readonly CallResult[] = await publicClient.multicall({
+        contracts: calls.map(({ call }) => call),
+        allowFailure: true,
+      })
+      return assembleGates(calls, results)
+    },
+    viewerAccount: (wallet) => wallet,
+    readLogs: (launcher, request) => logs.readLogs(launcher, request),
+    readBlockTimes: (blocks) => logs.readBlockTimes(blocks),
+  }
+}

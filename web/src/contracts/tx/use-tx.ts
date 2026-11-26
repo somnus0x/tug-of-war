@@ -52,6 +52,7 @@ export const useTx = <Name extends LauncherActionName>(
     IDLE,
   )
   const generation = useRef(0)
+  const inFlight = useRef(false)
   const latest = useRef(options)
   const launcher = options.launcher
   const address = wallet.address
@@ -60,6 +61,12 @@ export const useTx = <Name extends LauncherActionName>(
   useEffect(() => {
     latest.current = options
   })
+
+  useEffect(() => {
+    if (!isBusy(state)) {
+      inFlight.current = false
+    }
+  }, [state])
 
   const contextFor = useCallback(
     (ticket: number): RunnerContext<Name> => ({
@@ -97,9 +104,10 @@ export const useTx = <Name extends LauncherActionName>(
   }, [action, launcher, address, walletChainId, contextFor, queryClient])
 
   const run = (params: ActionParams[Name]): void => {
-    if (isBusy(state)) {
+    if (isBusy(state) || inFlight.current) {
       return
     }
+    inFlight.current = true
     generation.current += 1
     const context = contextFor(generation.current)
     dispatch({ type: 'start' })

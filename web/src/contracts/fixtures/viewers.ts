@@ -62,10 +62,19 @@ export const freshPlayer = (game: Game): Player => ({
   remainingCap: game.config.walletCap,
 })
 
+type CaptainSide = 'blue' | 'red'
+
+const captainStake = (team: CaptainSide, game: Game, rules: Rules) => {
+  if (!game.captainDeposited[team] || game.phase === 'cancelled') {
+    return null
+  }
+  const bnb = game.config.captainMinDeposit
+  return { team, bnb, pull: pullWei(mulBps(bnb, rules.startWeightBps)) }
+}
+
 const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
-  if (name === 'captain-blue' && game.captainDeposited.blue && game.phase !== 'cancelled') {
-    const bnb = game.config.captainMinDeposit
-    return { team: 'blue' as const, bnb, pull: pullWei(mulBps(bnb, rules.startWeightBps)) }
+  if (name === 'captain-blue') {
+    return captainStake('blue', game, rules)
   }
   const stake = FAN_STAKES[name]
   if (stake === undefined || game.phase === 'awaitingCaptains' || game.phase === 'cancelled') {
@@ -97,8 +106,11 @@ export const entitlements = (
   return { base: tokenWei(base), bonus: tokenWei(bonus) }
 }
 
-export const viewerPlayer = (name: ViewerName, game: Game, rules: Rules): Player => {
-  const stake = stakeOf(name, game, rules)
+const playerOfStake = (
+  stake: { team: Team; bnb: BnbWei; pull: PullWei } | null,
+  game: Game,
+  rules: Rules,
+): Player => {
   if (stake === null || stake.team === 'none') {
     return freshPlayer(game)
   }
@@ -114,6 +126,28 @@ export const viewerPlayer = (name: ViewerName, game: Game, rules: Rules): Player
     claimable: tokenWei(base + bonus),
     refundable: bnbWei(game.phase === 'refunding' ? stake.bnb : 0n),
     remainingCap: bnbWei(stake.bnb >= cap ? 0n : cap - stake.bnb),
+  }
+}
+
+export const viewerPlayer = (name: ViewerName, game: Game, rules: Rules): Player =>
+  playerOfStake(stakeOf(name, game, rules), game, rules)
+
+const captainSideOf = (game: Game, account: Address): CaptainSide | null => {
+  const lower = account.toLowerCase()
+  if (lower === game.config.captainBlue.toLowerCase()) {
+    return 'blue'
+  }
+  return lower === game.config.captainRed.toLowerCase() ? 'red' : null
+}
+
+export const captainRead = (game: Game, rules: Rules, account: Address): PlayerRead | null => {
+  const side = captainSideOf(game, account)
+  if (side === null) {
+    return null
+  }
+  return {
+    player: playerOfStake(captainStake(side, game, rules), game, rules),
+    balance: bnbWei(parseEther(VIEWER_BALANCE)),
   }
 }
 
