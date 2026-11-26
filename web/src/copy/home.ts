@@ -1,3 +1,31 @@
 export const HOME_COPY = {
   heading: 'Tug of War Launch',
+  intro: 'Two crews pull for one coin. Open a game to watch or join.',
+  createGame: 'Create game',
+  recent: 'Recent games',
+  captainGames: 'Your games as captain',
+  loading: 'Reading the games…',
+  empty: 'No games yet. Create the first one.',
+  unreadable: 'The game list could not be read.',
+  retry: 'Try again',
+  rowFailed: 'This game could not be read.',
+  rowLoading: 'Reading…',
+  phase: {
+    waiting: 'Waiting for captains',
+    live: 'Live',
+    ended: 'Clock ended',
+    refunding: 'Refunding',
+    launched: 'Launched',
+    cancelled: 'Cancelled',
+  },
+  team: {
+    blue: 'Blue captain',
+    red: 'Red captain',
+  },
+  raised: (amount: string) => `${amount} BNB raised`,
+  timeLeft: (clock: string) => `${clock} left`,
+  ropeLabel: (blueShare: string) => `Blue holds ${blueShare} of the pull`,
+  ropeIdle: 'The rope has not moved.',
+  openGame: (name: string, symbol: string, phase: string) =>
+    `${name} (${symbol}), ${phase}. Open the game.`,
 } as const
