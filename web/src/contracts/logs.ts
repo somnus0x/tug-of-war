@@ -31,7 +31,13 @@ export type OvertimeLog = LogPosition & {
   readonly extensionsUsed: number
 }
 
-export type GameLog = ContributedLog | CaptainDepositedLog | OvertimeLog
+export type CancelledLog = LogPosition & {
+  readonly kind: 'cancelled'
+  readonly captain: Address
+  readonly refunded: BnbWei
+}
+
+export type GameLog = ContributedLog | CaptainDepositedLog | OvertimeLog | CancelledLog
 
 export type PullLog = ContributedLog | CaptainDepositedLog
 
@@ -62,7 +68,8 @@ export type LogState = {
 
 export const logId = (txHash: Hash, logIndex: number): string => `${txHash}:${logIndex}`
 
-export const isPullLog = (log: GameLog): log is PullLog => log.kind !== 'overtime'
+export const isPullLog = (log: GameLog): log is PullLog =>
+  log.kind === 'contributed' || log.kind === 'captainDeposited'
 
 export const blockKey = (blockNumber: bigint): string => blockNumber.toString()
 

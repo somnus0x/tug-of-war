@@ -120,8 +120,9 @@ export const createFixtureWorld = (options: FixtureWorldOptions = {}): FixtureWo
     at?: number,
   ): PlayerRead => {
     const snapshot = game(launcher, scope, at)
-    const captain =
-      account === undefined ? null : captainRead(snapshot.game, FIXTURE_RULES, account)
+    const before = buildGame(snapshot.input, { launcher, loadTime, now: snapshot.now })
+    const baseline = { ...snapshot.game, captainDeposited: before.captainDeposited }
+    const captain = account === undefined ? null : captainRead(baseline, FIXTURE_RULES, account)
     const base =
       captain ?? viewerRead(resolveViewer(scope.viewer, true), snapshot.game, FIXTURE_RULES)
     const overlay = playerOverlayOf(overlayOf(launcher, scope), account)

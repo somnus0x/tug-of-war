@@ -1,4 +1,5 @@
 import type { SceneProps, SceneText } from './types'
+import type { VacantSides } from './vacant-sides'
 
 import { memo, useMemo } from 'react'
 
@@ -21,6 +22,8 @@ import { sceneVars } from './scene-vars'
 import { Stand } from './stand'
 import { StandLabels } from './stand-labels'
 import { useArrivalPlays } from './use-arrival-plays'
+import { VacantCaptain } from './vacant-captain'
+import { isVacant } from './vacant-sides'
 
 import './scene.css'
 import './scene-motion.css'
@@ -28,6 +31,8 @@ import './scene-motion.css'
 export type StageProps = SceneProps & {
   text: SceneText
   label: string
+  vacant?: VacantSides
+  vacantLabel?: string
 }
 
 export const Stage = memo(
@@ -44,6 +49,8 @@ export const Stage = memo(
     reducedMotion,
     text,
     label,
+    vacant = 'none',
+    vacantLabel = '',
   }: StageProps) => {
     const geometry = GEOMETRY[mode]
     const marker = markerX(ropeBps, geometry)
@@ -122,6 +129,17 @@ export const Stage = memo(
               entries={acts.figures.red}
               slides={slides}
             />
+            {(['blue', 'red'] as const).map((side) =>
+              isVacant(vacant, side) ? (
+                <VacantCaptain
+                  key={side}
+                  side={side}
+                  marker={marker}
+                  geometry={geometry}
+                  label={vacantLabel}
+                />
+              ) : null,
+            )}
             <CapPosts geometry={geometry} posts={posts} />
             <ArrivalChips
               chips={acts.chips}

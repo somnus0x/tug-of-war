@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest'
 
 import { bnbWei, mulBps } from '@/lib/units'
 
+import { isPullLog } from '../logs'
 import { fixtureGate } from '../tx/fixture-tx'
 import { FIXTURE_NAMES } from './catalog'
 import { FIXTURE_RULES } from './constants'
@@ -26,7 +27,7 @@ const totalsOf = (logs: readonly GameLog[]) => {
     red: { bnb: 0n, pull: 0n, wallets: new Set<string>() },
   }
   for (const log of logs) {
-    if (log.kind === 'overtime') continue
+    if (!isPullLog(log)) continue
     const side = totals[log.team]
     side.bnb += log.amount
     side.pull +=
@@ -59,7 +60,7 @@ const FULL = { fromBlock: null, startHint: undefined, createdAt: 0 }
 const ownTotals = (logs: readonly GameLog[], account: string) =>
   logs.reduce(
     (sum, log) =>
-      log.kind === 'overtime' || log.account.toLowerCase() !== account.toLowerCase()
+      !isPullLog(log) || log.account.toLowerCase() !== account.toLowerCase()
         ? sum
         : {
             bnb: sum.bnb + log.amount,
@@ -135,9 +136,9 @@ describe('fixture history', () => {
       scope,
     )
     const own = read.logs.filter(
-      (log) => log.kind !== 'overtime' && log.account === viewerAddress('fan-blue'),
+      (log) => isPullLog(log) && log.account === viewerAddress('fan-blue'),
     )
-    const total = own.reduce((sum, log) => sum + (log.kind === 'overtime' ? 0n : log.amount), 0n)
+    const total = own.reduce((sum, log) => sum + (isPullLog(log) ? log.amount : 0n), 0n)
     expect(total).toBe(world.player(LAUNCHER, viewerAddress('fan-blue'), scope).player.contribution)
   })
 

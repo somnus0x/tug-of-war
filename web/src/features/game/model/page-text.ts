@@ -3,6 +3,7 @@ import type { ClockFace } from './page-model'
 import type { Game } from '@/contracts/types'
 
 import { GAME_COPY } from '@/copy/game'
+import { WAITING_COPY } from '@/copy/waiting'
 import {
   formatBnb,
   formatPull,
@@ -18,10 +19,25 @@ import { headlineOf } from './headline'
 
 export type PageHeadline = { readonly title: string; readonly detail: string | null }
 
+export type CaptainsIn = 'none' | 'blue' | 'red' | 'both'
+
 export type AnnounceState = {
   readonly lead: Lead
   readonly extensionsUsed: number
   readonly ended: boolean
+  readonly captains: CaptainsIn
+  readonly cancelled: boolean
+}
+
+export const captainsInOf = (game: Game): CaptainsIn => {
+  const { blue, red } = game.captainDeposited
+  if (blue && red) {
+    return 'both'
+  }
+  if (blue || red) {
+    return blue ? 'blue' : 'red'
+  }
+  return 'none'
 }
 
 const pullHeadline = (game: Game): string => {
@@ -93,7 +109,18 @@ export const announceStateOf = (
     lead: isBeforeBuyIn ? 'tie' : leadOf(game.pullByTeam),
     extensionsUsed: game.extensionsUsed,
     ended: face === 'closing' || face === 'ended',
+    captains: captainsInOf(game),
+    cancelled: game.phase === 'cancelled',
   }
+}
+
+const captainNews = (before: AnnounceState, after: AnnounceState): string | null => {
+  if (after.captains === before.captains || after.captains === 'none') {
+    return null
+  }
+  return after.captains === 'both'
+    ? WAITING_COPY.announce.started
+    : WAITING_COPY.announce.captainIn(GAME_COPY.team[after.captains])
 }
 
 export const announcementOf = (
@@ -102,6 +129,13 @@ export const announcementOf = (
   extensionSeconds: number,
 ): string | null => {
   const parts: string[] = []
+  const captains = captainNews(before, after)
+  if (captains !== null) {
+    parts.push(captains)
+  }
+  if (after.cancelled && !before.cancelled) {
+    parts.push(WAITING_COPY.announce.cancelled)
+  }
   if (after.extensionsUsed > before.extensionsUsed) {
     parts.push(
       GAME_COPY.announce.extended(

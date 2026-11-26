@@ -166,6 +166,19 @@ const depositedByCaptains = (game: Game): BnbWei =>
       (game.captainDeposited.red ? game.raisedByTeam.red : 0n),
   )
 
+const returnCaptainDeposits = (overlay: GameOverlay, game: Game): GameOverlay =>
+  [game.config.captainBlue, game.config.captainRed].reduce(
+    (current, captain) =>
+      playerOverlayOf(current, captain).contribution === 0n
+        ? current
+        : withPlayer(current, captain, (player) => ({
+            ...player,
+            contribution: 0n,
+            spent: player.spent - player.contribution,
+          })),
+    overlay,
+  )
+
 type Effects = {
   readonly [Name in LauncherActionName]: (input: EffectInput<Name>) => EffectResult<Name>
 }
@@ -174,7 +187,7 @@ const EFFECTS: Effects = {
   contribute,
   depositCaptain,
   cancel: (input) => ({
-    overlay: { ...input.overlay, cancelled: true },
+    overlay: returnCaptainDeposits({ ...input.overlay, cancelled: true }, input.state.game),
     outcome: { refunded: depositedByCaptains(input.state.game) },
   }),
   scheduleAutoLaunch: (input) => ({

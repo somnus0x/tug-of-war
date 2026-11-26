@@ -1,5 +1,5 @@
 import type { GameLog, LogBatch, LogRequest } from '../logs'
-import type { SourceScope } from '../types'
+import type { Game, SourceScope } from '../types'
 import type { OverlayPull } from './overlay'
 import type { FixtureWorld } from './world'
 import type { Address, Hash } from 'viem'
@@ -9,10 +9,12 @@ import { keccak256, toHex } from 'viem'
 import { bnbWei, bps, pullWei } from '@/lib/units'
 
 import { blockKey, logId } from '../logs'
+import { ZERO_ADDRESS } from './constants'
 
 type Ledger = {
   served: bigint
   readonly blocks: bigint[]
+  cancelBlock?: bigint
 }
 
 const pullLogs = (pull: OverlayPull, txHash: Hash, blockNumber: bigint): GameLog[] => {
@@ -48,6 +50,25 @@ const pullLogs = (pull: OverlayPull, txHash: Hash, blockNumber: bigint): GameLog
 const maxBig = (...values: bigint[]): bigint =>
   values.reduce((top, value) => (value > top ? value : top))
 
+const cancelledLog = (game: Game, txHash: Hash, blockNumber: bigint): GameLog => {
+  const side = game.captainDeposited.blue ? 'blue' : game.captainDeposited.red ? 'red' : null
+  const captain =
+    side === null
+      ? ZERO_ADDRESS
+      : side === 'blue'
+        ? game.config.captainBlue
+        : game.config.captainRed
+  return {
+    id: logId(txHash, 0),
+    txHash,
+    blockNumber,
+    logIndex: 0,
+    kind: 'cancelled',
+    captain,
+    refunded: bnbWei(side === null ? 0n : game.raisedByTeam[side]),
+  }
+}
+
 export const createFixtureLogs = (world: FixtureWorld) => {
   const ledgers = new Map<string, Ledger>()
 
@@ -77,7 +98,21 @@ export const createFixtureLogs = (world: FixtureWorld) => {
       times[blockKey(block)] = pull.at
       return pullLogs(pull, keccak256(toHex(`${key}:pull:${index}`)), block)
     })
-    const latest = maxBig(now, ledger.served, ...ledger.blocks)
+    const { game } = world.game(launcher, scope)
+    if (game.phase === 'cancelled' && ledger.cancelBlock === undefined) {
+      ledger.cancelBlock = maxBig(now, ledger.served + 1n, ...ledger.blocks.map((b) => b + 1n))
+    }
+    const cancel = ledger.cancelBlock
+    if (cancel !== undefined) {
+      times[blockKey(cancel)] = Number(cancel)
+      extra.push(cancelledLog(game, keccak256(toHex(`${key}:cancel`)), cancel))
+    }
+    const latest = maxBig(
+      now,
+      ledger.served,
+      ...ledger.blocks,
+      ...(cancel === undefined ? [] : [cancel]),
+    )
     ledger.served = latest
     return { logs: [...history.logs, ...extra], times, latest }
   }

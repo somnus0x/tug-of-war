@@ -17,6 +17,7 @@ export const VIEWERS = [
   'fan-capped',
   'captain-blue',
   'funder',
+  'captain-red',
 ] as const
 
 export type ViewerName = (typeof VIEWERS)[number]
@@ -38,6 +39,7 @@ const VIEWER_ADDRESSES: Record<ViewerName, Address | undefined> = {
   'fan-capped': FIXTURE_ADDRESSES.fanCapped,
   'captain-blue': FIXTURE_ADDRESSES.captainBlue,
   funder: FIXTURE_ADDRESSES.funder,
+  'captain-red': FIXTURE_ADDRESSES.captainRed,
 }
 
 export const viewerAddress = (name: ViewerName): Address | undefined => VIEWER_ADDRESSES[name]
@@ -65,16 +67,20 @@ export const freshPlayer = (game: Game): Player => ({
 type CaptainSide = 'blue' | 'red'
 
 const captainStake = (team: CaptainSide, game: Game, rules: Rules) => {
-  if (!game.captainDeposited[team] || game.phase === 'cancelled') {
+  if (!game.captainDeposited[team]) {
     return null
   }
   const bnb = game.config.captainMinDeposit
-  return { team, bnb, pull: pullWei(mulBps(bnb, rules.startWeightBps)) }
+  const pull = pullWei(mulBps(bnb, rules.startWeightBps))
+  return { team, bnb: bnbWei(game.phase === 'cancelled' ? 0n : bnb), pull }
 }
 
 const stakeOf = (name: ViewerName, game: Game, rules: Rules) => {
   if (name === 'captain-blue') {
     return captainStake('blue', game, rules)
+  }
+  if (name === 'captain-red') {
+    return captainStake('red', game, rules)
   }
   const stake = FAN_STAKES[name]
   if (stake === undefined || game.phase === 'awaitingCaptains' || game.phase === 'cancelled') {

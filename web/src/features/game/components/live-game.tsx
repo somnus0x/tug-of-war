@@ -5,9 +5,11 @@ import type { Address } from 'viem'
 
 import { useChainSelect } from '@/contracts/queries/use-chain-clock'
 
+import { useAcceptState } from '../hooks/use-accept-state'
 import { useClockFace } from '../hooks/use-clock-face'
 import { usePullDraft } from '../hooks/use-pull-draft'
 import { usePullTx } from '../hooks/use-pull-tx'
+import { useWaitingActions } from '../hooks/use-waiting-actions'
 import { deriveLive } from '../model/derive-live'
 import { FEED_ROWS } from '../model/feed-rows'
 import { announceStateOf, capNoteOf, pageHeadline, sceneLabelOf } from '../model/page-text'
@@ -25,6 +27,7 @@ import { PullSlot } from './pull-slot'
 import { RulesPanel } from './rules-panel'
 import { TeamTotals } from './team-totals'
 import { ViewerReadout } from './viewer-readout'
+import { WaitingSlot } from './waiting-slot'
 
 const isKnown = (chainNow: number | null): boolean => chainNow !== null
 
@@ -36,6 +39,8 @@ type LiveGameProps = {
   player: Player | null
   mode: SceneMode
 }
+
+const WAITING_PHASES: ReadonlySet<Phase> = new Set(['awaitingCaptains', 'cancelled'])
 
 const CAP_NOTE_PHASES: ReadonlySet<Phase> = new Set(['buyIn', 'awaitingLaunch', 'launched'])
 
@@ -50,6 +55,8 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
   const draft = usePullDraft(player, account)
   const pullTx = usePullTx(launcher, draft)
   const pullState = pullBoxStateOf(game.phase, face, player)
+  const waiting = useWaitingActions(launcher, game, account)
+  const accept = useAcceptState(launcher, game)
   const hasBar = mode === 'phone' && game.phase === 'buyIn'
   const slots = {
     hud: <GameHud game={game} rules={rules} face={face} mode={mode} />,
@@ -70,7 +77,17 @@ export const LiveGame = ({ launcher, game, rules, account, player, mode }: LiveG
     ) : null,
     blueTotals: <TeamTotals game={game} side="blue" account={account} />,
     redTotals: <TeamTotals game={game} side="red" account={account} />,
-    pull: (
+    pull: WAITING_PHASES.has(game.phase) ? (
+      <WaitingSlot
+        launcher={launcher}
+        game={game}
+        rules={rules}
+        account={account}
+        player={player}
+        accept={accept}
+        actions={waiting}
+      />
+    ) : (
       <PullSlot
         launcher={launcher}
         game={game}

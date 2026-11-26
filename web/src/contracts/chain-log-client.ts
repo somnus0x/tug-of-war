@@ -14,6 +14,7 @@ const LOG_EVENTS = [
   getAbiItem({ abi: tugLauncherAbi, name: 'CaptainDeposited' }),
   getAbiItem({ abi: tugLauncherAbi, name: 'Contributed' }),
   getAbiItem({ abi: tugLauncherAbi, name: 'Overtime' }),
+  getAbiItem({ abi: tugLauncherAbi, name: 'Cancelled' }),
 ] as const
 
 const sideOf = (id: number): LogSide => {
@@ -61,6 +62,13 @@ export const toGameLog = (log: FetchedLog): GameLog | null => {
       }
     case 'Overtime':
       return { ...position, kind: 'overtime', extensionsUsed: log.args.extensionsUsed }
+    case 'Cancelled':
+      return {
+        ...position,
+        kind: 'cancelled',
+        captain: log.args.captain,
+        refunded: bnbWei(log.args.refunded),
+      }
     default:
       return null
   }

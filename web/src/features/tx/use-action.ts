@@ -69,6 +69,7 @@ const toastOf = (kind: ToastKind, message: TxMessage, hash: Hash | undefined): T
 
 export type ActionOptions = {
   readonly onSuccess?: () => void
+  readonly onQuietInfo?: () => void
 }
 
 export const useAction = <Name extends LauncherActionName>(
@@ -106,6 +107,10 @@ export const useAction = <Name extends LauncherActionName>(
     },
     onFailure: (error: TxErrorInfo, hash: Hash | undefined) => {
       clearSent()
+      if (error.tone === 'info' && options.onQuietInfo !== undefined) {
+        options.onQuietInfo()
+        return
+      }
       const kind = error.tone === 'info' ? 'info' : 'err'
       txToasts.push(toastOf(kind, errorMessage(action, error, errorValues(context)), hash))
     },
