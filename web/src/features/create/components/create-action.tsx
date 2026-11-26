@@ -88,6 +88,7 @@ export const CreateAction = ({
         type="submit"
         state={button.state}
         fullWidth
+        keepFocus
         describedBy={button.reason === undefined ? noteId : `${reasonId} ${noteId}`}
       >
         {button.label}

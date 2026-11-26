@@ -28,6 +28,7 @@ import {
   locksInputs,
 } from '../model/create-button'
 import { sendFailedFor } from '../model/send-attempt'
+import { anyErrorShown, shownErrorOf } from '../model/shown-errors'
 import { upperSymbol } from '../model/validate'
 import { CaptainField } from './captain-field'
 import { CreateAction } from './create-action'
@@ -103,7 +104,14 @@ export const CreateForm = ({
   const isSending = sender.stage !== 'idle'
   const isDisabled = isUnavailable || isSending || locksInputs(flow.stage)
   const hasErrors = hasBlockingErrors(check.errors, flow.fieldProblem)
-  const showsErrors = flow.submitted && hasErrors
+  const shown = {
+    errors: check.errors,
+    touched,
+    submitted: flow.submitted,
+    fieldProblem: flow.fieldProblem,
+    uploadFailed: flow.uploadFailed,
+  }
+  const showsErrors = anyErrorShown(shown)
   const liveKey = flow.prepared === null ? null : configKey(flow.prepared.config)
   const sendFailed = sendFailedFor(sender.failure, liveKey)
   const failureLine = sendFailed ? (sender.failure?.message ?? null) : null
@@ -119,15 +127,7 @@ export const CreateForm = ({
     fee: formatBnbExact(sender.fee),
   })
 
-  const errorOf = (field: FieldName): string | undefined => {
-    if (flow.fieldProblem?.field === field) {
-      return flow.fieldProblem.text
-    }
-    if (field === 'image' && flow.uploadFailed) {
-      return CREATE_COPY.errors.upload
-    }
-    return flow.submitted || touched.has(field) ? check.errors[field] : undefined
-  }
+  const errorOf = (field: FieldName): string | undefined => shownErrorOf(field, shown)
 
   const textProps = (field: TextField) => ({
     value: values[field],

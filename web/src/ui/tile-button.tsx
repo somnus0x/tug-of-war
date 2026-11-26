@@ -17,6 +17,7 @@ type TileButtonProps = {
   ariaLabel?: string | undefined
   describedBy?: string | undefined
   onClick?: (() => void) | undefined
+  keepFocus?: boolean
 }
 
 export const TileButton = ({
@@ -30,6 +31,7 @@ export const TileButton = ({
   ariaLabel,
   describedBy,
   onClick,
+  keepFocus = false,
 }: TileButtonProps) => {
   const { disabled, busy } = tileBehaviour(state)
   return (
@@ -42,6 +44,13 @@ export const TileButton = ({
       aria-label={ariaLabel}
       aria-describedby={describedBy}
       onClick={onClick}
+      onMouseDown={
+        keepFocus
+          ? (event) => {
+              event.preventDefault()
+            }
+          : undefined
+      }
     >
       {busy ? <Spinner /> : null}
       <span className="tile-button__label">{children}</span>
