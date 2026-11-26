@@ -130,6 +130,42 @@ contract TugForkTest is TugBase {
         );
     }
 
+    function test_MeasureDemoSizedTradesUntilTaxLiquidates() public {
+        (TugLauncher game, TugVault vault) = _launchDefaultGame();
+        address token = game.token();
+        ITugTaxProcessor processor = ITugTaxProcessor(ITugTaxToken(token).taxProcessor());
+        uint256 budget = 3 ether;
+        vm.deal(TRADER, budget);
+
+        address[] memory sellPath = new address[](2);
+        sellPath[0] = token;
+        sellPath[1] = ROUTER.WETH();
+        vm.prank(TRADER);
+        IERC20(token).approve(address(ROUTER), type(uint256).max);
+
+        uint256 rounds;
+        while (rounds < 30 && processor.marketQuoteBalance() == 0 && TRADER.balance >= 0.1 ether) {
+            assertTrue(_tryBuy(token, 0.1 ether));
+            uint256 tokens = IERC20(token).balanceOf(TRADER);
+            vm.prank(TRADER);
+            ROUTER.swapExactTokensForETHSupportingFeeOnTransferTokens(tokens, 0, sellPath, TRADER, block.timestamp);
+            ++rounds;
+        }
+        emit log_named_uint("Demo rounds (0.1 tBNB buy, full sell)", rounds);
+        emit log_named_uint("Trader tBNB spent (wei)", budget - TRADER.balance);
+        emit log_named_uint("Market quote after demo trades (wei)", processor.marketQuoteBalance());
+
+        uint256 beforeDispatch = address(vault).balance;
+        vm.prank(DISPATCHER);
+        try processor.dispatch() {
+            emit log_named_string("Dispatch after demo trades", "succeeded");
+        } catch (bytes memory reason) {
+            emit log_named_string("Dispatch after demo trades", "reverted");
+            emit log_named_bytes("Dispatch revert data", reason);
+        }
+        emit log_named_uint("Native BNB delivered by dispatch (wei)", address(vault).balance - beforeDispatch);
+    }
+
     function test_PostLaunchBuyerChoosesATeamAndKeepsItAfterUnstaking() public {
         (TugLauncher game, TugVault vault) = _launchDefaultGame();
         _prepareTrading(game);
