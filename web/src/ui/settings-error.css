@@ -1,0 +1,66 @@
+.settings-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--gutter);
+}
+
+.settings-error__panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 560px;
+}
+
+.settings-error__title {
+  margin-bottom: 8px;
+  color: var(--gold);
+  font-size: var(--text-primary);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.settings-error__hint {
+  margin-bottom: 14px;
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.settings-error__label {
+  margin-bottom: 6px;
+  color: var(--mute);
+  font-size: var(--text-label);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-error__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.settings-error__row {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 6px 8px;
+  background: var(--ink-0);
+}
+
+.settings-error__name {
+  color: var(--lime);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  overflow-wrap: anywhere;
+}
+
+.settings-error__message {
+  color: var(--cream);
+  font-size: var(--text-small);
+  overflow-wrap: anywhere;
+}

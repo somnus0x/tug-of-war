@@ -1,33 +1,13 @@
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
-import { QueryClientProvider } from '@tanstack/react-query'
-import { RouterProvider } from '@tanstack/react-router'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { WagmiProvider } from 'wagmi'
 
-import '@/app/env'
-import { queryClient } from '@/app/query-client'
-import { createAppRouter } from '@/app/router'
-import { wagmiConfig } from '@/app/wagmi'
-import { walletTheme } from '@/app/wallet-theme'
-import { entryLinkTarget } from '@/lib/entry-link'
+import { SETTINGS_COPY } from '@/copy/settings'
+import { readEnv } from '@/lib/env-schema'
+import { SettingsError } from '@/ui/settings-error'
 
-import '@rainbow-me/rainbowkit/styles.css'
 import '@/styles/fonts.css'
 import '@/styles/tokens.css'
 import '@/styles/base.css'
-import '@/styles/shell.css'
-
-const entryTarget = entryLinkTarget(
-  window.location.search,
-  window.location.hash,
-  import.meta.env.BASE_URL,
-)
-if (entryTarget !== null) {
-  window.history.replaceState(null, '', entryTarget)
-}
-
-const router = createAppRouter()
 
 const container = document.getElementById('root')
 
@@ -35,14 +15,20 @@ if (container === null) {
   throw new Error('Missing #root element in index.html')
 }
 
-createRoot(container).render(
-  <StrictMode>
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={walletTheme}>
-          <RouterProvider router={router} />
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
-  </StrictMode>,
-)
+const result = readEnv(import.meta.env)
+
+if (result.ok) {
+  const { boot } = await import('@/app/boot')
+  boot(container)
+} else {
+  createRoot(container).render(
+    <StrictMode>
+      <SettingsError
+        title={SETTINGS_COPY.title}
+        hint={import.meta.env.DEV ? SETTINGS_COPY.devHint : SETTINGS_COPY.buildHint}
+        listLabel={SETTINGS_COPY.listLabel}
+        issues={result.issues}
+      />
+    </StrictMode>,
+  )
+}
