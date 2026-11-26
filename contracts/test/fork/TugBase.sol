@@ -5,16 +5,12 @@ import {ClonesUpgradeable} from "@openzeppelin-contracts-upgradeable/proxy/Clone
 import {Test} from "forge-std/Test.sol";
 import {UpgradeableBeacon} from "solady/utils/UpgradeableBeacon.sol";
 
-import {Distribution} from "src/flap/Distribution.sol";
-import {DirectLaunchVaultBase} from "src/flap/DirectLaunchVaultBase.sol";
-import {DirectLaunchVaultFactoryBase} from "src/flap/DirectLaunchVaultFactoryBase.sol";
 import {IPortal, IPortalTypes} from "src/flap/IPortal.sol";
-import {FieldDescriptor, FactoryPolicy, VaultDataSchema, VaultUISchema} from "src/flap/IVaultSchemas.sol";
 import {LaunchVaultAddresses} from "src/flap/LaunchVaultAddresses.sol";
-import {ITugLauncher} from "src/interfaces/ITugLauncher.sol";
 import {TugConfig} from "src/interfaces/TugTypes.sol";
 import {TugLauncher} from "src/launcher/TugLauncher.sol";
 import {TugLauncherFactory} from "src/launcher/TugLauncherFactory.sol";
+import {TugVaultFactory} from "src/vault/TugVaultFactory.sol";
 
 interface IPortalProxyAdmin {
     function owner() external view returns (address);
@@ -31,7 +27,7 @@ abstract contract TugBase is Test {
     IPortal internal portal;
     address internal admin;
     TugLauncherFactory internal factory;
-    TugForkVaultFactory internal vaultFactory;
+    TugVaultFactory internal vaultFactory;
     uint256 internal saltFee;
 
     address internal constant creator = address(0xA1);
@@ -55,19 +51,9 @@ abstract contract TugBase is Test {
         emit log_named_address("Portal admin", admin);
         saltFee = portal.SALT_LOCK_FEE();
 
-        vaultFactory = new TugForkVaultFactory();
-        TugLauncher implementation = new TugLauncher();
-        address predictedFactory = vm.computeCreateAddress(address(this), uint256(vm.getNonce(address(this))) + 1);
-        UpgradeableBeacon beacon = new UpgradeableBeacon(predictedFactory, address(implementation));
-        factory = new TugLauncherFactory(
-            address(portal),
-            LaunchVaultAddresses.guardian(),
-            address(beacon),
-            address(vaultFactory),
-            TOKEN_IMPLEMENTATION,
-            TRIGGER_SERVICE
-        );
-        assertEq(address(factory), predictedFactory);
+        vaultFactory = new TugVaultFactory();
+        factory = _deployLauncherFactory();
+        vaultFactory.setLauncherFactory(address(factory));
 
         vm.label(creator, "Creator");
         vm.label(blue, "Blue captain");
@@ -82,6 +68,21 @@ abstract contract TugBase is Test {
 
         vm.prank(admin);
         portal.setCreationPaused(true);
+    }
+
+    function _deployLauncherFactory() internal returns (TugLauncherFactory launcherFactory) {
+        TugLauncher implementation = new TugLauncher();
+        address predictedFactory = vm.computeCreateAddress(address(this), uint256(vm.getNonce(address(this))) + 1);
+        UpgradeableBeacon beacon = new UpgradeableBeacon(predictedFactory, address(implementation));
+        launcherFactory = new TugLauncherFactory(
+            address(portal),
+            LaunchVaultAddresses.guardian(),
+            address(beacon),
+            address(vaultFactory),
+            TOKEN_IMPLEMENTATION,
+            TRIGGER_SERVICE
+        );
+        assertEq(address(launcherFactory), predictedFactory);
     }
 
     function _setFactories(uint16 vaultBps, bool vaultEnabled, uint16 launcherBps, bool launcherEnabled) internal {
@@ -146,67 +147,5 @@ abstract contract TugBase is Test {
     function _contribute(TugLauncher launcher, address player, uint8 team, uint256 amount) internal {
         vm.prank(player);
         launcher.contribute{value: amount}(team);
-    }
-}
-
-/// @dev Test-only vault used to verify the Portal's launch and reserve handoff.
-contract TugForkVault is DirectLaunchVaultBase {
-    receive() external payable {}
-
-    function description() public pure override returns (string memory) {
-        return "Fork test vault";
-    }
-
-    function vaultUISchema() public pure override returns (VaultUISchema memory schema) {
-        schema.description = "Fork test vault";
-    }
-}
-
-contract TugForkVaultFactory is DirectLaunchVaultFactoryBase {
-    uint256 public reserveAtCreation;
-
-    error UnsupportedLaunch();
-    error NoUpgrade();
-
-    function newVault(address, address launcher, uint8 kind, bytes calldata launchParams)
-        external
-        override
-        onlyHub
-        returns (address)
-    {
-        (IPortalTypes.CreateTaxTokenParams memory params, Distribution memory distribution) =
-            abi.decode(launchParams, (IPortalTypes.CreateTaxTokenParams, Distribution));
-        if (kind != uint8(IPortalTypes.LaunchKind.DIRECT_V2_POOL_TAX) || !isQuoteTokenSupported(params.quoteToken)) {
-            revert UnsupportedLaunch();
-        }
-        for (uint256 i; i < params.feeConfigs.length; ++i) {
-            if (params.feeConfigs[i].feeType != IPortalTypes.FeeSlotType.VAULT) continue;
-            IPortalTypes.FeeConfigVault memory slot =
-                abi.decode(params.feeConfigs[i].configData, (IPortalTypes.FeeConfigVault));
-            if (slot.vaultFactory != address(this)) continue;
-            if (abi.decode(slot.vaultData, (address)) != launcher || !ITugLauncher(launcher).launching()) {
-                revert UnsupportedLaunch();
-            }
-            reserveAtCreation = distribution.amount;
-            return address(new TugForkVault());
-        }
-        revert UnsupportedLaunch();
-    }
-
-    function isQuoteTokenSupported(address quoteToken) public pure override returns (bool) {
-        return quoteToken == address(0);
-    }
-
-    function vaultDataSchema() public pure override returns (VaultDataSchema memory schema) {
-        schema.fields = new FieldDescriptor[](1);
-        schema.fields[0] = FieldDescriptor("launcher", "address", "Tug launcher", 0);
-    }
-
-    function tokenCreationPolicies() public pure override returns (FactoryPolicy[] memory) {
-        return new FactoryPolicy[](0);
-    }
-
-    function upgradeVaultImplementation(address) external view override onlyGuardian {
-        revert NoUpgrade();
     }
 }
