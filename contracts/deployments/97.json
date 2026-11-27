@@ -1,0 +1,11 @@
+{
+  "blockNumber": 144976603,
+  "chainId": 97,
+  "deployer": "0x44F8B150BBa3f91e47A354ad1E7Fd21453a50fc6",
+  "launcherBeacon": "0x88FdC86DAD7B9b2867CD3c26A018D023eC2C47A0",
+  "launcherFactory": "0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431",
+  "launcherImplementation": "0x591f3F0Bd1f7Ab5682833106099240A6D5975F5e",
+  "vaultBeacon": "0x3207df035f0cF9c991d965bcb9403c211741C863",
+  "vaultFactory": "0xe01A0596892b0b173dc92f3823D48132D1E8B665",
+  "vaultImplementation": "0x3Dd95a288111Bce263f8CC583611944668843041"
+}

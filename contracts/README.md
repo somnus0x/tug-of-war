@@ -216,3 +216,39 @@ done
 ### 8. Record the result
 
 Save the real game's launcher, token, pool and vault addresses and the relevant transaction links. The run is complete once the factories are deployed and opened, the dry run passes, the real game runs from creation through staking, trading tax reaches the vault, rewards are paid, and the addresses are listed here.
+
+#### Deployed on BSC testnet (chain 97)
+
+All six contracts are source-verified on BscScan. `deployments/97.json` holds the same addresses.
+
+| Contract | Address |
+|---|---|
+| Launcher factory | [`0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431`](https://testnet.bscscan.com/address/0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431) |
+| Vault factory | [`0xe01A0596892b0b173dc92f3823D48132D1E8B665`](https://testnet.bscscan.com/address/0xe01A0596892b0b173dc92f3823D48132D1E8B665) |
+| Launcher implementation | [`0x591f3F0Bd1f7Ab5682833106099240A6D5975F5e`](https://testnet.bscscan.com/address/0x591f3F0Bd1f7Ab5682833106099240A6D5975F5e) |
+| Launcher beacon | [`0x88FdC86DAD7B9b2867CD3c26A018D023eC2C47A0`](https://testnet.bscscan.com/address/0x88FdC86DAD7B9b2867CD3c26A018D023eC2C47A0) |
+| Vault implementation | [`0x3Dd95a288111Bce263f8CC583611944668843041`](https://testnet.bscscan.com/address/0x3Dd95a288111Bce263f8CC583611944668843041) |
+| Vault beacon | [`0x3207df035f0cF9c991d965bcb9403c211741C863`](https://testnet.bscscan.com/address/0x3207df035f0cF9c991d965bcb9403c211741C863) |
+
+#### Real game: TugOfWar (TUG), launched 26 Nov 2026
+
+The game raised 2.262 tBNB against a 2.26 tBNB minimum and launched at block 145015702. Four players and both captains claimed and staked. Trading then sent 0.0086 tBNB of tax to the vault, and all six stakers and both captains were paid.
+
+| Contract | Address |
+|---|---|
+| Game (launcher) | [`0xD0892616dDC6239810A69866446EA44AF78eFEfb`](https://testnet.bscscan.com/address/0xD0892616dDC6239810A69866446EA44AF78eFEfb) |
+| Token | [`0xba80c68B1DF53119582F189a5f2fEFA713fD7777`](https://testnet.bscscan.com/token/0xba80c68B1DF53119582F189a5f2fEFA713fD7777) |
+| Pool | [`0x5287D5a4F16765562f7E5581d0b97e77C89796bd`](https://testnet.bscscan.com/address/0x5287D5a4F16765562f7E5581d0b97e77C89796bd) |
+| Vault | [`0x3b9af378A1D8911A9F6CA48d34a47CaE064444e1`](https://testnet.bscscan.com/address/0x3b9af378A1D8911A9F6CA48d34a47CaE064444e1) |
+
+| Step | Transaction |
+|---|---|
+| Create through the Portal (`newLauncher`) | [`0x5e3cc3bf…0378476`](https://testnet.bscscan.com/tx/0x5e3cc3bfc9ded19964a58450377eb900699edfb20b43abe1295b993df0378476) |
+| First contribution | [`0xab889c71…c0a0bfd`](https://testnet.bscscan.com/tx/0xab889c718f015a5186416ace8906a1eb0bf16c102b5a66d39744a92c7c0a0bfd) |
+| Launch | [`0x8184fed9…ecbdd2d`](https://testnet.bscscan.com/tx/0x8184fed937cb5dbe23ca27462617d962321de2483c713322e63e1e21aecbdd2d) |
+| First claim and stake | [`0x894cec23…ba52a26`](https://testnet.bscscan.com/tx/0x894cec2320a0c1c8fade7c65c278ef398483c6657cae633a3a1af9743ba52a26), [`0x68057add…4a463d3`](https://testnet.bscscan.com/tx/0x68057add92d237d0b4d4564054993805c071b5f42a006183893125b1b4a463d3) |
+| Tax dispatched to the vault | [`0x40c3ccd9…7bbd3a1`](https://testnet.bscscan.com/tx/0x40c3ccd9e85a8b35bd56fc289746a1d1e89387a4b3b58b61aeea1b77e7bbd3a1) |
+| First staker payout | [`0x54cbc9bc…b7850d7`](https://testnet.bscscan.com/tx/0x54cbc9bc4fd6aa0bbbe0b2da29e272957142b3b9a42008a062e5769b6b7850d7) |
+| Captain payouts | [`0x991c0dd2…9655ebb`](https://testnet.bscscan.com/tx/0x991c0dd2cd3a51d38ca3b94f7df561edd3e061946018523fbbe1426189655ebb), [`0x8cbdf0bf…13a9556`](https://testnet.bscscan.com/tx/0x8cbdf0bf04176cca265921608940406c106d2eab95332106d33ffed2f13a9556) |
+
+The factory's first game, [`0x487bDa989Dc79750b6B3cdFF199c79EB0044fF1F`](https://testnet.bscscan.com/address/0x487bDa989Dc79750b6B3cdFF199c79EB0044fF1F), missed its minimum raise after two funding transfers did not land. Both captains were refunded in full, which exercised the refund path on a live game.
