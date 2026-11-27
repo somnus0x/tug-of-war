@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "mode": "mini-app",
+  "appModel": "standalone",
+  "slug": "tug-of-war",
+  "artifactId": "vaultui_tug-of-war_01M8DGXNMDEM7G23A3XC0PWKHK",
+  "name": "Tug of War",
+  "displayTitle": {
+    "en": "Tug of War",
+    "zh": "拔河大战"
+  },
+  "match": {
+    "bindings": []
+  },
+  "i18n": [
+    "en",
+    "zh",
+    "ko"
+  ],
+  "walletChains": [
+    97
+  ],
+  "walletContracts": [
+    {
+      "id": "flap-portal",
+      "chainId": 97,
+      "address": "0x000042108465206185A077Edc3F3fd2b49060000",
+      "allow": [
+        "function newLauncher(address launcherFactory, bytes data) payable returns (address launcher)"
+      ],
+      "read": [
+        "function SALT_LOCK_FEE() view returns (uint256)"
+      ],
+      "maxValueWei": "10000000000000000"
+    },
+    {
+      "id": "tug-factory",
+      "chainId": 97,
+      "address": "0xbFc1ccCB2D6a611219D387eC9A67a9DCF10C5431",
+      "read": [
+        "function gamesCount() view returns (uint256)",
+        "function gameAt(uint256 index) view returns (address launcher)",
+        "function defaultConfig() view returns ((string name, string symbol, string meta, bytes32 salt, uint64 duration, uint256 minRaise, uint256 walletCap, address captainBlue, address captainRed, address vaultFactory, uint16 maxBonusShareBps, uint256 captainMinDeposit, uint64 acceptWindow, uint16 captainAllocBps, uint64 captainVestDuration, uint16 captainShareBps) config)",
+        "function limits() view returns (((uint64 min, uint64 max) duration, (uint64 min, uint64 max) acceptWindow, (uint64 min, uint64 max) captainVestDuration, (uint16 min, uint16 max) maxBonusShareBps, (uint16 min, uint16 max) captainAllocBps, (uint16 min, uint16 max) captainShareBps, uint256 minRaiseFloor, bool creationFloorAvailable) configLimits)",
+        "function validateConfig((string name, string symbol, string meta, bytes32 salt, uint64 duration, uint256 minRaise, uint256 walletCap, address captainBlue, address captainRed, address vaultFactory, uint16 maxBonusShareBps, uint256 captainMinDeposit, uint64 acceptWindow, uint16 captainAllocBps, uint64 captainVestDuration, uint16 captainShareBps) config) view returns (bool ok, bytes4 reason)",
+        "function encodeConfig((string name, string symbol, string meta, bytes32 salt, uint64 duration, uint256 minRaise, uint256 walletCap, address captainBlue, address captainRed, address vaultFactory, uint16 maxBonusShareBps, uint256 captainMinDeposit, uint64 acceptWindow, uint16 captainAllocBps, uint64 captainVestDuration, uint16 captainShareBps) config) pure returns (bytes data)",
+        "function predictToken(bytes32 salt) view returns (address token)",
+        "function portal() view returns (address)",
+        "function tokenImplementation() view returns (address)",
+        "function pairedVaultFactory() view returns (address)"
+      ],
+      "resolvedContracts": [
+        {
+          "id": "tug-game",
+          "resolver": "function gameAt(uint256 index) view returns (address launcher)",
+          "allow": [
+            "function contribute(uint8 team) payable",
+            "function depositCaptain() payable",
+            "function launch()",
+            "function refund()",
+            "function claim()",
+            "function claimCaptain()"
+          ],
+          "read": [
+            "function getGame() view returns ((address launcher, address creator, address factory, (string name, string symbol, string meta, bytes32 salt, uint64 duration, uint256 minRaise, uint256 walletCap, address captainBlue, address captainRed, address vaultFactory, uint16 maxBonusShareBps, uint256 captainMinDeposit, uint64 acceptWindow, uint16 captainAllocBps, uint64 captainVestDuration, uint16 captainShareBps) config, uint8 phase, (bool blue, bool red) captainDeposited, uint64 acceptDeadline, uint64 gameStart, uint64 originalDeadline, uint64 deadline, uint8 extensionsUsed, uint16 currentWeightBps, uint256 raised, (uint256 blue, uint256 red) raisedByTeam, (uint256 blue, uint256 red) pullByTeam, (uint256 blue, uint256 red) playersByTeam, uint16 ropeBps, uint256 autoLaunchRequestId, uint256 triggerBudget, address triggerFunder, address token, address pool, address vault, uint16 finalBlueShareBps) game)",
+            "function getPlayer(address player) view returns ((uint8 team, uint256 contribution, uint256 pull, uint256 baseEntitlement, uint256 bonusEntitlement, uint256 claimed, uint256 claimable, uint256 refundable, uint256 remainingCap) playerView)",
+            "function getRules() view returns ((uint16 buyTaxBps, uint16 sellTaxBps, uint16 vaultFeeBps, uint16 deflationFeeBps, uint16 captainShareBps, uint16 poolAllocBps, uint16 baseAllocBps, uint16 bonusAllocBps, uint16 captainAllocBps, uint16 maxBonusShareBps, uint64 captainVestDuration, uint32 taxDuration, uint32 antiFarmerDuration, uint16 startWeightBps, uint64 overtimeWindow, uint64 overtimeExtension, uint8 maxExtensions, uint64 launchGrace) rules)",
+            "function previewContribute(uint8 team, uint256 amount) view returns (uint256 pull, uint16 newRopeBps, bool wouldTriggerOvertime)",
+            "function canContribute(address player, uint8 team, uint256 amount) view returns (bool ok, bytes4 reason)",
+            "function canDepositCaptain(address captain, uint256 amount) view returns (bool ok, bytes4 reason)",
+            "function canLaunch() view returns (bool ok, bytes4 reason)",
+            "function canRefund(address player) view returns (bool ok, bytes4 reason)",
+            "function canClaim(address player) view returns (bool ok, bytes4 reason)"
+          ],
+          "maxValueWei": "10000000000000000000"
+        }
+      ]
+    }
+  ]
+}
