@@ -7,7 +7,7 @@ export const HEAD_WIDTH = 8
 export const HEAD_HEIGHT = 5
 export const COIN_SIZE = 14
 
-export type Pose = 'pull' | 'idle'
+export type Pose = 'pull' | 'hold'
 
 const HAT: Record<Side, readonly string[]> = {
   blue: ['..hhh.......', '.hhhhhdd....'],
@@ -29,13 +29,13 @@ const POSES: Record<Pose, readonly string[]> = {
     '..pp.....pp.',
     '.bbb.....bbb',
   ],
-  idle: [
+  hold: [
     '.sssss......',
     '.sssks......',
-    '..sss....s..',
-    '..hhhh..s...',
-    '.shhhhhs....',
-    '.s.hhhh.....',
+    '..sss.......',
+    '..hhhh......',
+    '..hhhhhsss..',
+    '...hhhh.....',
     '...hhhh.....',
     '...pppp.....',
     '...pp.pp....',

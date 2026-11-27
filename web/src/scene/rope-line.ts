@@ -1,7 +1,5 @@
 import type { FigureSlot, SceneGeometry } from './geometry'
 
-import { FIGURE_WIDTH } from './sprites'
-
 export type Point = readonly [number, number]
 
 export type RopeLine = {
@@ -17,22 +15,13 @@ const handOf = (slot: FigureSlot): Point => [slot.handX, slot.handY]
 export const ropeGround = (geometry: SceneGeometry): number =>
   geometry.ground - Math.max(2, Math.round(geometry.rope / 2))
 
-const groundLine = (
-  blue: readonly FigureSlot[],
-  red: readonly FigureSlot[],
-  marker: number,
-  geometry: SceneGeometry,
-): RopeLine => {
+const groundLine = (marker: number, geometry: SceneGeometry): RopeLine => {
   const ground = ropeGround(geometry)
   const reach = Math.round(geometry.width * SLACK_REACH)
-  const blueEnd = blue.at(-1)
-  const redEnd = red.at(-1)
-  const start = blueEnd === undefined ? marker - reach : blueEnd.x
-  const end = redEnd === undefined ? marker + reach : redEnd.x + FIGURE_WIDTH * redEnd.scale
   return {
     points: [
-      [start, ground],
-      [end, ground],
+      [marker - reach, ground],
+      [marker + reach, ground],
     ],
     markerY: ground,
     taut: false,
@@ -57,10 +46,9 @@ export const ropeLine = (
   red: readonly FigureSlot[],
   marker: number,
   geometry: SceneGeometry,
-  pulling: boolean,
 ): RopeLine => {
-  if (!pulling || (blue.length === 0 && red.length === 0)) {
-    return groundLine(blue, red, marker, geometry)
+  if (blue.length === 0 && red.length === 0) {
+    return groundLine(marker, geometry)
   }
   const ground = ropeGround(geometry)
   const markerY = markerHeight(blue[0], red[0], marker, ground)

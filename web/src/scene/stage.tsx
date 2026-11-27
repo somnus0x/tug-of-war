@@ -66,8 +66,8 @@ export const Stage = memo(
     )
     const placement = useMemo(() => placeCrew(crowd, marker, geometry), [crowd, marker, geometry])
     const line = useMemo(
-      () => ropeLine(placement.blue, placement.red, marker, geometry, pulling),
-      [placement, marker, geometry, pulling],
+      () => ropeLine(placement.blue, placement.red, marker, geometry),
+      [placement, marker, geometry],
     )
     const labels = useMemo(
       () => sceneLabels(crowd, walletCap, maxBonusShareBps, mode, text),
@@ -77,7 +77,7 @@ export const Stage = memo(
       () => layoutTags(tagRequestsOf(crowd, placement, text), geometry.tag, geometry.width),
       [crowd, placement, text, geometry],
     )
-    const pose = pulling ? 'pull' : 'idle'
+    const pose = pulling ? 'pull' : 'hold'
     const plays = useArrivalPlays(crew, pulling || stage === 'waiting', playLength(reducedMotion))
     const acts = useMemo(
       () => arrivalActs({ plays, crew, crowd, placement, geometry, walletCap, reducedMotion }),
